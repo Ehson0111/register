@@ -44,15 +44,15 @@ class ProxyView(View):
         
         if path.startswith('/api/auth/') or path.startswith('/api/users/'):
             return 'user-service'
-        
         return None       
 
     def get_target_path(self, request):
         path = request.path
         logger.info(f"Proxying to: {path}")
         
-        if path.startswith('/api/'):
-            return path[5:]  # Удаляем '/api/' -> остаётся '/auth/login/' или '/users/register/'
+        if path.startswith('/api/'):  
+            return path[:5]
+        
         return path
     
     def proxy_request(self,request,target_url):
