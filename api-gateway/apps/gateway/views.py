@@ -18,13 +18,18 @@ class ProxyView(View):
         logger.info(f"gateway request: {request.method} { request.path}")   
         logger.info(f"headers: {dict(request.headers)}")
         logger.info(f"body: {request.body.decode('utf-8') if request.body else 'no body'}")
-        
+        # print(f"{request.method} { request.path}")
+        # print(f" {dict(request.headers)}")
         service_name= self.get_service_name(request)
         
         if not service_name:
             logger.error(f'service not found for path:{ request.path}')
+        
+        print(f" {service_name}")
+
 
         service_url=settings.MICROSERVICES.get(service_name)
+        print(f" {service_name} {service_url}")
 
         if not service_url :
             logger.error(f"Service { service_name } not configured")
@@ -34,6 +39,8 @@ class ProxyView(View):
         target_path= self.get_target_path(request)
 
         target_url= f"{service_url}{target_path}"
+
+        print(f"  target_url {target_url}")
 
         logger.info(f"Proxying to: {target_path}")
 
@@ -51,7 +58,7 @@ class ProxyView(View):
         logger.info(f"Proxying to: {path}")
         
         if path.startswith('/api/'):  
-            return path[:5]
+            return path
         
         return path
     
@@ -68,6 +75,7 @@ class ProxyView(View):
             for header_name in important_headers:
                 header_value=request.headers.get(header_name)
                 if header_value:
+                    print(header_value)
                     headers[header_name]=header_value
             
             logger.info(f"forward headers: {headers}")
@@ -97,7 +105,17 @@ class ProxyView(View):
 
             if params:
                 logger.info(f"Query params: {params} ")            
-                
+            he = {
+                'method':request.method,
+                'url': target_url,
+                'headers':  headers,
+                'json':json_data,
+                'data' :  data if json_data is None else None,
+                'params':params
+            }
+            print(f"resonse --------------------------------------------------------------------------- ")            
+            print(json.dumps(he, indent=2, ensure_ascii=False))
+
             response =requests.request(
                 method=request.method,
                 url=target_url,
@@ -108,9 +126,8 @@ class ProxyView(View):
                 timeout=30
             )
                 
-            logger.info(f"Response status: {response.status_code}")
-            logger.info(f"Response content: {response.text[:200]}...")
-
+            print(f"Response status: {response.status_code}")
+            print(f"Response content: {response.text[:200]}...")
             # Возвращаем ответ
             django_response =HttpResponse(
                 response.content,
@@ -118,6 +135,7 @@ class ProxyView(View):
                 content_type=response.headers.get('content-type','application/json')
             )
             
+            print(f"django {django_response}")
             # response_headers_to_copy = ['Content-Type', 'Cache-Control', 'ETag']
             # for key in response_headers_to_copy:
             #     if key in response.headers:

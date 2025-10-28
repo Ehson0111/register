@@ -94,7 +94,7 @@ DATABASES = {
 }
 
 MICROSERVICES = {
-    'user-service': 'http://localhost:8004',  # Из вашего health_check
+    'user-service': 'http://127.0.0.1:8004',  # Из вашего health_check
     # Добавьте другие сервисы, если нужно, напр. 'product-service': 'http://localhost:8001'
 }
 
