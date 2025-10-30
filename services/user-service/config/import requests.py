@@ -6,7 +6,7 @@ from pathlib import Path
 project_path = Path(__file__).resolve().parent
 os.chdir(project_path)
 
-# Настройте Django
+#asf Настройте Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 try:
