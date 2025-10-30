@@ -13,7 +13,7 @@ try:
     django.setup()
     print("✅ Django setup successful")
     
-    # Проверьте настройки
+    # Проверьте настройки о
     from django.conf import settings
     print(f"✅ DEBUG mode: {settings.DEBUG}")
     print(f"✅ ALLOWED_HOSTS: {settings.ALLOWED_HOSTS}")
