@@ -6,7 +6,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from apps.users.models import User
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -15,13 +14,15 @@ def login_view(request):
 
     if not email or not password:
         return Response(
-            {'error': 'Email and password are required'},
+            {'error': 'Email и пароль обязательны'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
     user = authenticate(username=email, password=password)
     if user and user.is_active:
         refresh = RefreshToken.for_user(user)
+        refresh['role'] = user.role
+
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh),
@@ -31,11 +32,12 @@ def login_view(request):
                 'username': user.username,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
+                'role': user.role,  # ← Ключевое поле
             }
         })
 
     return Response(
-        {'error': 'Invalid credentials'},
+        {'error': 'Неверные данные'},
         status=status.HTTP_401_UNAUTHORIZED
     )
 

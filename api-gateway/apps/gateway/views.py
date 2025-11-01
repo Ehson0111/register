@@ -51,6 +51,8 @@ class ProxyView(View):
         
         if path.startswith('/api/auth/') or path.startswith('/api/users/'):
             return 'user-service'
+        if path.startswith('/api/contacts/'):
+            return 'contact-service'
         return None       
 
     def get_target_path(self, request):

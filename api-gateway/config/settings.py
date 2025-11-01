@@ -94,8 +94,8 @@ DATABASES = {
 }
 
 MICROSERVICES = {
-    'user-service': 'http://127.0.0.1:8004',  # Из вашего health_check
-    # Добавьте другие сервисы, если нужно, напр. 'product-service': 'http://localhost:8001'
+    'user-service': 'http://127.0.0.1:8004',  # 
+    'contact-service': 'http://127.0.0.1:8005',  # Новый порт
 }
 
 # Password validation
@@ -128,6 +128,11 @@ REST_FRAMEWORK = {
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
+SIMPLE_JWT = {
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    # можно не задавать lifetime здесь, если проверка только…
+}
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

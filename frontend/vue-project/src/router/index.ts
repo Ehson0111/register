@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/LoginView.vue'
+import Login1View from '@/views/Login1View.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import RegisterView  from   '@/views/RegisterView.vue'
 
@@ -13,10 +13,22 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: LoginView
+    component: Login1View
   },
   {
     path: '/dashboard',
+    name: 'Dashboard',
+    component: DashboardView
+  },
+  
+  {
+    path: '/manager/dashboard',
+    name: 'Dashboard',
+    component: DashboardView
+  },
+  
+  {
+    path: '/client/dashboard',
     name: 'Dashboard',
     component: DashboardView
   },

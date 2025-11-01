@@ -20,54 +20,41 @@ class UserWithProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'username', 'first_name',
-            'last_name', 'is_active', 'date_joined', 'profile']
-
+                  'last_name', 'is_active', 'date_joined', 'profile', 'role']  # ← Добавь role
+        
+        
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
+    role = serializers.ChoiceField(
+        choices=['manager', 'client'],
+        default='client',
+        write_only=True
+    )
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'first_name',
-            'last_name', 'password', 'password_confirm']
+        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password_confirm', 'role']
 
     def validate_email(self, value):
-        """Проверка уникальности email"""
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
-
-    def validate_username(self, value):
-        """Проверка уникальности username"""
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
-        return value
-
-    def validate_password(self, value):
-        """Валидация пароля"""
-        try:
-            validate_password(value)
-        except exceptions.ValidationError as e:
-            raise serializers.ValidationError(list(e.messages))
+            raise serializers.ValidationError("Пользователь с таким email уже существует.")
         return value
 
     def validate(self, attrs):
-        """Проверка совпадения паролей"""
-        if attrs.get('password') != attrs.get('password_confirm'):
-            raise serializers.ValidationError({
-                'password_confirm': 'Passwords do not match'
-            })
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password_confirm": "Пароли не совпадают"})
+        try:
+            validate_password(attrs['password'])
+        except exceptions.ValidationError as e:
+            raise serializers.ValidationError({"password": list(e.messages)})
         return attrs
 
     def create(self, validated_data):
-        """Создание пользователя"""
-        # Убираем password_confirm из данных
-        validated_data.pop('password_confirm', None)
-
-        # Создаем пользователя
+        validated_data.pop('password_confirm')
+        role = validated_data.pop('role', 'client')
         user = User.objects.create_user(**validated_data)
-
-        # Создаем профиль
-        UserProfile.objects.create(user=user)
-
+        user.role = role
+        user.save()
+        UserProfile.objects.get_or_create(user=user)
         return user
