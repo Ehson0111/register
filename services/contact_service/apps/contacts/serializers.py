@@ -56,6 +56,30 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                 return value
             raise serializers.ValidationError("Контакт с таким email уже существует")
         return value
+
+class AddContactSerializer(serializers.ModelSerializer):  # Исправил - убрал скобки
+    """Сериализатор для добавления нового контакта"""
     
-class AddContactSerializer():
+    class Meta:
+        model = Contact
+        fields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'status',
+            'company',
+            'position',
+            'address',
+            'notes'
+        ]
     
+    def validate_email(self, value):
+        """Валидация уникальности email при создании"""
+        if Contact.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Контакт с таким email уже существует")
+        return value
+    
+    def create(self, validated_data):
+        """Создание контакта"""
+        return Contact.objects.create(**validated_data)
