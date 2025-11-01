@@ -31,7 +31,7 @@ from .models import Contact
 #             'owner_id', 'assigned_manager_id',
 #             'created_at', 'updated_at'
 #         ]
-#         read_only_fields = ['owner_id', 'created_at', 'updated_at']
+#         read_only_fields = ['owner_id', 'created_at', 'updated_at']d 
 
 class ContactListSerializer(serializers.ModelSerializer):
     """Упрощенный сериализатор для списка контактов"""
