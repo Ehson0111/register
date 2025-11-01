@@ -56,3 +56,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                 return value
             raise serializers.ValidationError("Контакт с таким email уже существует")
         return value
+    
+class AddContactSerializer():
+    
