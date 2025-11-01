@@ -1,20 +1,12 @@
- 
 from django.db import models
-from django.contrib.auth.models import User
 
 class Contact(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField("Email")
-    phone = models.CharField( max_length=20, blank=True)
-    # owner = models.ForeignKey(
-    #     User, 
-    #     on_delete=models.CASCADE, 
-    #     verbose_name="Владелец",
-    #     related_name="contacts"
-    # )
-    created_at = models.DateTimeField(auto_now_add=True)
-    # updated_at = models.DateTimeField("Обновлено", auto_now=True)
+    phone = models.CharField(max_length=20, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # исправил кавычки!
+    
     STATUS_LEAD = 'lead'
     STATUS_CLIENT = 'client'
     STATUS_PARTNER = 'partner'
@@ -31,20 +23,12 @@ class Contact(models.Model):
     )
     company = models.CharField("Company", max_length=200, blank=True)
     position = models.CharField("Position", max_length=100, blank=True)
-
-    # address
     address = models.TextField("Address", blank=True)
-
-    # заметки
-    notes = models.TextField("Заметки", blank=True)
-
+    notes = models.TextField("Notes", blank=True)
 
     class Meta:
-    #     verbose_name = "Контакт"
-    #     verbose_name_plural = "Контакты"
         ordering = ['-created_at']
         unique_together = ['email', 'phone']
-
 
     def __str__(self):
         return f"{self.first_name}"
