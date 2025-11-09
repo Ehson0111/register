@@ -98,11 +98,6 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     }
-# SIMPLE_JWT = {
-#     'ALGORITHM': 'HS256',
-#     'SIGNING_KEY': SECRET_KEY,
-#     # можно не задавать lifetime здесь, если проверка только…
-# }
 
 
 CORS_ALLOW_ALL_ORIGINS = True
