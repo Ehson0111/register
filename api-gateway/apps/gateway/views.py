@@ -51,7 +51,10 @@ class ProxyView(View):
         
         if path.startswith('/api/auth/') or path.startswith('/api/users/'):
             return 'user-service'
-        if path.startswith('/api/contacts/'):
+         # Contact service routes - ДОБАВИЛ новые пути для услуг и сделок
+        if (path.startswith('/api/contacts/') or 
+            path.startswith('/api/services/') or 
+            path.startswith('/api/deals/')):
             return 'contact-service'
         return None       
 

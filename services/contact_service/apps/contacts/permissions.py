@@ -9,7 +9,7 @@ class IsManager(permissions.BasePermission):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            request.user.role == 'manager'  # ← твое поле role!
+            request.user.role == 'manager'  # ← поле role!
         )
 
 class IsClient(permissions.BasePermission):
@@ -18,7 +18,7 @@ class IsClient(permissions.BasePermission):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            request.user.role == 'client'  # ← твое поле role!
+            request.user.role == 'client'  # ← поле role!
         )
 
 # class IsContactOwner(permissions.BasePermission):
