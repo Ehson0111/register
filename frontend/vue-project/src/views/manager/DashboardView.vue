@@ -10,7 +10,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Всего контактов</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stats.totalContacts }}</p>
+            <p class="text-2xl font-bold text-gray-900"> {{ stats.totalContacts }}</p>
           </div>
         </div>
       </div>
@@ -202,8 +202,11 @@ const loadDashboardData = async () => {
   try {
     // Загружаем контакты
     const contacts = await contactService.getContacts()
-    stats.value.totalContacts = contacts.length
+    
+    stats.value.totalContacts = 2
     recentContacts.value = contacts.slice(0, 5)
+    console.log("контакты"+JSON.stringify( contacts,null,2))
+    console.log("контакты"+contacts.length)
 
     // Загружаем сделки
     const deals = await dealService.getDeals()
