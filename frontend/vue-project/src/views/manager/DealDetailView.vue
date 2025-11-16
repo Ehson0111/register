@@ -1,17 +1,523 @@
 <!-- frontend/src/views/manager/DealDetailView.vue -->
 <template>
-  <div class="space-y-6">
-    <h1 class="text-2xl font-bold text-gray-900">Детали сделки</h1>
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <p class="text-gray-500">Детальная страница сделки в разработке...
 
-          
-        
+
+  <div class="space-y-6" v-if="dealdetail">
+    <!-- Заголовок и навигация -->
+    <div class="flex justify-between items-start">
+      <!-- <div -->
+      <div>
+        <button
+          @click="$router.back()"
+          class="flex items-center text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+        >
+          <ArrowLeftIcon class="w-5 h-5 mr-2" />
+          Назад к списку сделок
+        </button>
+        <h1 class="text-3xl font-bold text-gray-900">
+          {{ dealdetail?.title }}
+        </h1>
+        <p class="text-gray-600 text-lg">{{ dealdetail?.description }}</p>
+      </div>
+
+      <div class="flex space-x-3">
+        <!-- показываем если сделка не закрытаа-->
+        <button
+          v-if="!dealdetail?.is_closed"
+          @click="changeDealStatus('won')"
+          class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors"
+        >
+          <CheckIcon class="w-5 h-5" />
+          <span>Выиграть сделку</span>
+        </button>
+
+        <button
+          v-if="!dealdetail?.is_closed"
+          @click="changeDealStatus('lost')"
+          class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2 transition-colors"
+        >
+          <XMarkIcon class="w-5 h-5" />
+          <span>Проиграть сделку</span>
+        </button>
+
+        <button
+          @click="editDeal"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+        >
+          <PencilIcon class="w-5 h-5" />
+          <span>Редактировать</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Основная информация lg:grid-cols-3 - на больших экранах (≥1024px): 3 колонки-->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Левая колонка - детали сделки -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Карточка основной информации -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-6">
+            Основная информация
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div>
+                <label class="block font-medium text-gray-500 mb-1"
+                  >Контакт</label
+                >
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+                  >
+                    <span class="text-blue-600 font-medium text-sm">
+                      {{ getInitials(dealdetail?.contact_name || "") }}
+                    </span>
+                  </div>
+
+                  <span class="text-lg font-medium text-gray-900">{{
+                    dealdetail?.contact_name
+                  }}</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1"
+                  >Услуга</label
+                >
+                <p class="text-lg text-gray-900">
+                  {{ dealdetail?.service_name }}
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1"
+                  >Статус</label
+                >
+                <span
+                  class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                  :class="getStatusClass(dealdetail?.status || '')"
+                >
+                  {{ dealdetail?.status_display }}
+                </span>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1"
+                  >Сумма сделки</label
+                >
+                <p class="text-2xl font-bold text-gray-900">
+                  {{ formatCurrency(parseFloat(dealdetail?.amount || "0")) }}
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1"
+                  >Вероятность успеха</label
+                >
+                <div class="flex items-center space-x-3">
+                  <div class="flex-1 bg-gray-200 rounded-full h-3">
+                    <div
+                      class="h-3 rounded-full transition-all duration-500"
+                      :class="getProbabilityColor(dealdetail?.probability || 0)"
+                      :style="{ width: `${dealdetail?.probability || 0}%` }"
+                    ></div>
+                  </div>
+                  <span class="text-lg font-medium text-gray-900 min-w-12">
+                    {{ dealdetail?.probability }}%
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1"
+                  >Дней в работе</label
+                >
+                <p class="text-lg text-gray-900">
+                  {{ dealdetail?.days_open }} дней
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Даты и временные метки -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-6">
+            Временная шкала
+          </h2>
+
+          <div class="space-y-10">
+            <div
+              class="flex justify-between items-center py-3 border-b border-gray-100"
+            >
+              <span class="text-gray-600">Дата создания</span>
+              <span class="font-medium text-gray-900">{{
+                formatDate(dealdetail?.created_at || "")
+              }}</span>
+            </div>
+
+            <div
+              class="flex justify-between items-center py-3 border-b border-gray-100"
+            >
+              <span class="text-gray-600">Последнее обновление</span>
+              <span class="font-medium text-gray-900">{{
+                formatDate(dealdetail?.updated_at || "")
+              }}</span>
+            </div>
+            <div
+              v-if="dealdetail?.expected_close_date"
+              class="flex justify-between items-center py-3 border-b border-gray-100"
+            >
+              <span class="text-gray-600">Ожидаемая дата закрытия</span>
+              <span class="font-medium text-gray-900">{{
+                formatDate(dealdetail.expected_close_date)
+              }}</span>
+            </div>
+            <div
+              v-if="dealdetail?.actual_close_date"
+              class="flex justify-between items-center py-3"
+            >
+              <span class="text-gray-600">Фактическая дата закрытия</span>
+              <span class="font-medium text-gray-900">{{
+                formatDate(dealdetail.actual_close_date)
+              }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Описание -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            Описание сделки
+          </h2>
+          <p
+            class="text-gray-700 leading-relaxed"
+            v-if="dealdetail?.description"
+          >
+            {{ dealdetail.description }}
+          </p>
+          <p class="text-gray-500 italic" v-else>Описание отсутствует</p>
+        </div>
+      </div>
+ 
+
+      <!-- Правая колонка - действия и статистика -->
+      <div class="space-y-6">
+        <!-- Статус сделки -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Статус сделки
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Текущий статус:</span>
+              <span
+                class="font-medium"
+                :class="getStatusTextColor(dealdetail?.status || '')"
+              >
+                {{ dealdetail?.status_display }}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Состояние:</span>
+              <span
+                class="font-medium"
+                :class="
+                  dealdetail?.is_closed ? 'text-red-600' : 'text-green-600'
+                "
+              >
+                {{ dealdetail?.is_closed ? "Закрыта" : "Активна" }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Быстрые действия -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Быстрые действия
+          </h3>
+          <div class="space-y-2">
+            <button
+              v-if="!dealdetail?.is_closed"
+              @click="changeDealStatus('won')"
+              class="w-full flex items-center space-x-3 px-4 py-3 text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+            >
+              <CheckCircleIcon class="w-5 h-5" />
+              <span>Отметить как выигранную</span>
+            </button>
+            <button
+              v-if="!dealdetail?.is_closed"
+              @click="changeDealStatus('lost')"
+              class="w-full flex items-center space-x-3 px-4 py-3 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <XCircleIcon class="w-5 h-5" />
+              <span>Отметить как проигранную</span>
+            </button>
+            <button
+              @click="editDeal"
+              class="w-full flex items-center space-x-3 px-4 py-3 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              <PencilSquareIcon class="w-5 h-5" />
+              <span>Редактировать сделку</span>
+            </button>
+            <button
+              class="w-full flex items-center space-x-3 px-4 py-3 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+            >
+              <DocumentTextIcon class="w-5 h-5" />
+              <span>Создать коммерческое предложение</span>
+            </button>
+            <button
+              class="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <EnvelopeIcon class="w-5 h-5" />
+              <span>Отправить email</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Прогресс сделки -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Прогресс сделки
+          </h3>
+          <div class="space-y-4">
+            <div
+              v-for="stage in dealStages"
+              :key="stage.status"
+              class="flex items-center space-x-3"
+            >
+              <div
+                class="w-3 h-3 rounded-full border-2"
+                :class="getStageDotClass(stage.status)"
+              ></div>
+              <span class="text-sm" :class="getStageTextClass(stage.status)">
+                {{ stage.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Загрузка -->
+    <div v-if="loading" class="text-center py-12">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+      ></div>
+      <p class="text-gray-500 mt-4 text-lg">Загрузка данных сделки...</p>
+    </div>
+
+    <!-- Ошибка -->
+    <div v-if="!loading && !dealdetail" class="text-center py-12">
+      <ExclamationTriangleIcon class="w-16 h-16 text-red-400 mx-auto mb-4" />
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">
+        Сделка не найдена
+      </h3>
+      <p class="text-gray-500 mb-6">
+        Запрошенная сделка не существует или была удалена
       </p>
+      <button
+        @click="$router.back()"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        Вернуться назад
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Базовый компонент деталей сделки
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useToast } from "../../composables/useToast";
+import dealService, { type Deal } from "../../../src/services/dealService";
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  XMarkIcon,
+  PencilIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  PencilSquareIcon,
+  DocumentTextIcon,
+  EnvelopeIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/vue/24/outline";
+
+const route = useRoute();
+const router = useRouter();
+const { showSuccess, showError } = useToast();
+
+const dealdetail = ref<Deal | null>(null);
+const loading = ref(true);
+
+// Стадии сделки
+const dealStages = [
+  { status: "new", label: "Новая заявка" },
+  { status: "in_progress", label: "В работе" },
+  { status: "won", label: "Успешно закрыта" },
+  { status: "lost", label: "Закрыта неудачно" },
+];
+
+// Вспомогательные функции
+//фио Пример: "John Doe" → "JD", "Мария Иванова" → "МИ"
+
+
+const getInitials = (fullName: string) => {
+  if (!fullName) return "??";
+  return fullName
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const getStatusClass = (status: string) => {
+  const classes: Record<string, string> = {
+    new: "bg-blue-100 text-blue-800",
+    in_progress: "bg-orange-100 text-orange-800",
+    won: "bg-green-100 text-green-800",
+    lost: "bg-red-100 text-red-800",
+    on_hold: "bg-gray-100 text-gray-800",
+  };
+  return classes[status] || "bg-gray-100 text-gray-800";
+};
+
+const getStatusTextColor = (status: string) => {
+  const colors: Record<string, string> = {
+    new: "text-blue-600",
+    in_progress: "text-orange-600",
+    won: "text-green-600",
+    lost: "text-red-600",
+    on_hold: "text-gray-600",
+  };
+  return colors[status] || "text-gray-600";
+};
+
+const getProbabilityColor = (probability: number) => {
+  if (probability >= 80) return "bg-green-500";
+  if (probability >= 50) return "bg-yellow-500";
+  return "bg-red-500";
+};
+
+const getStageDotClass = (stageStatus: string) => {
+  const currentStatus = dealdetail.value?.status;
+  const statusOrder = ["new", "in_progress", "won", "lost"];
+
+  const currentIndex = statusOrder.indexOf(currentStatus || "");
+  const stageIndex = statusOrder.indexOf(stageStatus);
+
+  if (stageIndex < currentIndex) {
+    return "bg-green-500 border-green-500"; // Пройдено
+  } else if (stageIndex === currentIndex) {
+    return "bg-blue-500 border-blue-500"; // Текущее
+  } else {
+    return "bg-gray-300 border-gray-300"; // Будущее
+  }
+};
+
+const getStageTextClass = (stageStatus: string) => {
+  const currentStatus = dealdetail.value?.status;
+  const statusOrder = ["new", "in_progress", "won", "lost"];
+
+  const currentIndex = statusOrder.indexOf(currentStatus || "");
+  const stageIndex = statusOrder.indexOf(stageStatus);
+
+  if (stageIndex < currentIndex) {
+    return "text-green-600 font-medium"; // Пройдено
+  } else if (stageIndex === currentIndex) {
+    return "text-blue-600 font-bold"; // Текущее
+  } else {
+    return "text-gray-500"; // Будущее
+  }
+};
+
+const formatCurrency = (amount: number) => {  
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("ru-RU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+// Действия со сделкой
+const changeDealStatus = async (status: "won" | "lost") => {
+  
+  if (!dealdetail.value) return;
+
+  const statusNames = {
+    won: "выиграна",
+    lost: "проиграна",
+  };
+
+  if (
+    !confirm(
+      `Вы уверены, что хотите отметить сделку "${dealdetail.value.title}" как ${statusNames[status]}?`
+    )
+  ) {
+    return;
+  }
+
+  try {
+    await dealService.changeDealStatus(dealdetail.value.id, status);
+    showSuccess(`Сделка успешно отмечена как ${statusNames[status]}`);
+    // Перезагружаем данные
+    loadDeal();
+  } catch (error) {
+    console.error("Ошибка изменения статуса:", error);
+    showError("Не удалось изменить статус сделки");
+  }
+};
+
+const editDeal = () => {
+  if (dealdetail.value) {
+    router.push(`/manager/deals/${dealdetail.value.id}/edit`);
+  }
+};
+
+// Загрузка данных
+const loadDeal = async () => {
+  try {
+    loading.value = true;
+    const dealId = parseInt(route.params.id as string);
+    console.log("Загрузка сделки ID:", dealId);
+    dealdetail.value = await dealService.getDeal(dealId);
+    console.log("Загруженная сделка:", dealdetail.value);
+  } catch (error) {
+    console.error("Ошибка загрузки сделки:", error);
+    showError("Не удалось загрузить данные сделки");
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Инициализация
+onMounted(() => {
+  loadDeal();
+});
 </script>
+
+<style scoped>
+/* Дополнительные стили для плавных анимаций */
+.transition-colors {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Стили для прогресс-бара */
+.progress-bar {
+  transition: width 0.5s ease-in-out;
+}
+</style>

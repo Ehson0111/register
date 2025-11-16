@@ -154,8 +154,9 @@ import {
   CurrencyDollarIcon,
   ChartBarIcon
 } from '@heroicons/vue/24/outline'
-import contactService, { type Contact } from '../../services/contactService'
-import dealService, { type Deal } from '../../services/dealService'
+// import contactService, { type Contact } from '../../services/contactService'
+import contactService, { type Contact } from '../services/contactService'
+import dealService, { type Deal } from '../services/dealService'
 
 const stats = ref({
   totalContacts: 0,

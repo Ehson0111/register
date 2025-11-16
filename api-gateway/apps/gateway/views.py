@@ -51,7 +51,7 @@ class ProxyView(View):
         
         if path.startswith('/api/auth/') or path.startswith('/api/users/'):
             return 'user-service'
-         # Contact service routes - ДОБАВИЛ новые пути для услуг и сделок
+
         if (path.startswith('/api/contacts/') or 
             path.startswith('/api/services/') or 
             path.startswith('/api/deals/')):
@@ -130,22 +130,18 @@ class ProxyView(View):
                 params=params,
                 timeout=30
             )
-                
+            
             print(f"Response status: {response.status_code}")
             print(f"Response content: {response.text[:200]}...")
             # Возвращаем ответ
             django_response =HttpResponse(
                 response.content,
                 status=response.status_code,
-                content_type=response.headers.get('content-type','application/json')
+                content_type=response.headers.get('content-type', 'application/json')
             )
             
             print(f"django {django_response}")
-            # response_headers_to_copy = ['Content-Type', 'Cache-Control', 'ETag']
-            # for key in response_headers_to_copy:
-            #     if key in response.headers:
-            #         django_response[key] = response.headers[key]
-
+       
             return django_response
 
         except requests.exceptions.Timeout:

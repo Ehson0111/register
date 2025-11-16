@@ -10,7 +10,8 @@
 </template>
 
 <script>
-import Login1Form from '../components/auth/Login1Form.vue'
+// import Login1Form from '../components/auth/Login1Form.vue'
+import Login1Form from '../components/auth/login1Form.vue'
 
 export default {
   name: 'Login1View',
