@@ -99,10 +99,14 @@ class ContactListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'full_name',
+            'position',
             "first_name",
             "last_name",
             'email',
             'phone',
+            
+            'address',
+            'notes',
             'company',
             'status',
             'status_display',
@@ -132,6 +136,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'status',
+            
             'status_display',
             'company',
             'position',

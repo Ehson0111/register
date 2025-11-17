@@ -3,13 +3,13 @@ import api from './api'
 
 export interface Contact {
   id: number
-    first_name: string
-    last_name: string
+  first_name: string
+  last_name: string
   email: string
   phone: string
-  company: string
   status: string
   status_display: string
+  
   position: string
   address: string
   notes: string

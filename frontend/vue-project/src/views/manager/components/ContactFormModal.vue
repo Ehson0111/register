@@ -139,7 +139,7 @@
                 <!-- Адрес -->
                 <div class="mb-4">
                   <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Адрес
+                    Адрес 
                   </label>
                   <textarea
                     v-model="formData.address"
@@ -156,7 +156,7 @@
                   <textarea
                     v-model="formData.notes"
                     rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 arounded-md focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -238,6 +238,8 @@ watch(() => props.show, (newVal) => {
   if (newVal && props.contact) {
     // Заполняем форму данными контакта для редактирования
     formData.value = { ...props.contact }
+
+    console.log("xcv",formData.value.address)
   } else if (!newVal) {
     // Сбрасываем форму при закрытии
     resetForm()
