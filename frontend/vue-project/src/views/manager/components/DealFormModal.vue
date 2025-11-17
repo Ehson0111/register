@@ -56,6 +56,7 @@
                       <label class="block text-sm font-medium text-gray-700 mb-1">
                         Контакт *
                       </label>
+
                       <select
                         v-model="formData.contact"
                         required
@@ -76,6 +77,7 @@
                       <label class="block text-sm font-medium text-gray-700 mb-1">
                         Услуга *
                       </label>
+                      <!-- {{formData.contact_name}} -->
                       <select
                         v-model="formData.service"
                         required
@@ -276,6 +278,7 @@ const loadFormData = async () => {
     // print(contactsData)
     contacts.value = contactsData
     services.value = servicesData
+
   } catch (error) {
     console.error('Ошибка загрузки данных формы:', error)
   }
@@ -286,6 +289,8 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     if (props.deal) {
       // Заполняем форму данными сделки для редактирования
+
+ 
       formData.value = { 
         ...props.deal,
         contact: props.deal.contact,

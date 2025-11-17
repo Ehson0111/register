@@ -146,7 +146,7 @@ class ServiceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ServiceSerializer
     permission_classes = [IsManager]
 
-# Новые View для сделок
+#   View для сделок
 class DealListView(generics.ListCreateAPIView):
     queryset = Deal.objects.all()
     permission_classes = [IsManager]

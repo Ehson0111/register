@@ -210,9 +210,11 @@ class DealListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка сделок"""
     contact_name = serializers.CharField(source='contact.get_full_name', read_only=True)
     service_name = serializers.CharField(source='service.name', read_only=True)
+    # service_Id = serializers.CharField(source='service.id' )
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     status_color = serializers.SerializerMethodField()
     is_closed = serializers.BooleanField(read_only=True)
+    # contactId=serializers.CharField(source='contact.id')
     
     class Meta:
         model = Deal
@@ -220,6 +222,13 @@ class DealListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'contact_name',
+            # "contactId",
+            'description',
+            'contact',
+            'service',
+            
+
+
             'service_name',
             'amount',
             'probability',
@@ -241,6 +250,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     status_color = serializers.SerializerMethodField()
     is_closed = serializers.BooleanField(read_only=True)
+    
     days_open = serializers.SerializerMethodField()
     
     class Meta:
@@ -249,6 +259,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
+             
             'contact',
             'contact_name',
             'service',

@@ -122,7 +122,16 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (error) {
       console.error('Token refresh error:', error)
+      if(error.response?.token==401){
+        console.log('refresh token неправильный ')
       await logout()
+
+      if(window.location.pathname!=='/login'){
+        window.location.href ='/login'
+      }
+
+      }
+
     }
     return false
   }
