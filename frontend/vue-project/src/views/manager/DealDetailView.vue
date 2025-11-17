@@ -41,7 +41,7 @@
         </button>
 
         <button
-          @click="editDeal"
+          @click.stop="editDeal(dealdetail)"
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
         >
           <PencilIcon class="w-5 h-5" />
@@ -327,6 +327,15 @@
         Вернуться назад
       </button>
     </div>
+  
+  
+  <DealFormModal
+      :show="showCreateModal"
+      :deal="editingDeal"
+      @close="closeModal"
+      @saved="handleDealSaved"
+    />
+
   </div>
 </template>
 
@@ -335,6 +344,9 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
 import dealService, { type Deal } from "../../../src/services/dealService";
+
+import DealFormModal from './components/DealFormModal.vue'
+
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -348,13 +360,61 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/vue/24/outline";
 
+
+const editingDeal=ref<Deal | null>(null)
+const showCreateModal=ref(false)
+
+
 const route = useRoute();
 const router = useRouter();
 const { showSuccess, showError } = useToast();
+const deals = ref<Deal[]>([])
 
 const dealdetail = ref<Deal | null>(null);
 const loading = ref(true);
+const closeModal = () => {
+  showCreateModal.value = false
+  editingDeal.value = null
+}
 
+const handleDealSaved = () => {
+  closeModal()
+  loadDeals()
+}
+const searchQuery = ref('')
+const statusFilter = ref('')
+const serviceFilter = ref('')
+
+// Загрузка данных
+const loadDeals = async () => {
+  try {
+    loading.value = true
+    const params: any = {}
+    
+    if (searchQuery.value) {
+      params.search = searchQuery.value
+    }
+    
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+
+    if (serviceFilter.value) {
+      params.service = serviceFilter.value
+    }
+
+    deals.value = await dealService.getDeals(params)
+
+    loadDeal()
+
+  } catch (error) {
+    console.error('Ошибка загрузки сделок:', error)
+    showError('Не удалось загрузить сделки')
+  } finally {
+    loading.value = false
+  }
+}
+// Ини
 // Стадии сделки
 const dealStages = [
   { status: "new", label: "Новая заявка" },
@@ -482,10 +542,13 @@ const changeDealStatus = async (status: "won" | "lost") => {
   }
 };
 
-const editDeal = () => {
-  if (dealdetail.value) {
-    router.push(`/manager/deals/${dealdetail.value.id}/edit`);
-  }
+const editDeal = (deal: Deal) => {
+  // if (dealdetail.value) {
+  //   router.push(`/manager/deals/${dealdetail.value.id}/edit`);
+  // }
+  
+  editingDeal.value=deal
+  showCreateModal.value=true
 };
 
 // Загрузка данных
@@ -506,6 +569,7 @@ const loadDeal = async () => {
 
 // Инициализация
 onMounted(() => {
+  loadDeals();
   loadDeal();
 });
 </script>
