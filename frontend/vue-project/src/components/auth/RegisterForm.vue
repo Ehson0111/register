@@ -8,8 +8,8 @@
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
       <!-- Email Field -->
-      <BaseInput
         v-model="formData.email"
+      <BaseInput
         type="email"
         label="Email Address"
         placeholder="Enter your email"

@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
 
     # Поля для отображения в списке пользователей
-    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined')
+    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active', "role",'date_joined')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'date_joined')
 
     # Поля для поиска

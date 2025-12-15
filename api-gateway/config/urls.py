@@ -10,9 +10,11 @@ def health_check(request):
             'user-service': 'http://localhost:8004',
         }
     })
-
+#s
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.gateway.urls')),
-    path('health/', health_check),  # Если нужно
+    path('health/', health_check),  # Если нужноssd
+
+    
 ]
