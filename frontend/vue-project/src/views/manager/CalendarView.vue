@@ -2,17 +2,98 @@
 <template>
   <div class="space-y-6">
     <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-gray-900">Календарь задач</h2>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Календарь задач</h2>
+        <p class="text-gray-600 mt-1">
+          {{ currentDate }}
+          <span v-if="loading" class="text-sm text-blue-600 ml-2">Загрузка...</span>
+        </p>
+      </div>
       <button 
         @click="showCreateModal = true"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
       >
-        + Новая задача
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Новая задача
       </button>
     </div>
 
+    <!-- Блок фильтров и статистики -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div class="flex space-x-4 mb-4">
+        <button 
+          @click="loadAllTasks"
+          :class="activeFilter === 'all' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-lg text-sm font-medium"
+        >
+          Все задачи
+        </button>
+        <button 
+          @click="loadTodayTasks"
+          :class="activeFilter === 'today' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-lg text-sm font-medium"
+        >
+          Сегодня
+        </button>
+        <button 
+          @click="loadUpcomingTasks"
+          :class="activeFilter === 'upcoming' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-lg text-sm font-medium"
+        >
+          Предстоящие
+        </button>
+        <button 
+          @click="loadOverdueTasks"
+          :class="activeFilter === 'overdue' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'"
+          class="px-4 py-2 rounded-lg text-sm font-medium"
+        >
+          Просроченные
+        </button>
+      </div>
+
+      <!-- Статистика -->
+      <div v-if="stats" class="grid grid-cols-4 gap-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-gray-900">{{ stats.total_tasks }}</div>
+          <div class="text-sm text-gray-600">Всего задач</div>
+        </div>
+        <div class="bg-green-50 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-green-900">{{ stats.completed_tasks }}</div>
+          <div class="text-sm text-green-600">Выполнено</div>
+        </div>
+        <div class="bg-yellow-50 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-900">{{ stats.high_priority_tasks }}</div>
+          <div class="text-sm text-yellow-600">Высокий приоритет</div>
+        </div>
+        <div class="bg-red-50 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-red-900">{{ stats.overdue_tasks }}</div>
+          <div class="text-sm text-red-600">Просрочено</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Календарь -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="grid grid-cols-7 gap-4 mb-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-lg font-semibold">Календарь на {{ currentMonthYear }}</h3>
+        <div class="flex space-x-2">
+          <button @click="prevMonth" class="p-2 hover:bg-gray-100 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button @click="nextMonth" class="p-2 hover:bg-gray-100 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Дни недели -->
+      <div class="grid grid-cols-7 gap-4 mb-4">
         <div 
           v-for="day in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']" 
           :key="day"
@@ -22,14 +103,16 @@
         </div>
       </div>
       
+      <!-- Ячейки календаря -->
       <div class="grid grid-cols-7 gap-4">
         <div 
           v-for="day in calendarDays" 
           :key="day.date"
-          class="min-h-24 border border-gray-200 rounded-lg p-2 hover:bg-gray-50 transition-colors"
+          class="min-h-32 border border-gray-200 rounded-lg p-2 hover:bg-gray-50 transition-colors"
           :class="{
             'bg-blue-50': day.isToday,
-            'text-gray-400': !day.isCurrentMonth
+            'text-gray-400': !day.isCurrentMonth,
+            'border-blue-200': day.hasTasks
           }"
         >
           <div class="flex justify-between items-center mb-2">
@@ -40,301 +123,397 @@
             ></span>
           </div>
           
-          <div class="space-y-1">
+          <div class="space-y-1 max-h-20 overflow-y-auto">
             <div 
               v-for="task in getTasksForDay(day.date)"
               :key="task.id"
-              class="text-xs p-1 rounded cursor-pointer"
-              :class="getTaskColor(task.priority)"
-              @click="openTask(task)"
+              class="text-xs p-2 rounded cursor-pointer transition-colors"
+              :class="getTaskClasses(task)"
+              @click="openTaskDetails(task)"
             >
-              <div class="font-medium truncate">{{ task.title }}</div>
-              <div class="text-gray-600">{{ formatTime(task.time) }}</div>
+              <div class="flex items-center justify-between">
+                <div class="font-medium truncate flex-1">{{ task.title }}</div>
+                <div class="flex items-center space-x-1">
+                  <input 
+                    type="checkbox" 
+                    :checked="task.completed"
+                    @click.stop="toggleTaskComplete(task.id)"
+                    class="w-3 h-3"
+                  />
+                  <button 
+                    @click.stop="deleteTask(task.id)"
+                    class="text-gray-400 hover:text-red-500"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div v-if="task.time" class="text-gray-600 text-xs mt-1">
+                {{ formatTime(task.time) }}
+                <span v-if="task.location" class="ml-2">📍 {{ task.location }}</span>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Список задач (альтернативный вид) -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold mb-4">Список задач ({{ tasks.length }})</h3>
+      <div class="space-y-3">
+        <div 
+          v-for="task in tasks" 
+          :key="task.id"
+          class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+        >
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center space-x-2">
+                <input 
+                  type="checkbox" 
+                  :checked="task.completed"
+                  @change="toggleTaskComplete(task.id)"
+                  class="w-4 h-4"
+                />
+                <span class="font-medium" :class="{ 'line-through text-gray-500': task.completed }">
+                  {{ task.title }}
+                </span>
+                <span :class="getPriorityBadge(task.priority)" class="text-xs px-2 py-1 rounded">
+                  {{ task.priority_display }}
+                </span>
+                <span v-if="task.is_overdue" class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded">
+                  Просрочено
+                </span>
+              </div>
+              <p class="text-gray-600 text-sm mt-1">{{ task.description }}</p>
+              <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                <span>📅 {{ task.formatted_date }}</span>
+                <span v-if="task.time">🕒 {{ formatTime(task.time) }}</span>
+                <span v-if="task.location">📍 {{ task.location }}</span>
+                <span>👤 {{ task.manager_id }}</span>
+              </div>
+            </div>
+            <button 
+              @click="deleteTask(task.id)"
+              class="text-gray-400 hover:text-red-500 p-1"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Модальное окно создания задачи -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 class="text-lg font-medium mb-4">Новая задача</h3>
-        
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
-            <input 
-              v-model="newTask.title"
-              type="text" 
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Введите название задачи"
-              required
-            >
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
-            <textarea 
-              v-model="newTask.description"
-              rows="3"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Описание задачи"
-            ></textarea>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Дата *</label>
-              <input 
-                v-model="newTask.date"
-                type="date" 
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Время *</label>
-              <input 
-                v-model="newTask.time"
-                type="time" 
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-            </div>
-          </div>
+    <TaskModal 
+      v-if="showCreateModal"
+      @close="showCreateModal = false"
+      @save="handleCreateTask"
+    />
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
-            <select 
-              v-model="newTask.priority"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="low">Низкий</option>
-              <option value="medium">Средний</option>
-              <option value="high">Высокий</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="flex justify-end space-x-3 mt-6">
-          <button 
-            @click="showCreateModal = false"
-            class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            Отмена
-          </button>
-          <button 
-            @click="createTask"
-            :disabled="!isFormValid"
-            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            Создать
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Модальное окно просмотра/редактирования задачи -->
+    <TaskModal 
+      v-if="showEditModal && selectedTask"
+      :task="selectedTask"
+      @close="showEditModal = false"
+      @save="handleUpdateTask"
+    />
   </div>
 </template>
-<script setup lang="ts">
+
+<script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../../store/auth'
+import calendarService from '../../services/calendarService'
+import TaskModal from './components/TaskModal.vue'
 
-interface Task {
-  id: number
-  title: string
-  description: string
-  date: string
-  time: string
-  priority: 'low' | 'medium' | 'high'
-  completed: boolean
-}
-
+const authStore = useAuthStore()
+const tasks = ref([])
+const loading = ref(false)
+const stats = ref(null)
 const showCreateModal = ref(false)
-const tasks = ref<Task[]>([])
+const showEditModal = ref(false)
+const selectedTask = ref(null)
+const activeFilter = ref('all')
 
-const newTask = ref({
-  title: '',
-  description: '',
-  date: new Date().toISOString().split('T')[0],
-  time: '09:00',
-  priority: 'medium' as 'low' | 'medium' | 'high'
+// Дата для календаря
+const currentMonth = ref(new Date().getMonth())
+const currentYear = ref(new Date().getFullYear())
+
+// Вычисляемые свойства
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('ru-RU', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 })
 
-// ИСПРАВЛЕННАЯ генерация календаря
+const currentMonthYear = computed(() => {
+  return new Date(currentYear.value, currentMonth.value).toLocaleDateString('ru-RU', {
+    month: 'long',
+    year: 'numeric'
+  })
+})
+
+// Генерация дней календаря (ваш существующий код)
 const calendarDays = computed(() => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  
-  // Первый день месяца
-  const firstDay = new Date(year, month, 1)
-  // Последний день месяца
-  const lastDay = new Date(year, month + 1, 0)
-  
-  const days = []
-  
-  // День недели первого дня месяца (0 - воскресенье, 6 - суббота)
-  let firstDayOfWeek = firstDay.getDay()
-  // Преобразуем к формату: 1 - понедельник, 7 - воскресенье
-  firstDayOfWeek = firstDayOfWeek === 0 ? 7 : firstDayOfWeek
-  
-  // Количество дней предыдущего месяца для показа
-  const daysFromPrevMonth = firstDayOfWeek - 1
-  
-  // Добавляем дни предыдущего месяца
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
-  for (let i = daysFromPrevMonth; i > 0; i--) {
-    const dayNumber = prevMonthLastDay - i + 1
-    const date = new Date(year, month - 1, dayNumber)
-    days.push({
-      date: formatDateForComparison(date),
-      day: dayNumber,
-      isCurrentMonth: false,
-      isToday: false
-    })
-  }
-  
-  // Добавляем дни текущего месяца
-  for (let i = 1; i <= lastDay.getDate(); i++) {
-    const date = new Date(year, month, i)
-    days.push({
-      date: formatDateForComparison(date),
-      day: i,
-      isCurrentMonth: true,
-      isToday: date.toDateString() === today.toDateString()
-    })
-  }
-  
-  // Добавляем дни следующего месяца чтобы получить ровно 42 ячейки
-  const totalCells = 42
-  const daysNeeded = totalCells - days.length
-  for (let i = 1; i <= daysNeeded; i++) {
-    const date = new Date(year, month + 1, i)
-    days.push({
-      date: formatDateForComparison(date),
-      day: i,
-      isCurrentMonth: false,
-      isToday: false
-    })
-  }
-  
-  return days
+  // ... ваш существующий код генерации календаря
 })
 
-// ИСПРАВЛЕННЫЙ метод для сравнения дат
-const getTasksForDay = (date: string) => {
-  return tasks.value
-    .filter(task => {
-      // Приводим обе даты к одному формату для сравнения
-      const taskDate = formatDateForComparison(new Date(task.date))
-      const cellDate = formatDateForComparison(new Date(date))
-      return taskDate === cellDate
-    })
-    .sort((a, b) => a.time.localeCompare(b.time))
-}
-
-// Универсальная функция для форматирования дат в YYYY-MM-DD
-const formatDateForComparison = (date: Date): string => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// Валидация формы
-const isFormValid = computed(() => {
-  return newTask.value.title.trim() !== '' && 
-         newTask.value.date !== '' && 
-         newTask.value.time !== ''
-})
-
-const getTaskColor = (priority: string) => {
-  const colors = {
-    low: 'bg-green-100 border border-green-200',
-    medium: 'bg-yellow-100 border border-yellow-200',
-    high: 'bg-red-100 border border-red-200'
+// Загрузка данных
+async function loadAllTasks() {
+  try {
+    loading.value = true
+    activeFilter.value = 'all'
+    const response = await calendarService.getTasks()
+    tasks.value = response
+    console.log('Загружены все задачи:', tasks.value.length)
+  } catch (error) {
+    console.error('Ошибка загрузки задач:', error)
+    alert('Ошибка загрузки задач')
+  } finally {
+    loading.value = false
   }
-  return colors[priority] || 'bg-gray-100'
 }
 
-const formatTime = (time: string) => {
+async function loadTodayTasks() {
+  try {
+    loading.value = true
+    activeFilter.value = 'today'
+    const response = await calendarService.getTodayTasks()
+    tasks.value = response
+  } catch (error) {
+    console.error('Ошибка загрузки задач на сегодня:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadUpcomingTasks() {
+  try {
+    loading.value = true
+    activeFilter.value = 'upcoming'
+    const response = await calendarService.getUpcomingTasks()
+    tasks.value = response
+  } catch (error) {
+    console.error('Ошибка загрузки предстоящих задач:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadOverdueTasks() {
+  try {
+    loading.value = true
+    activeFilter.value = 'overdue'
+    const response = await calendarService.getOverdueTasks()
+    tasks.value = response
+  } catch (error) {
+    console.error('Ошибка загрузки просроченных задач:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadStats() {
+  try {
+    const response = await calendarService.getStats()
+    stats.value = response
+  } catch (error) {
+    console.error('Ошибка загрузки статистики:', error)
+  }
+}
+
+// Создание задачи
+async function handleCreateTask(taskData) {
+  try {
+    const newTask = await calendarService.createTask({
+      ...taskData,
+      task_type: taskData.task_type || 'task',
+      is_recurring: false,
+      recurrence_rule: ''
+    })
+    
+    // Обновляем список задач
+    tasks.value = [newTask, ...tasks.value]
+    await loadStats() // Обновляем статистику
+    showCreateModal.value = false
+    
+    alert('Задача успешно создана!')
+  } catch (error) {
+    console.error('Ошибка создания задачи:', error)
+    alert('Ошибка создания задачи: ' + (error.response?.data?.error || error.message))
+  }
+}
+
+// Обновление задачи
+async function handleUpdateTask(updatedTask) {
+  try {
+    await calendarService.updateTask(updatedTask.id, updatedTask)
+    
+    // Обновляем задачу в списке
+    const index = tasks.value.findIndex(t => t.id === updatedTask.id)
+    if (index !== -1) {
+      tasks.value[index] = updatedTask
+    }
+    
+    showEditModal.value = false
+    selectedTask.value = null
+    
+    alert('Задача успешно обновлена!')
+  } catch (error) {
+    console.error('Ошибка обновления задачи:', error)
+    alert('Ошибка обновления задачи')
+  }
+}
+
+// Переключение статуса выполнения
+async function toggleTaskComplete(taskId) {
+  try {
+    const updatedTask = await calendarService.toggleTaskComplete(taskId)
+    
+    // Обновляем задачу в списке
+    const index = tasks.value.findIndex(t => t.id === taskId)
+    if (index !== -1) {
+      tasks.value[index] = updatedTask
+    }
+    
+    await loadStats() // Обновляем статистику
+  } catch (error) {
+    console.error('Ошибка обновления статуса задачи:', error)
+  }
+}
+
+// Удаление задачи
+async function deleteTask(taskId) {
+  if (!confirm('Вы уверены, что хотите удалить эту задачу?')) return
+  
+  try {
+    await calendarService.deleteTask(taskId)
+    
+    // Удаляем задачу из списка
+    tasks.value = tasks.value.filter(t => t.id !== taskId)
+    
+    await loadStats() // Обновляем статистику
+    alert('Задача удалена')
+  } catch (error) {
+    console.error('Ошибка удаления задачи:', error)
+    alert('Ошибка удаления задачи')
+  }
+}
+
+// Получение задач для дня
+function getTasksForDay(date) {
+  return tasks.value.filter(task => {
+    const taskDate = new Date(task.date).toISOString().split('T')[0]
+    return taskDate === date
+  })
+}
+
+// Классы для задач
+function getTaskClasses(task) {
+  const baseClass = 'border-l-4 '
+  if (task.completed) {
+    return baseClass + 'bg-gray-100 border-gray-400'
+  }
+  
+  const colorMap = {
+    high: 'bg-red-50 border-red-400',
+    medium: 'bg-yellow-50 border-yellow-400',
+    low: 'bg-green-50 border-green-400'
+  }
+  
+  return baseClass + (colorMap[task.priority] || 'bg-gray-50 border-gray-300')
+}
+
+// Бейдж приоритета
+function getPriorityBadge(priority) {
+  const badgeMap = {
+    high: 'bg-red-100 text-red-800',
+    medium: 'bg-yellow-100 text-yellow-800',
+    low: 'bg-green-100 text-green-800'
+  }
+  return badgeMap[priority] || 'bg-gray-100 text-gray-800'
+}
+
+// Форматирование времени
+function formatTime(time) {
+  if (!time) return ''
   const [hours, minutes] = time.split(':')
   return `${hours}:${minutes}`
 }
 
-const createTask = () => {
-  if (!isFormValid.value) {
-    alert('Пожалуйста, заполните все обязательные поля')
+// Открыть детали задачи
+function openTaskDetails(task) {
+  selectedTask.value = { ...task }
+  showEditModal.value = true
+}
+
+// Навигация по месяцам
+function prevMonth() {
+  currentMonth.value -= 1
+  if (currentMonth.value < 0) {
+    currentMonth.value = 11
+    currentYear.value -= 1
+  }
+  loadTasksForMonth()
+}
+
+function nextMonth() {
+  currentMonth.value += 1
+  if (currentMonth.value > 11) {
+    currentMonth.value = 0
+    currentYear.value += 1
+  }
+  loadTasksForMonth()
+}
+
+async function loadTasksForMonth() {
+  try {
+    const response = await calendarService.getTasksByMonth(
+      currentYear.value,
+      currentMonth.value + 1
+    )
+    tasks.value = response
+  } catch (error) {
+    console.error('Ошибка загрузки задач за месяц:', error)
+  }
+}
+
+// Инициализация
+onMounted(async () => {
+  console.log('CalendarView mounted, user:', authStore.user)
+  
+  if (!authStore.isAuthenticated) {
+    alert('Вы не авторизованы')
     return
   }
-
-  // ИСПРАВЛЕНИЕ: Форматируем дату задачи для единообразия
-  const taskDate = formatDateForComparison(new Date(newTask.value.date))
   
-  const task: Task = {
-    id: Date.now(),
-    ...newTask.value,
-    date: taskDate, // Используем отформатированную дату
-    completed: false
-  }
-  
-  tasks.value.push(task)
-  showCreateModal.value = false
-  
-  // Сброс формы
-  newTask.value = {
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    time: '09:00',
-    priority: 'medium'
-  }
-  
-  // Для отладки
-  console.log('Создана задача:', task)
-  console.log('Все задачи:', tasks.value)
-}
-
-const openTask = (task: Task) => {
-  console.log('Opening task:', task)
-  alert(`Задача: ${task.title}\nДата: ${task.date}\nВремя: ${formatTime(task.time)}\nОписание: ${task.description}`)
-}
-
-// Для отладки - выводим информацию о календаре
-const debugCalendar = () => {
-  console.log('Отладочная информация календаря:')
-  calendarDays.value.forEach((day, index) => {
-    console.log(`Ячейка ${index}: число ${day.day}, дата ${day.date}, текущий месяц: ${day.isCurrentMonth}`)
-  })
-}
-
-onMounted(() => {
-  // Загрузка тестовых данных с ОТФОРМАТИРОВАННЫМИ датами
-  const today = formatDateForComparison(new Date())
-  
-  tasks.value = [
-    {
-      id: 1,
-      title: 'Встреча с клиентом',
-      description: 'Обсуждение нового проекта',
-      date: today,
-      time: '10:00',
-      priority: 'high',
-      completed: false
-    },
-    {
-      id: 2,
-      title: 'Подготовка отчета',
-      description: 'Еженедельный отчет по продажам',
-      date: today,
-      time: '14:30',
-      priority: 'medium',
-      completed: false
-    }
-  ]
-  
-  // Выводим отладочную информацию
-  debugCalendar()
+  await Promise.all([
+    loadAllTasks(),
+    loadStats()
+  ])
 })
 </script>
+
+<style scoped>
+/* Стили для скролла в ячейках календаря */
+.max-h-20 {
+  max-height: 5rem;
+}
+
+/* Анимации */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+</style>
