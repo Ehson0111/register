@@ -1,52 +1,3 @@
-// import { createRouter, createWebHistory } from 'vue-router'
-// import Login1View from '@/views/Login1View.vue'
-// import DashboardView from '@/views/DashboardView.vue'
-// import RegisterView  from   '@/views/RegisterView.vue'
-
-
-
-// const routes = [
-//   {
-//     path: '/',
-//     redirect: '/login'
-//   },
-//   {
-//     path: '/login',
-//     name: 'Login',
-//     component: Login1View
-//   },
-//   // {
-//   //   path: '/dashboard',
-//   //   name: 'Dashboard',
-//   //   component: DashboardView
-//   // },
-  
-//   {
-//     path: '/manager/dashboard',
-//     name: 'Dashboard',
-//     component: DashboardView
-//   },
-  
-//   // {
-//   //   path: '/client/dashboard',  
-//   //   name: 'Dashboard',
-//   //   component: DashboardView
-//   // },
-//   {
-//     path: '/register',
-//     name:'register',
-//     component: RegisterView,
-//     meta: { requiresGuest: true }
-
-//   }
-// ]
-
-// const router = createRouter({
-//   history: createWebHistory(),
-//   routes
-// })
-
-// export default router
 // frontend/src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../store/auth'
@@ -106,6 +57,31 @@ const routes = [
         path: 'services',
         name: 'ManagerServices',
         component: () => import('@/views/manager/ServicesView.vue')
+      },
+      {
+        path: 'calendar',
+        name: 'ManagerCalendar',
+        component: () => import('@/views/manager/CalendarView.vue')
+      },
+      {
+        path: 'analytics',
+        name: 'ManagerAnalytics',
+        component: () => import('@/views/manager/AnalyticsView.vue')
+      },
+      {
+        path: 'marketing',
+        name: 'ManagerMarketing',
+        component: () => import('@/views/manager/MarketingView.vue')
+      },
+      {
+        path: 'documents',
+        name: 'ManagerDocuments',
+        component: () => import('@/views/manager/DocumentsView.vue')
+      },
+      {
+        path: 'profile',
+        name: 'ManagerProfile',
+        component: () => import('@/views/manager/ProfileView.vue')
       }
     ]
   }

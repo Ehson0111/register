@@ -1,19 +1,17 @@
- 
 from rest_framework import permissions
 class IsManager(permissions.BasePermission):
-    """Доступ только для менеджеров (по твоему полю role)"""
     def has_permission(self, request, view):
         return bool(
-            request.user and 
-            request.user.is_authenticated and 
-            request.user.role == 'manager'  # ← поле role!
-        )
-
+                    request.user and
+                    request.user.is_authenticated and 
+                    request.user.role =='manager'
+                    )
+    
 class IsClient(permissions.BasePermission):
     """Доступ только для клиентов"""
     def has_permission(self, request, view):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            request.user.role == 'client'  # ← поле role!
+            request.user.role == 'client'  
         )
