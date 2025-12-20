@@ -1,17 +1,3 @@
-# from django.urls import path,re_path
-# from . import views
- 
-
-
-# urlpatterns = [
-
-#     # user-service
-#     re_path(r'^auth/.*',views.proxy_view, name='auth-proxy'),
-#     re_path(r'^users/.*', views.proxy_view, name='users-proxy'),
-
-
-# ]
-
 from django.urls import re_path
 from . import views
 
@@ -21,6 +7,8 @@ urlpatterns = [
 
 
     re_path(r'^contacts/.*', views.proxy_view, name='contacts-proxy'),
+    re_path(r'^tasks/.*', views.proxy_view, name='tasks-proxy'),
+
 
     re_path(r'^services/', views.proxy_view, name='services-proxy'),
     re_path(r'^deals/', views.proxy_view, name='deals-proxy'),

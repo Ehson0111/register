@@ -72,70 +72,76 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Добавьте остальные функции которые есть в вашем оригинальном коде
-  async function logout() {
-    console.log('Logging out user')
-    token.value = null
-    refreshToken.value = null
-    user.value = null
-
-    // Clear localStorage
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-  }
-
-  async function fetchProfile() {
-    try {
-      if (!token.value) {
-        console.log('No token available for profile fetch')
-        return
-      }
-
-      console.log('Fetching user profile...')
-      const response = await authService.getProfile()
-      if (response.data) {
-        user.value = response.data
-        console.log('Profile fetched successfully:', user.value)
-      }
-    } catch (error) {
-      console.error('Fetch profile error:', error)
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('Profile fetch failed with auth error, logging out')
-        await logout()
+    async function logout() {
+      console.log('Logging out user')
+      token.value = null
+      refreshToken.value = null
+      user.value = null
+  
+      // Clear localStorage
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+    }
+  
+    async function fetchProfile() {
+      try {
+        if (!token.value) {
+          console.log('No token available for profile fetch')
+          return
+        }
+  
+        console.log('Fetching user profile...')
+        const response = await authService.getProfile()
+        if (response.data) {
+          user.value = response.data
+          console.log('Profile fetched successfully:', user.value)
+        }
+      } catch (error) {
+        console.error('Fetch profile error:', error)
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          console.log('Profile fetch failed with auth error, logging out')
+          await logout()
+        }
       }
     }
-  }
-
   async function refreshAccessToken() {
     try {
       if (!refreshToken.value) {
-        console.log('No refresh token available')
-        return false
+        console.log('No refresh token available');
+        return false;
       }
-
-      console.log('Refreshing access token...')
-      const response = await authService.refreshToken(refreshToken.value)
+  
+      console.log('Refreshing access token...');
+      console.log('Refresh token being sent:', refreshToken.value.substring(0, 30) + '...');
+  
+      const response = await authService.refreshToken(refreshToken.value);
+      
       if (response.data?.access) {
-        token.value = response.data.access
-        localStorage.setItem('access_token', response.data.access)
-        console.log('Token refreshed successfully')
-        return true
+        token.value = response.data.access;
+        localStorage.setItem('access_token', response.data.access);
+        console.log('Token refreshed successfully');
+        return true;
       }
+      
+      return false;
     } catch (error) {
-      console.error('Token refresh error:', error)
-      if(error.response?.token==401){
-        console.log('refresh token неправильный ')
-      await logout()
-
-      if(window.location.pathname!=='/login'){
-        window.location.href ='/login'
+      console.error('Token refresh error:', error);
+      
+      // ПРАВИЛЬНАЯ ПРОВЕРКА!
+      if (error.response?.status === 401) {
+        console.log('Refresh token invalid or expired');
+        await logout();
+        
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      } else {
+        console.log('Other error during token refresh:', error.message);
       }
-
-      }
-
+      
+      return false;
     }
-    return false
   }
-
   // ВАЖНО: Верните все значения в конце!
   return {
     // State

@@ -1,49 +1,83 @@
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-
-class CalendarUser(AbstractUser):
-    title = models.CharField(max_length=50)
-    description= models.CharField(max_length=100)
-    date = models.DateField(null=True,blank=True)
+class CalendarTask(models.Model):
+    """Задача в календаре менеджера"""
     
-    priority_high='high'
-    priority_medium='medium'
-    priority_low='low'
-
-    priority_choisec= [
-        (priority_high, 'Высокий'),
-        (priority_medium, 'Средний'),
-        (priority_low, 'Низкий'),
+    # Типы задач
+    TYPE_MEETING = 'meeting'
+    TYPE_TASK = 'task'
+    TYPE_REMINDER = 'reminder'
+    TYPE_DEADLINE = 'deadline'
+    
+    TYPE_CHOICES = [
+        (TYPE_MEETING, 'Встреча'),
+        (TYPE_TASK, 'Задача'),
+        (TYPE_REMINDER, 'Напоминание'),
+        (TYPE_DEADLINE, 'Дедлайн'),
     ]
-
-    priority =models.CharField( max_length=40, choices=priority_choisec,default=priority_low)
-
-    completed=models.BooleanField()
-
+    
+    # Приоритеты
+    PRIORITY_HIGH = 'high'
+    PRIORITY_MEDIUM = 'medium'
+    PRIORITY_LOW = 'low'
+    
+    PRIORITY_CHOICES = [
+        (PRIORITY_HIGH, 'Высокий'),
+        (PRIORITY_MEDIUM, 'Средний'),
+        (PRIORITY_LOW, 'Низкий'),
+    ]
+    
+    # Основные поля
+    title = models.CharField(max_length=200, verbose_name="Название")
+    description = models.TextField(blank=True, verbose_name="Описание")
+    task_type = models.CharField(
+        max_length=20, 
+        choices=TYPE_CHOICES, 
+        default=TYPE_TASK,
+        verbose_name="Тип задачи"
+    )
+    date = models.DateField(verbose_name="Дата")
+    time = models.TimeField(null=True, blank=True, verbose_name="Время")
+    priority = models.CharField(
+        max_length=10, 
+        choices=PRIORITY_CHOICES, 
+        default=PRIORITY_MEDIUM,
+        verbose_name="Приоритет"
+    )
+    completed = models.BooleanField(default=False, verbose_name="Выполнено")
+    
+    # Привязка к менеджеру - ТОЛЬКО ID (обязательное поле)
+    manager_id = models.IntegerField(verbose_name="ID менеджера")
+    
+    # Дополнительные поля
+    location = models.CharField(max_length=200, blank=True, verbose_name="Место")
+    color = models.CharField(max_length=7, default='#4CAF50', verbose_name="Цвет")
+    
+    # Для повторяющихся задач
+    is_recurring = models.BooleanField(default=False, verbose_name="Повторяющаяся")
+    recurrence_rule = models.CharField(max_length=100, blank=True, verbose_name="Правило повторения")
+    
+    # Автоматические поля
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['date', 'time']
+        verbose_name = "Задача календаря"
+        verbose_name_plural = "Задачи календаря"
+        indexes = [
+            models.Index(fields=['manager_id', 'date']),
+            models.Index(fields=['manager_id', 'completed']),
+            models.Index(fields=['date', 'priority']),
+        ]
+    
     def __str__(self):
-        return f'{self.title} {self.description}'
+        return f"{self.title} ({self.date}) - Manager #{self.manager_id}"
     
-    class Meta: 
-        ordering= ['-date']
-        unique_together = ['title', 'description']
-        
-
+    def get_priority_display(self):
+        """Получить отображаемое значение приоритета"""
+        return dict(self.PRIORITY_CHOICES).get(self.priority, self.priority)
     
-
-
-
-
-    #    id: 1,
-    #   title: 'Встреча с клиентом',
-    #   description: 'Обсуждение нового проекта',
-    #   date: today,
-    #   time: '10:00',
-    #   priority: 'high'    ,
-    #   completed: false
-    # },
+    def get_task_type_display(self):
+        """Получить отображаемое значение типа задачи"""
+        return dict(self.TYPE_CHOICES).get(self.task_type, self.task_type)

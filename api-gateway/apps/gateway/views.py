@@ -56,6 +56,9 @@ class ProxyView(View):
             path.startswith('/api/services/') or 
             path.startswith('/api/deals/')):
             return 'contact-service'
+
+        if(path.startswith('/api/tasks')):
+            return 'tasks-service'    
         return None       
 
     def get_target_path(self, request):

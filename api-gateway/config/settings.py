@@ -94,8 +94,9 @@ DATABASES = {
 }
 
 MICROSERVICES = {
-    'user-service': 'http://127.0.0.1:8004',  # 
-    'contact-service': 'http://127.0.0.1:8005',  # Новый порт
+    'user-service': 'http://127.0.0.1:8004',  # user server 
+    'contact-service': 'http://127.0.0.1:8005',  # calendar
+    'tasks-service' : 'http://127.0.0.1:8006', # tasks service 
 }
 
 # Password validation

@@ -36,7 +36,7 @@ LOCAL_APPS = ['apps.calendarUser']
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # settings.py
-AUTH_USER_MODEL = 'calendarUser.CalendarUser'  # 'app_name.ModelName'
+AUTH_USER_MODEL = 'auth.User'  # 'app_name.ModelName'
 
 
 MIDDLEWARE = [
