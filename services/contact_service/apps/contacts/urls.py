@@ -37,4 +37,11 @@ urlpatterns = [
     path('deals/remove/<int:deal_id>/', views.delete_deal, name='deal-delete'),
     path('contacts/select/', views.get_contacts_for_select, name='contacts-select'),
     path('services/select/', views.get_services_for_select, name='services-select'),
-]
+
+
+     path('contacts/analytics/overview/', views.analytics_overview, name='analytics-overview'),
+    path('contacts/analytics/timeline/', views.analytics_timeline, name='analytics-timeline'),
+    path('contacts/analytics/top-contacts/', views.analytics_top_contacts, name='analytics-top-contacts'),
+    path('contacts/analytics/top-services/', views.analytics_top_services, name='analytics-top-services'),
+    path('contacts/analytics/deal-performance/', views.analytics_deal_performance, name='analytics-deal-performance'),
+] 

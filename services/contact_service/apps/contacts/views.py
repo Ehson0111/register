@@ -1,4 +1,9 @@
- 
+from django.db.models import Count, Sum, Avg, Q
+from django.utils import timezone
+from datetime import datetime, timedelta
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from .models import Contact, Deal, Service 
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -270,3 +275,241 @@ def get_contacts_for_select(request):
     contacts = Contact.objects.all()
     serializer = SimpleContactSerializer(contacts, many=True)
     return Response(serializer.data)
+
+ 
+
+@api_view(['GET'])
+@permission_classes([IsManager])
+def analytics_overview(request):
+    """Общая аналитика по CRM"""
+    user = request.user
+    
+    # Общие данные
+    total_contacts = Contact.objects.count()
+    total_deals = Deal.objects.count()
+    total_services = Service.objects.filter(is_active=True).count()
+    
+    # Сделки по статусам
+    deals_by_status = Deal.objects.values('status').annotate(
+        count=Count('id'),
+        total_amount=Sum('amount')
+    )
+    
+    # Контакты по статусам
+    contacts_by_status = Contact.objects.values('status').annotate(
+        count=Count('id')
+    )
+    
+    # Сумма всех успешных сделок
+    total_revenue = Deal.objects.filter(status=Deal.DEAL_WON).aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    
+    # Средняя стоимость сделки
+    avg_deal_amount = Deal.objects.aggregate(
+        avg=Avg('amount')
+    )['avg'] or 0
+    
+    # Конверсия (процент выигранных сделок от всех сделок)
+    won_deals = Deal.objects.filter(status=Deal.DEAL_WON).count()
+    conversion_rate = (won_deals / total_deals * 100) if total_deals > 0 else 0
+    
+    return Response({
+        'overview': {
+            'total_contacts': total_contacts,
+            'total_deals': total_deals,
+            'total_services': total_services,
+            'total_revenue': float(total_revenue),
+            'avg_deal_amount': float(avg_deal_amount),
+            'conversion_rate': round(conversion_rate, 2)
+        },
+        'deals_by_status': list(deals_by_status),
+        'contacts_by_status': list(contacts_by_status)
+    })
+
+@api_view(['GET'])
+@permission_classes([IsManager])
+def analytics_timeline(request):
+    """Аналитика по времени (последние 30 дней)"""
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    # Сделки за последние 30 дней
+    recent_deals = Deal.objects.filter(
+        created_at__gte=thirty_days_ago
+    ).extra({
+        'date': "DATE(created_at)"
+    }).values('date').annotate(
+        count=Count('id'),
+        total_amount=Sum('amount')
+    ).order_by('date')
+    
+    # Контакты за последние 30 дней
+    recent_contacts = Contact.objects.filter(
+        created_at__gte=thirty_days_ago
+    ).extra({
+        'date': "DATE(created_at)"
+    }).values('date').annotate(
+        count=Count('id')
+    ).order_by('date')
+    
+    # Выигранные сделки за последние 30 дней
+    won_deals = Deal.objects.filter(
+        status=Deal.DEAL_WON,
+        created_at__gte=thirty_days_ago
+    ).extra({
+        'date': "DATE(created_at)"
+    }).values('date').annotate(
+        count=Count('id'),
+        total_amount=Sum('amount')
+    ).order_by('date')
+    
+    return Response({
+        'deals_timeline': list(recent_deals),
+        'contacts_timeline': list(recent_contacts),
+        'won_deals_timeline': list(won_deals)
+    })
+
+@api_view(['GET'])
+@permission_classes([IsManager])
+def analytics_top_contacts(request):
+    """Топ контактов по количеству сделок и сумме"""
+    # Топ контактов по количеству сделок
+    contacts_by_deal_count = Contact.objects.annotate(
+        deal_count=Count('deals'),
+        total_deal_amount=Sum('deals__amount'),
+        won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
+        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+    ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
+    
+    # Топ контактов по сумме сделок
+    contacts_by_deal_amount = Contact.objects.annotate(
+        total_deal_amount=Sum('deals__amount'),
+        deal_count=Count('deals'),
+        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+    ).filter(total_deal_amount__gt=0).order_by('-total_deal_amount')[:10]
+    
+    return Response({
+        'by_deal_count': [
+            {
+                'id': contact.id,
+                'full_name': contact.get_full_name(),
+                'company': contact.company,
+                'deal_count': contact.deal_count,
+                'total_deal_amount': float(contact.total_deal_amount or 0),
+                'won_deals': contact.won_deals,
+                'won_amount': float(contact.won_amount or 0)
+            }
+            for contact in contacts_by_deal_count
+        ],
+        'by_deal_amount': [
+            {
+                'id': contact.id,
+                'full_name': contact.get_full_name(),
+                'company': contact.company,
+                'total_deal_amount': float(contact.total_deal_amount or 0),
+                'deal_count': contact.deal_count,
+                'won_amount': float(contact.won_amount or 0)
+            }
+            for contact in contacts_by_deal_amount
+        ]
+    })
+
+@api_view(['GET'])
+@permission_classes([IsManager])
+def analytics_top_services(request):
+    """Топ услуг по популярности и доходу"""
+    # Топ услуг по количеству сделок
+    services_by_deal_count = Service.objects.filter(is_active=True).annotate(
+        deal_count=Count('deals'),
+        total_amount=Sum('deals__amount'),
+        won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
+        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+    ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
+    
+    # Топ услуг по доходу
+    services_by_revenue = Service.objects.filter(is_active=True).annotate(
+        total_amount=Sum('deals__amount'),
+        deal_count=Count('deals'),
+        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+    ).filter(total_amount__gt=0).order_by('-total_amount')[:10]
+    
+    return Response({
+        'by_popularity': [
+            {
+                'id': service.id,
+                'name': service.name,
+                'price': float(service.price),
+                'deal_count': service.deal_count,
+                'total_amount': float(service.total_amount or 0),
+                'won_deals': service.won_deals,
+                'won_amount': float(service.won_amount or 0)
+            }
+            for service in services_by_deal_count
+        ],
+        'by_revenue': [
+            {
+                'id': service.id,
+                'name': service.name,
+                'price': float(service.price),
+                'total_amount': float(service.total_amount or 0),
+                'deal_count': service.deal_count,
+                'won_amount': float(service.won_amount or 0)
+            }
+            for service in services_by_revenue
+        ]
+    })
+
+@api_view(['GET'])
+@permission_classes([IsManager])
+def analytics_deal_performance(request):
+    """Анализ эффективности сделок"""
+    # Анализ по месяцам
+    current_year = timezone.now().year
+    monthly_performance = []
+    
+    for month in range(1, 13):
+        month_deals = Deal.objects.filter(
+            created_at__year=current_year,
+            created_at__month=month
+        )
+        
+        total_deals = month_deals.count()
+        won_deals = month_deals.filter(status=Deal.DEAL_WON).count()
+        lost_deals = month_deals.filter(status=Deal.DEAL_LOST).count()
+        total_amount = month_deals.filter(status=Deal.DEAL_WON).aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        conversion_rate = (won_deals / total_deals * 100) if total_deals > 0 else 0
+        
+        monthly_performance.append({
+            'month': month,
+            'total_deals': total_deals,
+            'won_deals': won_deals,
+            'lost_deals': lost_deals,
+            'total_amount': float(total_amount),
+            'conversion_rate': round(conversion_rate, 2)
+        })
+    
+    # Анализ по вероятности
+    probability_analysis = []
+    for prob_range in [(0, 25), (26, 50), (51, 75), (76, 100)]:
+        deals = Deal.objects.filter(
+            probability__gte=prob_range[0],
+            probability__lte=prob_range[1]
+        )
+        
+        won_deals = deals.filter(status=Deal.DEAL_WON).count()
+        conversion_rate = (won_deals / deals.count() * 100) if deals.count() > 0 else 0
+        
+        probability_analysis.append({
+            'range': f"{prob_range[0]}-{prob_range[1]}%",
+            'total_deals': deals.count(),
+            'won_deals': won_deals,
+            'conversion_rate': round(conversion_rate, 2)
+        })
+    
+    return Response({
+        'monthly_performance': monthly_performance,
+        'probability_analysis': probability_analysis
+    })

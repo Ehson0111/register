@@ -2,7 +2,7 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth'
 
-// Create axios instance
+// Create axios instanced
 const api = axios.create({
   baseURL: '/api',
   timeout: 30000,
