@@ -17,8 +17,11 @@ function Start-Service {
 # Запуск API Gateway
 Start-Service -ServiceName "API Gateway" -Path "D:\django\crm\api-gateway" -Command "python manage.py runserver"
 
+
 # Запуск User Service
 Start-Service -ServiceName "User Service" -Path "D:\django\crm\services\user-service" -Command "python manage.py runserver 0.0.0.0:8004"
+
+Start-Service -ServiceName "calendar" -Path "D:\django\crm\services\calendar" -Command "python manage.py runserver 0.0.0.0:8006"
 
 # Запуск Contact Service
 Start-Service -ServiceName "Contact Service" -Path "D:\django\crm\services\contact_service" -Command "python manage.py runserver 0.0.0.0:8005"
@@ -33,4 +36,5 @@ Write-Host "Все сервисы запускаются..." -ForegroundColor Gr
 Write-Host "API Gateway: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "User Service: http://localhost:8004" -ForegroundColor Cyan
 Write-Host "Contact Service: http://localhost:8005" -ForegroundColor Cyan
+Write-Host "Calendar: http://localhost:8006" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan

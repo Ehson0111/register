@@ -39,7 +39,7 @@ urlpatterns = [
     path('services/select/', views.get_services_for_select, name='services-select'),
 
 
-     path('contacts/analytics/overview/', views.analytics_overview, name='analytics-overview'),
+    path('contacts/analytics/overview/', views.analytics_overview, name='analytics-overview'),
     path('contacts/analytics/timeline/', views.analytics_timeline, name='analytics-timeline'),
     path('contacts/analytics/top-contacts/', views.analytics_top_contacts, name='analytics-top-contacts'),
     path('contacts/analytics/top-services/', views.analytics_top_services, name='analytics-top-services'),
