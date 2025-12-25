@@ -1,182 +1,138 @@
 from rest_framework import serializers
-from .models import EmailCampaign, EmailTemplate, ContactSegment, CampaignStatistic
+from django.utils import timezone
+from .models import Template, Campaign, CampaignRecipient
 
-class EmailCampaignSerializer(serializers.ModelSerializer):
-    """Сериализатор для email рассылок"""
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    campaign_type_display = serializers.CharField(source='get_campaign_type_display', read_only=True)
-    open_rate = serializers.FloatField(read_only=True)
-    click_rate = serializers.FloatField(read_only=True)
-    progress = serializers.IntegerField(read_only=True)
-    is_active_campaign = serializers.BooleanField(read_only=True)
+class TemplateSerializer(serializers.ModelSerializer):  
+    template_type_display = serializers.CharField(source='get_template_type_display', read_only=True)
     
-    class Meta:
-        model = EmailCampaign
+    class Meta: 
+        model = Template
         fields = [
             'id',
             'name',
-            'description',
-            'campaign_type',
-            'campaign_type_display',
+            'template_type',
+            'template_type_display',
             'subject',
             'body',
-            'status',
-            'status_display',
-            'scheduled_for',
-            'sent_at',
-            'recipient_count',
-            'sent_count',
-            'opens_count',
-            'clicks_count',
-            'open_rate',
-            'click_rate',
-            'progress',
-            'is_active_campaign',
-            'created_by',
-            'created_by_name',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = [
-            'id', 'created_by', 'created_at', 'updated_at', 'sent_count',
-            'opens_count', 'clicks_count', 'open_rate', 'click_rate', 'progress'
-        ]
-
-
-class EmailCampaignCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания рассылки"""
-    class Meta:
-        model = EmailCampaign
-        fields = [
-            'name',
-            'description',
-            'campaign_type',
-            'subject',
-            'body',
-            'body_html',
-            'target_segment',
-            'scheduled_for',
-            'tags'
-        ]
-    
-    def validate_target_segment(self, value):
-        """Валидация сегмента получателей"""
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Сегмент должен быть JSON объектом")
-        return value
-    
+        read_only_fields = ['id', 'created_at', 'updated_at','manager_id']
     def create(self, validated_data):
-        """Автоматически назначаем создателя"""
         request = self.context.get('request')
-        validated_data['created_by'] = request.user
-        validated_data['recipient_count'] = self.calculate_recipient_count(validated_data['target_segment'])
+        if request and hasattr(request, 'user'):
+            validated_data['manager_id'] = request.user.id
+
         return super().create(validated_data)
-    
-    def calculate_recipient_count(self, target_segment):
-        """Рассчитываем количество получателей (пока заглушка)"""
-        # В реальном проекте здесь будет запрос к contact-service
-        return 1000
 
+    def validate(self, data):
+        template_type = data.get('template_type', self.instance.template_type if self.instance else 'email')
+        
+        if template_type == 'email' and not data.get('subject'):
+            raise serializers.ValidationError({
+                "subject": "Для email шаблона требуется тема"
+            })
+        
+        if template_type == 'sms' and not data.get('sms_content'):
+            raise serializers.ValidationError({
+                "sms_content": "Для SMS шаблона требуется текст"
+            })
+        
+        return data
 
-class EmailTemplateSerializer(serializers.ModelSerializer):
-    """Сериализатор для шаблонов email"""
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
-    category_display = serializers.CharField(source='get_category_display', read_only=True)
-    
-    class Meta:
-        model = EmailTemplate
-        fields = [
-            'id',
-            'name',
-            'description',
-            'category',
-            'category_display',
-            'subject',
-            'body',
-            'body_html',
-            'variables',
-            'used_count',
-            'is_active',
-            'created_by',
-            'created_by_name',
-            'created_at',
-            'updated_at'
-        ]
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at', 'used_count']
-
-
-class ContactSegmentSerializer(serializers.ModelSerializer):
-    """Сериализатор для сегментов контактов"""
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+        
+class CampaignRecipientSerializer(serializers.ModelSerializer):
+    """Сериализатор для получателей кампании"""
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
-        model = ContactSegment
+        model = CampaignRecipient
         fields = [
-            'id',
-            'name',
-            'description',
-            'filters',
-            'contact_count',
-            'last_calculated_at',
-            'is_active',
-            'created_by',
-            'created_by_name',
-            'created_at',
-            'updated_at'
-        ]
-        read_only_fields = ['id', 'created_by', 'contact_count', 'last_calculated_at', 'created_at', 'updated_at']
-
-
-class CampaignStatisticSerializer(serializers.ModelSerializer):
-    """Сериализатор для статистики кампаний"""
-    campaign_name = serializers.CharField(source='campaign.name', read_only=True)
-    open_rate = serializers.FloatField(read_only=True)
-    click_rate = serializers.FloatField(read_only=True)
-    
-    class Meta:
-        model = CampaignStatistic
-        fields = [
-            'id',
-            'campaign',
-            'campaign_name',
-            'date',
-            'sent',
-            'delivered',
-            'opened',
-            'clicked',
-            'unsubscribed',
-            'bounced',
-            'complaints',
-            'open_rate',
-            'click_rate',
-            'created_at'
+            'id', 'recipient_id', 'recipient_email', 'recipient_phone',
+            'status', 'status_display', 'sent_at', 'delivered_at', 
+            'opened_at', 'error_message', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
 
+class CampaignSerializer(serializers.ModelSerializer):
+    """Сериализатор для кампаний"""
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    campaign_type_display = serializers.CharField(source='get_campaign_type_display', read_only=True)
+    template_name = serializers.CharField(source='template.name', read_only=True)
+    delivery_rate = serializers.SerializerMethodField()
+    recipients_detail = CampaignRecipientSerializer(
+        source='campaign_recipients', many=True, read_only=True
+    )
+    
+    class Meta:
+        model = Campaign
+        fields = [
+            'id', 'name', 'campaign_type', 'campaign_type_display',
+            'status', 'status_display', 'template', 'template_name',
+            'subject', 'content', 'recipients', 'recipient_count',
+            'success_count', 'failed_count', 'sent_at',
+            'delivery_rate', 'recipients_detail',
+            'manager_id', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'manager_id']
+    
+    def get_delivery_rate(self, obj):
+        """Процент успешной доставки"""
+        if obj.recipient_count > 0:
+            return round((obj.success_count / obj.recipient_count) * 100, 2)
+        return 0
+    
+    def create(self, validated_data):
+        """Создание кампании с автоматическим manager_id"""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['manager_id'] = request.user.id
+        
+        # Устанавливаем количество получателей
+        recipients = validated_data.get('recipients', [])
+        validated_data['recipient_count'] = len(recipients)
+        
+        return super().create(validated_data)
 
-class MarketingOverviewSerializer(serializers.Serializer):
-    """Сериализатор для общей статистики маркетинга"""
-    total_campaigns = serializers.IntegerField()
-    active_campaigns = serializers.IntegerField()
-    total_recipients = serializers.IntegerField()
-    total_opens = serializers.IntegerField()
-    total_clicks = serializers.IntegerField()
-    average_open_rate = serializers.FloatField()
-    average_click_rate = serializers.FloatField()
-    template_count = serializers.IntegerField()
-    segment_count = serializers.IntegerField()
+class SendCampaignSerializer(serializers.Serializer):
+    """Сериализатор для отправки кампании"""
+    template_id = serializers.IntegerField(required=True)
+    subject = serializers.CharField(required=False, allow_blank=True)
+    content = serializers.CharField(required=True)
+    
+    # Выбор получателей
+    recipient_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True,
+        help_text="Список ID получателей"
+    )
+    
+    # Или можно отправить всем клиентам
+    send_to_all = serializers.BooleanField(default=False, required=False)
+    
+    campaign_name = serializers.CharField(
+        required=False, 
+        default="Новая рассылка",
+        help_text="Название кампании (если не указано, будет сгенерировано автоматически)"
+    )
+    
+    def validate(self, data):
+        """Валидация данных"""
+        if not data.get('recipient_ids') and not data.get('send_to_all'):
+            raise serializers.ValidationError({
+                "recipient_ids": "Необходимо указать получателей или выбрать 'send_to_all'"
+            })
+        
+        return data
 
-
-class CampaignPerformanceSerializer(serializers.Serializer):
-    """Сериализатор для производительности кампаний"""
-    campaign_id = serializers.UUIDField()
-    campaign_name = serializers.CharField()
-    sent = serializers.IntegerField()
-    opens = serializers.IntegerField()
-    clicks = serializers.IntegerField()
-    open_rate = serializers.FloatField()
-    click_rate = serializers.FloatField()
-    unsubscribes = serializers.IntegerField()
-    revenue = serializers.FloatField()
-    roi = serializers.FloatField()
+class IndividualSendSerializer(serializers.Serializer):
+    """Сериализатор для индивидуальной отправки"""
+    template_id = serializers.IntegerField(required=True)
+    recipient_id = serializers.IntegerField(required=True)
+    
+    # Переменные для подстановки
+    variables = serializers.JSONField(
+        required=False, 
+        default=dict,
+        help_text="Переменные для подстановки в шаблон"
+    )

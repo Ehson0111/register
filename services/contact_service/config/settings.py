@@ -1,5 +1,4 @@
- 
-# DEFAULT_AUTOfrom pathlib import Path
+ # DEFAULT_AUTOfrom pathlib import Path
 from datetime import timedelta
 from decouple import config  # ← pip install python-decouple
 import os 
