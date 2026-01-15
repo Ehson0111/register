@@ -1,50 +1,22 @@
-from django.utils import timezone
+# services/marketing/apps/marketing/models.py
 from django.db import models
+from django.utils import timezone
 
-# Create your models here.
-# 1 шаблон рассылок 
-# 2 id пользователей 
-# 3 запланированное время рассылки  
-# class MarketingTemplate(models.Model):
-#     name = models.CharField(max_length=100, verbose_name="Название шаблона")
-#     subject = models.CharField(max_length=200, verbose_name="Тема письма")
-#     body = models.TextField(verbose_name="Тело письма")
-#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-#     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-
-#     def __str__(self):
-#         return self.name
-
-
-# class MarketingCampaign(models.Model):
-#     template = models.ForeignKey(MarketingTemplate, on_delete=models.CASCADE, related_name='campaigns', verbose_name="Шаблон рассылки")
-#     user_ids = models.TextField(verbose_name="ID пользователей для рассылки")  # Список ID пользователей через запятую
-#     scheduled_time = models.DateTimeField(verbose_name="Запланированное время рассылки")
-#     sent = models.BooleanField(default=False, verbose_name="Отправлено")
-#     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-#     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-
-#     def __str__(self):
-#         return f"Campaign {self.id} using {self.template.name}"
- 
 class Template(models.Model):
-    # name = models.CharField(max_length=100, verbose_name="Название шаблона")
-    # subject = models.CharField(max_length=200, verbose_name="Тема письма")
-    # body = models.TextField(verbose_name="Тело письма")
-    # created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    # updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-
-    # def __str__(self):
-    #     return self.name
+    """Шаблон для рассылок"""
     TEMPLATE_TYPES = [
         ('email', 'Email'),
         ('sms', 'SMS'),
     ]
     
+    # Основные поля
     name = models.CharField(max_length=100, verbose_name="Название шаблона")
-    template_types=models.CharField(max_length=10,choices=TEMPLATE_TYPES,default="email")
-
-
+    template_type = models.CharField(  # ← ЭТОТ ПОЛЕ ОБЯЗАТЕЛЬНО ДОЛЖНО БЫТЬ
+        max_length=10, 
+        choices=TEMPLATE_TYPES, 
+        default='email'
+    )
+    
     # Для email
     subject = models.CharField(max_length=255, blank=True, verbose_name="Тема")
     content = models.TextField(verbose_name="Содержание")
@@ -63,17 +35,14 @@ class Template(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-
-    class meta:
+    class Meta:
         ordering = ['-created_at']
-
         indexes = [
             models.Index(fields=['manager_id', 'template_type']),
         ]
     
     def __str__(self):
         return f"{self.name} ({self.get_template_type_display()})"
-    
 
 class Campaign(models.Model):
     STATUS_CHOICES = [

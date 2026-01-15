@@ -9,14 +9,16 @@ from rest_framework import filters
 from django.utils import timezone
 from datetime import datetime, timedelta
 import json
+import threading
+import logging
 
 from .models import Template, Campaign, CampaignRecipient
 from .serializers import (
     TemplateSerializer, CampaignSerializer,
     SendCampaignSerializer, IndividualSendSerializer
 )
+from .services import MarketingService
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -159,6 +161,20 @@ class CampaignViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+def send_campaign_async(campaign_id, recipient_ids, client_info_map=None):
+    """Асинхронная отправка кампании"""
+    try:
+        campaign = Campaign.objects.get(id=campaign_id)
+        service = MarketingService()
+        
+        result = service.send_campaign(campaign, recipient_ids, client_info_map)
+        
+        logger.info(f"Кампания {campaign_id} отправлена: {result['success']} успешно, {result['failed']} с ошибками")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при асинхронной отправке кампании {campaign_id}: {str(e)}")
+
+
 class SendCampaignView(APIView):
     """Отправка рассылки (индивидуальной или массовой)"""
     permission_classes = [IsAuthenticated]
@@ -214,46 +230,71 @@ class SendCampaignView(APIView):
             manager_id=user.id
         )
         
-        # Создаем записи для каждого получателя
-        for recipient_id in recipient_ids:
-            CampaignRecipient.objects.create(
-                campaign=campaign,
-                recipient_id=recipient_id,
-                status='pending'
-            )
-        
-        # Здесь должна быть реальная логика отправки
-        # Пока просто имитируем успешную отправку
-        self._simulate_sending(campaign)
-        
-        # Обновляем статус кампании
-        campaign.status = 'sent'
-        campaign.sent_at = timezone.now()
-        campaign.success_count = len(recipient_ids)
-        campaign.save()
-        
-        # Возвращаем результат
-        campaign_serializer = CampaignSerializer(campaign)
-        return Response({
-            'success': True,
-            'message': f'Рассылка отправлена {len(recipient_ids)} получателям',
-            'campaign': campaign_serializer.data
-        }, status=status.HTTP_201_CREATED)
-    
-    def _simulate_sending(self, campaign):
-        """Имитация отправки (заглушка)"""
-        # В реальности здесь должна быть интеграция с email/SMS сервисами
-        for recipient in campaign.campaign_recipients.all():
-            recipient.status = 'sent'
-            recipient.sent_at = timezone.now()
-            recipient.save()
+        # Запускаем отправку в отдельном потоке (для массовых рассылок)
+        if len(recipient_ids) > 1:
+            # Получаем информацию о клиентах (заглушка)
+            client_info_map = self._get_clients_info(recipient_ids, user.id)
             
-            # Имитация случайных открытий
-            import random
-            if random.random() > 0.3:  # 70% шанс открытия
-                recipient.status = 'opened'
-                recipient.opened_at = timezone.now() + timedelta(minutes=random.randint(1, 60))
-                recipient.save()
+            # Запускаем в отдельном потоке
+            thread = threading.Thread(
+                target=send_campaign_async,
+                args=(campaign.id, recipient_ids, client_info_map)
+            )
+            thread.daemon = True
+            thread.start()
+            
+            return Response({
+                'success': True,
+                'message': f'Рассылка запущена для {len(recipient_ids)} получателей',
+                'campaign_id': campaign.id,
+                'status': 'sending'
+            }, status=status.HTTP_202_ACCEPTED)
+        
+        else:
+            # Для одного получателя отправляем сразу
+            client_info = self._get_client_info(recipient_ids[0], user.id) if recipient_ids else {}
+            
+            service = MarketingService()
+            success, error_msg = service.send_to_recipient(
+                campaign=campaign,
+                recipient_id=recipient_ids[0] if recipient_ids else None,
+                client_info=client_info
+            )
+            
+            if success:
+                campaign.status = 'sent'
+                campaign.sent_at = timezone.now()
+                campaign.success_count = 1
+                campaign.save()
+                
+                return Response({
+                    'success': True,
+                    'message': 'Сообщение отправлено успешно',
+                    'campaign_id': campaign.id
+                }, status=status.HTTP_201_CREATED)
+            else:
+                campaign.status = 'failed'
+                campaign.failed_count = 1
+                campaign.save()
+                
+                return Response({
+                    'success': False,
+                    'error': error_msg,
+                    'campaign_id': campaign.id
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _get_clients_info(self, client_ids, manager_id):
+        """Получить информацию о клиентах (заглушка)"""
+        # В реальности нужно делать запрос к сервису контактов
+        client_info_map = {}
+        for client_id in client_ids:
+            client_info_map[client_id] = {
+                'id': client_id,
+                'name': f'Клиент #{client_id}',
+                'email': f'client{client_id}@example.com',
+                'phone': '+7999000' + str(client_id).zfill(4)
+            }
+        return client_info_map
 
 
 class IndividualSendView(APIView):
@@ -286,49 +327,60 @@ class IndividualSendView(APIView):
         campaign = Campaign.objects.create(
             name=f"Индивидуальная рассылка клиенту #{recipient_id}",
             campaign_type='individual',
-            status='sent',
+            status='sending',
             template=template,
             subject=template.subject,
             content=template.content,
             recipients=[recipient_id],
             recipient_count=1,
-            success_count=1,
-            sent_at=timezone.now(),
             manager_id=user.id
         )
         
-        # Создаем запись о получателе
-        recipient = CampaignRecipient.objects.create(
-            campaign=campaign,
-            recipient_id=recipient_id,
-            status='sent',
-            sent_at=timezone.now()
-        )
-        
-        # Здесь должна быть реальная логика отправки
-        # Пока просто логируем
-        logger.info(f"Индивидуальная отправка: менеджер {user.id} -> клиент {recipient_id}, шаблон {template.name}")
-        
-        # Получаем данные клиента из сервиса контактов (заглушка)
+        # Получаем информацию о клиенте (заглушка)
         client_info = self._get_client_info(recipient_id, user.id)
         
-        return Response({
-            'success': True,
-            'message': f'Сообщение отправлено клиенту #{recipient_id}',
-            'campaign_id': campaign.id,
-            'recipient': {
-                'id': recipient_id,
-                'info': client_info
-            },
-            'template': TemplateSerializer(template).data
-        }, status=status.HTTP_201_CREATED)
+        # Отправляем сообщение
+        service = MarketingService()
+        success, error_msg = service.send_to_recipient(
+            campaign=campaign,
+            recipient_id=recipient_id,
+            client_info=client_info
+        )
+        
+        # Обновляем статус кампании
+        if success:
+            campaign.status = 'sent'
+            campaign.sent_at = timezone.now()
+            campaign.success_count = 1
+            
+            return Response({
+                'success': True,
+                'message': f'Сообщение отправлено клиенту #{recipient_id}',
+                'campaign_id': campaign.id,
+                'recipient': {
+                    'id': recipient_id,
+                    'info': client_info
+                },
+                'template': TemplateSerializer(template).data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            campaign.status = 'failed'
+            campaign.failed_count = 1
+            
+            return Response({
+                'success': False,
+                'error': error_msg,
+                'campaign_id': campaign.id
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        campaign.save()
     
     def _get_client_info(self, client_id, manager_id):
         """Получить информацию о клиенте (заглушка)"""
         # В реальности нужно делать запрос к сервису контактов
         return {
             'id': client_id,
-            'name': f'Клиент #{client_id}',
+            'name': f' надо делать запрос к серверу контактов Клиент #{client_id}',
             'email': f'client{client_id}@example.com',
             'phone': '+7999000' + str(client_id).zfill(4)
         }

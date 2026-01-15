@@ -38,3 +38,4 @@ Write-Host "User Service: http://localhost:8004" -ForegroundColor Cyan
 Write-Host "Contact Service: http://localhost:8005" -ForegroundColor Cyan
 Write-Host "Calendar: http://localhost:8006" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
+

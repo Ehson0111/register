@@ -1,31 +1,31 @@
+# services/marketing/apps/marketing/serializers.py
 from rest_framework import serializers
 from django.utils import timezone
 from .models import Template, Campaign, CampaignRecipient
 
-class TemplateSerializer(serializers.ModelSerializer):  
+class TemplateSerializer(serializers.ModelSerializer):
+    """Сериализатор для шаблонов"""
     template_type_display = serializers.CharField(source='get_template_type_display', read_only=True)
     
-    class Meta: 
+    class Meta:
         model = Template
         fields = [
-            'id',
-            'name',
-            'template_type',
-            'template_type_display',
-            'subject',
-            'body',
-            'created_at',
-            'updated_at'
+            'id', 'name', 'template_type', 'template_type_display',
+            'subject', 'content', 'sms_content', 'variables',
+            'description', 'manager_id', 'is_active',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at','manager_id']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'manager_id']
+    
     def create(self, validated_data):
+        """Автоматически добавляем manager_id"""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['manager_id'] = request.user.id
-
         return super().create(validated_data)
-
+    
     def validate(self, data):
+        """Валидация в зависимости от типа шаблона"""
         template_type = data.get('template_type', self.instance.template_type if self.instance else 'email')
         
         if template_type == 'email' and not data.get('subject'):
@@ -40,7 +40,6 @@ class TemplateSerializer(serializers.ModelSerializer):
         
         return data
 
-        
 class CampaignRecipientSerializer(serializers.ModelSerializer):
     """Сериализатор для получателей кампании"""
     status_display = serializers.CharField(source='get_status_display', read_only=True)
