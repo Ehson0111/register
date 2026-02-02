@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 
 def quick_send_yandex():
     msg = MIMEText("Текст 1", 'plain', 'utf-8')
-    msg['Subject'] = 'Тема письма'
+    msg['Subject'] = 'тестирование     '
     msg['From'] = 'ehsonboboev7@yandex.ru'
     msg['To'] = 'ehsonboboev7@gmail.com'
     

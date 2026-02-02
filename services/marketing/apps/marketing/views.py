@@ -1,6 +1,9 @@
+
 # services/marketing/apps/marketing/views.py
+from django.http import HttpResponse
 from rest_framework import viewsets, generics, status
 from rest_framework.decorators import action
+import requests
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -337,7 +340,7 @@ class IndividualSendView(APIView):
         )
         
         # Получаем информацию о клиенте (заглушка)
-        client_info = self._get_client_info(recipient_id, user.id)
+        client_info = self._get_client_info(request, recipient_id, user.id)
         
         # Отправляем сообщение
         service = MarketingService()
@@ -346,6 +349,7 @@ class IndividualSendView(APIView):
             recipient_id=recipient_id,
             client_info=client_info
         )
+        campaign.save()
         
         # Обновляем статус кампании
         if success:
@@ -373,18 +377,69 @@ class IndividualSendView(APIView):
                 'campaign_id': campaign.id
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        campaign.save()
-    
-    def _get_client_info(self, client_id, manager_id):
-        """Получить информацию о клиенте (заглушка)"""
-        # В реальности нужно делать запрос к сервису контактов
-        return {
-            'id': client_id,
-            'name': f' надо делать запрос к серверу контактов Клиент #{client_id}',
-            'email': f'client{client_id}@example.com',
-            'phone': '+7999000' + str(client_id).zfill(4)
-        }
+ 
 
+    def _get_client_info(self, request, client_id, manager_id):
+            """Получить информацию о клиенте"""
+            
+            try:
+                headers = {}
+                important_headers = [
+                    'Authorization', 'Content-Type', 'Accept', 'User-Agent',
+                    'Accept-Language', 'Accept-Encoding'
+                ]
+                
+                # Переносим важные заголовки из запроса
+                for header_name in important_headers:
+                    header_value = request.headers.get(header_name)
+                    if header_value:
+                        headers[header_name] = header_value
+
+                client_id=10
+
+                # Пример URL для получения информации о клиенте
+                target_url = f'http://localhost:8000/api/contacts/{client_id}/'
+                params = dict(request.GET.items())  # Получаем query параметры (если есть)
+
+                # Логируем запрос для отладки
+                logger.info(f"Получаем информацию о клиенте: {target_url}, headers: {headers}, params: {params}")
+
+                # Делаем GET-запрос к API для получения информации о клиенте
+                response = requests.get(
+                    target_url,
+                    headers=headers,
+                    params=params,
+                    timeout=30
+                )
+
+                # Проверяем успешность ответа
+                if response.status_code == 200:
+                    # Если запрос успешен, возвращаем данные клиента
+                    # print(response.)
+                    # print(response.json())
+                    return response.json()  # Данные в формате JSON
+
+                else:
+                    # Если ошибка, логируем и возвращаем заглушку
+                    logger.error(f"Ошибка при получении информации о клиенте: {response.status_code}")
+                    
+                    return {
+                        'id': client_id,
+                        'name': f'Информация о клиенте #{client_id} не найдена',
+                        'email': f'client{client_id}@example.com',
+                        'phone': '+7999000' + str(client_id).zfill(4)
+                    }
+
+            except Exception as e:
+                logger.error(f"Ошибка при запросе информации о клиенте: {e}")
+                return {
+                    'id': client_id,
+                    'name': f'Ошибка при запросе информации о клиенте #{client_id}',
+                    'email': f'client{client_id}@example.com',
+                    'phone': '+7999000' + str(client_id).zfill(4)
+                }
+
+        
 
 class CampaignHistoryView(APIView):
     """История рассылок с фильтрами"""
