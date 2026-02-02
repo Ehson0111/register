@@ -304,7 +304,7 @@ class IndividualSendView(APIView):
     """Индивидуальная отправка одному клиенту"""
     permission_classes = [IsAuthenticated]
     
-    def post(self, request,client_id):
+    def post(self, request):
         serializer = IndividualSendSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -341,7 +341,7 @@ class IndividualSendView(APIView):
         
         # Получаем информацию о клиенте (заглушка)
         # client_info = self._get_client_info(request, recipient_id, user.id,client_id)
-        client_info = self._get_client_info(request, client_id)
+        client_info = self._get_client_info(request, recipient_id)
         
     # def _get_client_info(self, request, client_id, manager_id):
         
