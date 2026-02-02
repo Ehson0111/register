@@ -54,7 +54,7 @@ POST /api/send-campaign/
 }
 3. Отправить индивидуально:
 json
-POST /api/send-individual/
+POST [/api/send-individual/](http://localhost:8007/api/send-individual/{client_id}/)
 {
   "template_id": 2,
   "recipient_id": 105,
@@ -63,6 +63,7 @@ POST /api/send-individual/
     "offer": "СКИДКА20"
   }
 }
+
 
 4. Получить историю с фильтрами:
 text

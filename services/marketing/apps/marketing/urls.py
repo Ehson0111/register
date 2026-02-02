@@ -11,6 +11,6 @@ urlpatterns = [
     path('',include(router.urls)),
 
     path('send-campaign/', views.SendCampaignView.as_view(), name='send-campaign'),
-    path('send-individual/', views.IndividualSendView.as_view(), name='send-individual'),
+    path('send-individual/<int:client_id>/', views.IndividualSendView.as_view(), name='send-individual'),
     path('history/', views.CampaignHistoryView.as_view(), name='campaign-history'),
 ]
