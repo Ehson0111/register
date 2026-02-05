@@ -1,9 +1,12 @@
+
+
+
  Все сервисы запускаются..." - 
- API Gateway: http://localhost:8000"  
- User Service: http://localhost:8004"  
- Contact Service: http://localhost:8005"  
- Calendar: http://localhost:8006"  
- Frontend: http://localhost:3000"   
+ API Gateway: http://localhost:8000"  api
+ User Service: http://localhost:8004"   для авторизации  
+ Contact Service: http://localhost:8005"  контакты, услуги, сделки 
+ Calendar: http://localhost:8006"  календарь 
+ Frontend: http://localhost:3000"   фронтенд
  
 
 
@@ -41,17 +44,17 @@ POST /api/templates/
   "content": "Уважаемый {name}, рады приветствовать вас...",
   "variables": ["name", "company"],
   "description": "Шаблон для новых клиентов"
-}
+} 
 2. Отправить массовую рассылку:
+http://localhost:8007/api/send-campaign/
 json
-POST /api/send-campaign/
 {
   "template_id": 1,
   "subject": "Скидка 20% для вас",
   "content": "Специальное предложение только для вас!",
-  "recipient_ids": [101, 102, 103, 104],
+  "recipient_ids": [10, 11],
   "campaign_name": "Декабрьская акция"
-}
+} 
 3. Отправить индивидуально:
 json
 POST [/api/send-individual/](http://localhost:8007/api/send-individual/{client_id}/)
@@ -68,3 +71,6 @@ POST [/api/send-individual/](http://localhost:8007/api/send-individual/{client_i
 4. Получить историю с фильтрами:
 text
 GET /api/history/?start_date=2024-12-01&type=bulk&page=1
+
+
+

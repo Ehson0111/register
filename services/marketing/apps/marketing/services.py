@@ -1,4 +1,4 @@
-
+import requests
 import smtplib
 import logging
 import re
@@ -33,7 +33,7 @@ class EmailService:
                 msg = MIMEText(content, 'plain', 'utf-8')
 
             msg['Subject'] = subject
-            msg['From'] = from_email      # ← КРИТИЧНО
+            msg['From'] = from_email  
             msg['To'] = to_email
 
             with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port) as server:
@@ -73,6 +73,8 @@ class EmailService:
             # Проверяем наличие необходимых переменных
             if not variables:
                 variables = {}
+            
+            print(variables)
             
             # Добавляем дефолтные значения для отсутствующих переменных
             required_vars = self._extract_placeholders(content) | self._extract_placeholders(subject)
@@ -223,11 +225,11 @@ class MarketingService:
                 'client_name': client_info.get('name', f'{client_info["first_name"]}') if client_info else f'{recipient_id}',
                 'client_email': client_info.get('email', '') if client_info else '',
                 'manager_id': campaign.manager_id,
-                'campaign_name': campaign.name,
+                'company': campaign.name,
                 'date': timezone.now().strftime('%d.%m.%Y'),
             }
             
-            # Добавляем 'name' как alias для 'client_name' (часто используется в шаблонах)
+            # Добавляем 'nameJ' как alias для 'client_name' (часто используется в шаблонах)
             if 'client_name' in variables:
                 variables['name'] = variables['client_name']
             

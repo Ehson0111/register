@@ -205,11 +205,12 @@ class SendCampaignView(APIView):
         # Определяем получателей
         recipient_ids = data.get('recipient_ids', [])
         
-        # Если выбрано "отправить всем", нужно получить список всех клиентов
+        # # Если выбрано "отправить всем", нужно получить список всех клиентов
         if data.get('send_to_all'):
             # Здесь нужно интегрироваться с сервисом контактов
             # Пока используем пустой список
-            recipient_ids = []  # Заглушка
+            print(recipient_ids)
+            # recipient_ids = []  # Заглушка
         
         # Проверяем, есть ли получатели
         if not recipient_ids:
@@ -235,8 +236,8 @@ class SendCampaignView(APIView):
         
         # Запускаем отправку в отдельном потоке (для массовых рассылок)
         if len(recipient_ids) > 1:
-            # Получаем информацию о клиентах (заглушка)
-            client_info_map = self._get_clients_info(recipient_ids, user.id)
+            # client_info_map = self._get_clients_info(recipient_ids, user.id)
+            client_info_map = self._get_clients_info(request, recipient_ids)
             
             # Запускаем в отдельном потоке
             thread = threading.Thread(
@@ -286,19 +287,76 @@ class SendCampaignView(APIView):
                     'campaign_id': campaign.id
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    def _get_clients_info(self, client_ids, manager_id):
-        """Получить информацию о клиентах (заглушка)"""
-        # В реальности нужно делать запрос к сервису контактов
-        client_info_map = {}
-        for client_id in client_ids:
-            client_info_map[client_id] = {
-                'id': client_id,
-                'name': f'Клиент #{client_id}',
-                'email': f'client{client_id}@example.com',
-                'phone': '+7999000' + str(client_id).zfill(4)
-            }
-        return client_info_map
+     
+    def _get_clients_info(self, request, client_ids):
+        """Получить информацию о клиенте"""
 
+        try:
+            client_info_map = {}
+
+            # Проходим по всем client_ids
+            for client_id in client_ids:
+                headers = {}
+                important_headers = [
+                    'Authorization', 'Content-Type', 'Accept', 'User-Agent',
+                    'Accept-Language', 'Accept-Encoding'
+                ]
+
+                # Переносим важные заголовки из запроса
+                for header_name in important_headers:
+                    header_value = request.headers.get(header_name)
+                    if header_value:
+                        headers[header_name] = header_value
+
+                print(client_id)
+
+                # Пример URL для получения информации о клиенте
+                target_url = f'http://localhost:8000/api/contacts/{client_id}/'
+                params = dict(request.GET.items())  # Получаем query параметры (если есть)
+
+                # Логируем запрос для отладки
+                logger.info(f"Получаем информацию о клиенте: {target_url}, headers: {headers}, params: {params}")
+
+                # Делаем GET-запрос к API для получения информации о клиенте
+                response = requests.get(
+                    target_url,
+                    headers=headers,
+                    params=params,
+                    timeout=30
+                )
+
+                # Проверяем успешность ответа
+                if response.status_code == 200:
+                    # Если запрос успешен, сохраняем данные клиента
+                    client_info_map[client_id] = response.json()  # Данные в формате JSON
+                else:
+                    # Если ошибка, логируем и добавляем заглушку
+                    logger.error(f"Ошибка при получении информации о клиенте {client_id}: {response.status_code}")
+
+                    client_info_map[client_id] = {
+                        'id': client_id,
+                        'name': f'Информация о клиенте #{client_id} не найдена',
+                        'email': f'client{client_id}@example.com',
+                        'phone': '+7999000' + str(client_id).zfill(4)
+                    }
+
+            # Возвращаем словарь с информацией о всех клиентах\
+            print(client_info_map)
+            return client_info_map
+
+        except Exception as e:
+            logger.error(f"Ошибка при запросе информации о клиенте: {e}")
+
+            # Возвращаем заглушки для всех запрошенных client_ids
+            result = {}
+            for client_id in client_ids:
+                result[client_id] = {
+                    'id': client_id,
+                    'name': f'Ошибка при запросе информации о клиенте #{client_id}',
+                    'email': f'client{client_id}@example.com',
+                    'phone': '+7999000' + str(client_id).zfill(4)
+                }
+            return result
 
 class IndividualSendView(APIView):
     """Индивидуальная отправка одному клиенту"""
