@@ -326,9 +326,11 @@ class SendCampaignView(APIView):
                 )
 
                 # Проверяем успешность ответа
-                if response.status_code == 200:
+                # print()
+                if response.status_code == 200 or response.status_code==201:
                     # Если запрос успешен, сохраняем данные клиента
                     client_info_map[client_id] = response.json()  # Данные в формате JSON
+                
                 else:
                     # Если ошибка, логируем и добавляем заглушку
                     logger.error(f"Ошибка при получении информации о клиенте {client_id}: {response.status_code}")
@@ -385,8 +387,10 @@ class IndividualSendView(APIView):
         # Создаем кампанию для одного получателя
         recipient_id = data['recipient_id']
         
+        client_info = self._get_client_info(request, recipient_id)
+        
         campaign = Campaign.objects.create(
-            name=f"Индивидуальная рассылка клиенту #{recipient_id}",
+            name=client_info.get('client_name') if client_info.get('client_name') else f"Индивидуальная рассылка клиенту      #{recipient_id} " ,
             campaign_type='individual',
             status='sending',
             template=template,
@@ -397,9 +401,7 @@ class IndividualSendView(APIView):
             manager_id=user.id
         )
         
-        # Получаем информацию о клиенте (заглушка)
         # client_info = self._get_client_info(request, recipient_id, user.id,client_id)
-        client_info = self._get_client_info(request, recipient_id)
         
     # def _get_client_info(self, request, client_id, manager_id):
         
@@ -474,7 +476,7 @@ class IndividualSendView(APIView):
                 )
 
                 # Проверяем успешность ответа
-                if response.status_code == 200:
+                if response.status_code == 200 or response.status_code==201:
                     # Если запрос успешен, возвращаем данные клиента
                     # print(response.)
                     # print(response.json())
