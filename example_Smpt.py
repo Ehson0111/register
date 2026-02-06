@@ -8,7 +8,7 @@ def quick_send_yandex():
     msg['To'] = 'ehsonboboev7@gmail.com'
     
     server = smtplib.SMTP_SSL('smtp.yandex.ru', 465)
-    server.login('ehsonboboev7@yandex.ru', 'hbewwdgiloviutid')
+    server.login('ehsonboboev7@yandex.ru', 'token')
     server.send_message(msg)
     server.quit()
     print("Письмо отправлено!")
