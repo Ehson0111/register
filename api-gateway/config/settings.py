@@ -98,6 +98,7 @@ MICROSERVICES = {
     'contact-service': 'http://127.0.0.1:8005',  # calendar
     'tasks-service' : 'http://127.0.0.1:8006', # tasks service 
     'marketing' : 'http://127.0.0.1:8007', # marketing
+    'documents': 'http://127.0.0.1:8008',  # documents
     
     
 }

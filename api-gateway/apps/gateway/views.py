@@ -1,7 +1,7 @@
 import requests
 import json
 import logging
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse,StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
@@ -17,7 +17,7 @@ class ProxyView(View):
     def dispatch(self, request, *args, **kwargs):
         logger.info(f"gateway request: {request.method} { request.path}")   
         logger.info(f"headers: {dict(request.headers)}")
-        logger.info(f"body: {request.body.decode('utf-8') if request.body else 'no body'}")
+        # logger.info(f"body: {request.body.decode('utf-8') if request.body else 'no body'}")
         # print(f"{request.method} { request.path}")
         # print(f" {dict(request.headers)}")
         service_name= self.get_service_name(request)
@@ -59,6 +59,9 @@ class ProxyView(View):
         
         if (path.startswith('/api/marketing/')) :
             return 'marketing'
+        
+        if path.startswith('/api/documents/'):
+            return 'documents'
 
 
         if(path.startswith('/api/tasks')):
@@ -123,10 +126,11 @@ class ProxyView(View):
                 'headers':  headers,
                 'json':json_data,
                 'data' :  data if json_data is None else None,
-                'params':params
+                'params':params,
+                
             }
-            print(f"resonse --------------------------------------------------------------------------- ")            
-            print(json.dumps(he, indent=2, ensure_ascii=False))
+            # print(f"resonse --------------------------------------------------------------------------- ")            
+            # print(json.dumps(he, indent=2, ensure_ascii=False))
 
             response =requests.request(
                 method=request.method,
@@ -135,22 +139,41 @@ class ProxyView(View):
                 json=json_data,
                 data= data if json_data is None else None,
                 params=params,
-                timeout=30
+                stream=True,
+                timeout=60,
             )
-            
+            # Streaming (потоковая передача) в контексте прокси-запросов — 
+            # это метод обработки данных частями (чанками) по мере их поступления,
+            # а не загрузки всего ответа целиком в память.
+
+                            
             print(f"Response status: {response.status_code}")
             print(f"Response content: {response.text[:200]}...")
             # Возвращаем ответ
-            django_response =HttpResponse(
-                response.content,
-                status=response.status_code,
-                content_type=response.headers.get('content-type', 'application/json')
-            )
+            # django_response =HttpResponse(
+            #     response.content,
+            #     status=response.status_code,
+            #     content_type=response.headers.get('content-type', 'application/json')
+            # )
             
-            print(f"django {django_response}")
-       
-            return django_response
+            django_response= StreamingHttpResponse(
+                streaming_content=response.iter_content(chunk_size=8192),
+                status=response.status_code,
+                content_type=response.headers.get('Content-Type','application/octet-stream')
+            )
+            # print(f"django {django_response}")
 
+            # Копируем важные headers
+            for header, value in response.headers.items():
+                if header.lower() not in ['content-length', 'transfer-encoding', 'content-encoding']:
+                    django_response[header] = value
+    
+            # Особенно Content-Disposition для имени файла
+            if 'Content-Disposition' in response.headers:
+                django_response['Content-Disposition'] = response.headers['Content-Disposition']       
+
+            return django_response
+        
         except requests.exceptions.Timeout:
             logger.error(f"timeout when calling {target_url}")
             return JsonResponse({'error':'service timeout'}, status=504)

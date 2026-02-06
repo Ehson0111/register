@@ -221,4 +221,27 @@ http://localhost:8000/api/marketing/campaigns/
         "created_at": "2026-02-05T06:57:43.764243-06:00",
         "updated_at": "2026-02-05T06:57:54.228578-06:00"
     },
-    ....
+    
+
+запуск minio
+
+docker run -d -p 9000:9000 -p 9001:9001 ^
+  --name minio ^
+  -e "MINIO_ROOT_USER=minioadmin" ^
+  -e "MINIO_ROOT_PASSWORD=minioadmin" ^
+  -v minio-data:/data ^
+  quay.io/minio/minio server /data --console-address ":9001"
+
+
+документы 
+http://localhost:8000/api/documents/upload/
+
+formdata 
+client_id text id
+file fike файл
+
+список документов 
+http://localhost:8000/api/documents/10/list/
+
+загрузка документов 
+http://localhost:8000/api/documents/download/1/

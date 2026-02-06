@@ -14,4 +14,5 @@ urlpatterns = [
     re_path(r'^deals/', views.proxy_view, name='deals-proxy'),
     
     re_path(r'^marketing/', views.proxy_view, name='marketing'),
+    re_path(r'^documents/', views.proxy_view, name='documents'),
 ]
