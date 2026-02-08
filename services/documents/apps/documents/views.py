@@ -12,10 +12,10 @@ import uuid
 
 
 class DocumentUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated] # 
     def post(self, request):
         serializer = UploadDocumentSerializer(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -30,7 +30,11 @@ class DocumentUploadView(APIView):
         )
 
         bucket = settings.MINIO_BUCKET
-        if not minio_client.bucket_exists(bucket):
+        
+            # bucket_exists() — проверка существования
+
+            # make_bucket() — создание если не существует   
+        if not minio_client.bucket_exists(bucket):  
             minio_client.make_bucket(bucket)
 
         # Уникальное имя объекта
@@ -47,7 +51,7 @@ class DocumentUploadView(APIView):
                     content_type=file_obj.content_type or 'application/octet-stream',
                 )
 
-            # Сохранение метаданных
+            # Сохранение метаданных 
             document = ClientDocument.objects.create(
                 client_id=client_id,
                 original_filename=file_obj.name,
@@ -103,6 +107,17 @@ class DocumentDownloadView(APIView):
             obj = minio_client.get_object(settings.MINIO_BUCKET, document.object_name)
 
             # Генератор для стриминга файла по чанкам (по 1 МБ)
+            
+            
+            # Допустим, файл 2.7 МБ
+# file_stream() вызывается Django
+
+# 1-й вызов: yield первые 1 МБ → отдаём клиенту
+# 2-й вызов: yield вторые 1 МБ → отдаём клиенту  
+# 3-й вызов: yield последние 0.7 МБ → отдаём клиенту
+# 4-й вызов: StopIteration → конец файла
+# finally: закрываем соединение
+
             def file_stream():
                 try:
                     for data in obj.stream(1024 * 1024):

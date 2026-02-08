@@ -7,8 +7,8 @@ class ClientDocumentSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
 
     class Meta:
-        model = ClientDocument
-        fields = [
+        model = ClientDocument # Переводи модели ClientDocument
+        fields = [  #   только эти поля"
             'id', 'client_id', 'original_filename', 'content_type',
             'file_size', 'uploaded_by', 'uploaded_at', 'download_url'
         ]

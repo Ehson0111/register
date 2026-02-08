@@ -226,12 +226,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# MinIO настройки (измени под свои, если нужно)
-MINIO_ENDPOINT = "localhost:9000"          # или play.min.io для теста
+# MinIO настройки 
+MINIO_ENDPOINT = "localhost:9000"         
 MINIO_ACCESS_KEY = "minioadmin"
 MINIO_SECRET_KEY = "minioadmin"
 MINIO_BUCKET = "client-documents"
-MINIO_SECURE = False  # True если используешь HTTPS
+MINIO_SECURE = False  
 
 
 
