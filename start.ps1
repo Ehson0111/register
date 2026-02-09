@@ -28,6 +28,7 @@ Start-Service -ServiceName "Contact Service" -Path "D:\django\crm\services\conta
 
 Start-Service -ServiceName "Marketing" -Path "D:\django\crm\services\marketing" -Command "python manage.py runserver 0.0.0.0:8007"
 
+Start-Service -ServiceName "docements" -Path "D:\django\crm\services\documents" -Command "python manage.py runserver 0.0.0.0:8008"
 # Ждем немного перед запуском фронтенда
 Start-Sleep 5
 
@@ -40,5 +41,6 @@ Write-Host "User Service: http://localhost:8004" -ForegroundColor Cyan
 Write-Host "Contact Service: http://localhost:8005" -ForegroundColor Cyan
 Write-Host "Calendar: http://localhost:8006" -ForegroundColor Cyan
 Write-Host "marketing: http://localhost:8007" -ForegroundColor Cyan
+Write-Host "docements: http://localhost:8008" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
 

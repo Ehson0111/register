@@ -1,12 +1,4 @@
-# from django.urls import path
-# from . import views 
 
-# urlpatterns = [
-#     path('contacts/', views.ContactListView.as_view(), name='contact-list'),
-#     path('contacts/<int:pk>/', views.ContactDetailView.as_view(), name='contact-detail'),  
-#     path('contacts/remove/<int:item_id>/', views.ContactDeleteViews, name='contact-delete'),
-#     path('contacts/add/', views.add_to_contact, name='contact-add')  # Добавление контакта
-# ]
 
 from django.urls import path
 from . import views 
@@ -29,7 +21,9 @@ urlpatterns = [
     path('deals/<int:deal_id>/change-status/', views.change_deal_status, name='change-deal-status'), 
 
 
-     
+    path("client/profile/", views.client_profile, name="client-profile"),
+    path("client/deals/", views.client_deals, name="client_deals"),
+    path("client/request/", views.create_client_request, name="client-request") ,
     # НОВЫЕ URL - безопасное добавление
     path('services/add/', views.create_service, name='service-add'),
     path('services/remove/<int:service_id>/', views.delete_service, name='service-delete'),

@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from .models import Contact, Deal, Service 
+from .models import Contact, Deal, Service
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -20,7 +20,7 @@ from .serializers import (
     ServiceSerializer, DealListSerializer, DealDetailSerializer, CreateDealSerializer
     ,SimpleContactSerializer,SimpleServiceSerializer
 )
-from .permissions import IsManager
+from .permissions import IsManager,IsClient
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ContactListView(generics.ListCreateAPIView):
 class ContactDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Contact.objects.all()
     permission_classes = [IsManager]
-    
+
     def get_serializer_class(self):
         return ContactDetailSerializer
 
@@ -51,23 +51,174 @@ def ContactDeleteViews(request, item_id):
         'message': 'Контакт успешно удален'
     }, status=status.HTTP_204_NO_CONTENT)
 
+
+# @api_view(['GET'])
+# @permission_classes([IsClient])
+# def client_profile(request):
+#     try:
+#         contact =get_object_or_404(Contact,email=request.user.email)
+
+#         serializer=ContactDetailSerializer(contact)
+#         return Response(
+#             serializer.data
+#         )
+#     except Contact.DoesNotExist:
+#         return Response({
+#             'error':'Контакт не найден ',
+#             'detail': f'Контакт с email {request.user.email} не найден в базе'
+#         },status=404)
+
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated, IsClient])
+# def client_profile(request):
+#     """
+#     Профиль клиента
+#     - Если Contact есть - возвращаем
+#     - Если нет - создаём из данных User
+#     """
+#     try:
+#         # Пробуем найти по email
+#         contact = Contact.objects.get(email=request.user.email)
+#     except Contact.DoesNotExist:
+#         # Создаём новый Contact из User
+#         contact = Contact.objects.create(
+#             email=request.user.email,
+#             first_name=request.user.first_name or '',
+#             last_name=request.user.last_name or '',
+#             status='client'  # Важно!
+#         )
+    
+#     serializer = ContactDetailSerializer(contact)
+#     return Response(serializer.data)
+         
+    
+# с
+ 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsClient])
+def client_profile(request):
+    """
+    Профиль клиента.
+    Возвращает данные контакта по email из JWT.
+    Если контакт не найден — создаёт его автоматически из данных пользователя.
+    """
+    try:
+        # Ищем контакт по email из токена
+        contact = Contact.objects.get(email=request.user.email)
+    except Contact.DoesNotExist:
+        # Создаём новый контакт, если его нет
+        contact = Contact.objects.create(
+            email=request.user.email,
+            first_name=request.user.first_name or '',
+            last_name=request.user.last_name or '',
+            status='client',  # Важно: сразу делаем клиентом
+        )
+    
+    serializer = ContactDetailSerializer(contact)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsClient])
+def client_deals(request):
+    """
+    Список сделок клиента.
+    Фильтруется по контакту (email из JWT) и опционально по статусу.
+    """
+    try:
+        # Находим контакт клиента
+        contact = get_object_or_404(Contact, email=request.user.email)
+        
+        # Все сделки этого контакта
+        deals = Deal.objects.filter(contact=contact).select_related('service')
+        
+        # Фильтр по статусу, если передан
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            deals = deals.filter(status=status_filter)
+        
+        # Сортировка по дате создания (новые сверху)
+        deals = deals.order_by('-created_at')
+        
+        serializer = DealListSerializer(deals, many=True)
+        
+        return Response({
+            'contact': {
+                'id': contact.id,
+                'full_name': contact.get_full_name(),
+                'email': contact.email
+            },
+            'total_deals': deals.count(),
+            'deals': serializer.data
+        })
+    
+    except Contact.DoesNotExist:
+        return Response({
+            'error': 'Контакт не найден',
+            'detail': f'Контакт с email {request.user.email} не найден'
+        }, status=404)
+    except Exception as e:
+        return Response({
+            'error': 'Ошибка сервера',
+            'detail': str(e)
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsClient])
+def create_client_request(request):
+    """
+    Создание запроса (сделки) от клиента.
+    Требует service_id и опционально message и budget.
+    """
+    # Находим контакт клиента
+    contact = get_object_or_404(Contact, email=request.user.email)
+    
+    # Обязательный параметр — ID услуги
+    service_id = request.data.get('service_id')
+    if not service_id:
+        return Response({
+            'error': 'Поле service_id обязательно'
+        }, status=400)
+    
+    # Проверяем, что услуга существует и активна
+    service = get_object_or_404(Service, id=service_id, is_active=True)
+    
+    # Создаём сделку-запрос
+    deal = Deal.objects.create(
+        contact=contact,
+        service=service,
+        title=f"Запрос: {service.name}",
+        description=request.data.get('message', ''),
+        amount=request.data.get('budget', service.price),  # Можно переопределить бюджет
+        probability=10,  # Начальная вероятность
+        status='new'
+    )
+    
+    return Response({
+        'deal_id': deal.id,
+        'message': 'Запрос успешно создан',
+        'deal': DealListSerializer(deal).data  # Опционально возвращаем данные сделки
+    }, status=201)
+# э      
+
 @api_view(['POST'])
 @permission_classes([IsManager])
 def add_to_contact(request):
     """Добавление нового контакта"""
     logger.info(f"Add contact request from user {request.user}: {request.data}")
-    
+
     serializer = AddContactSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         contact = serializer.save()
         logger.info(f"Contact created: {contact.id} by user {request.user}")
-        
+
         return Response({
             'message': 'Контакт успешно создан',
             'contact': ContactListSerializer(contact).data
         }, status=status.HTTP_201_CREATED)
-    
+
     logger.warning(f"Contact creation failed: {serializer.errors}")
     return Response({
         'message': 'Ошибка при создании контакта',
@@ -94,12 +245,12 @@ class DealListView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['title', 'description', 'contact__first_name', 'contact__last_name']
     filterset_fields = ['status', 'service', 'contact']
-    
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CreateDealSerializer
         return DealListSerializer
-    
+
     def get_queryset(self):
         queryset = Deal.objects.all()
         # Фильтр по контакту
@@ -111,10 +262,10 @@ class DealListView(generics.ListCreateAPIView):
 class DealDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Deal.objects.all()
     permission_classes = [IsManager]
-    
+
     def get_serializer_class(self):
         return DealDetailSerializer
-    
+
     def get_queryset(self):
         return Deal.objects.select_related('contact', 'service')
 
@@ -123,12 +274,12 @@ class DealDetailView(generics.RetrieveUpdateDestroyAPIView):
 def contact_deals_stats(request, contact_id):
     """Статистика сделок по контакту"""
     contact = get_object_or_404(Contact, id=contact_id)
-    
+
     deals = contact.deals.all()
     total_deals = deals.count()
     won_deals = deals.filter(status=Deal.DEAL_WON).count()
     total_amount = sum(deal.amount for deal in deals.filter(status=Deal.DEAL_WON))
-    
+
     return Response({
         'contact': contact.get_full_name(),
         'total_deals': total_deals,
@@ -143,25 +294,25 @@ def contact_deals_stats(request, contact_id):
 def change_deal_status(request, deal_id):
     """Изменение статуса сделки"""
     deal = get_object_or_404(Deal, id=deal_id)
-    
+
     new_status = request.data.get('status')
     if new_status not in dict(Deal.DEAL_STATUS_CHOICES):
         return Response({
             'error': 'Неверный статус'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     old_status = deal.status
     deal.status = new_status
-    
+
     # Автоматическое обновление даты закрытия
     if new_status in [Deal.DEAL_WON, Deal.DEAL_LOST] and not deal.actual_close_date:
         from django.utils import timezone
         deal.actual_close_date = timezone.now().date()
-    
+
     deal.save()
-    
+
     logger.info(f"Deal {deal_id} status changed from {old_status} to {new_status} by {request.user}")
-    
+
     return Response({
         'message': 'Статус сделки обновлен',
         'deal': DealDetailSerializer(deal).data
@@ -172,25 +323,25 @@ def change_deal_status(request, deal_id):
 
 
 
-# для создание услуги 
+# для создание услуги
 
 @api_view(['POST'])
 @permission_classes([IsManager])
 def create_service(request):
     """Создание новой услуги"""
     logger.info(f"Create service request from user {request.user}")
-    
+
     serializer = ServiceSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         service = serializer.save()
         logger.info(f"Service created: {service.id} - {service.name}")
-        
+
         return Response({
             'message': 'Услуга успешно создана',
             'service': ServiceSerializer(service).data
         }, status=status.HTTP_201_CREATED)
-    
+
     logger.warning(f"Service creation failed: {serializer.errors}")
     return Response({
         'message': 'Ошибка при создании услуги',
@@ -202,22 +353,22 @@ def create_service(request):
 def delete_service(request, service_id):
     """Удаление услуги (мягкое удаление - деактивация)"""
     service = get_object_or_404(Service, id=service_id)
-    
+
     # Проверяем, нет ли активных сделок с этой услугой
     active_deals = service.deals.exclude(status__in=[Deal.DEAL_WON, Deal.DEAL_LOST]).count()
-    
+
     if active_deals > 0:
         return Response({
             'message': f'Невозможно удалить услугу. Есть активные сделки: {active_deals}',
             'active_deals': active_deals
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # Мягкое удаление - деактивация
     service.is_active = False
     service.save()
-    
+
     logger.info(f"Service deactivated: {service.id} - {service.name} by {request.user}")
-    
+
     return Response({
         'message': 'Услуга успешно деактивирована'
     }, status=status.HTTP_200_OK)
@@ -227,18 +378,18 @@ def delete_service(request, service_id):
 def create_deal(request):
     """Создание новой сделки"""
     logger.info(f"Create deal request from user {request.user}")
-    
+
     serializer = CreateDealSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         deal = serializer.save()
         logger.info(f"Deal created: {deal.id} - {deal.title}")
-        
+
         return Response({
             'message': 'Сделка успешно создана',
             'deal': DealListSerializer(deal).data
         }, status=status.HTTP_201_CREATED)
-    
+
     logger.warning(f"Deal creation failed: {serializer.errors}")
     return Response({
         'message': 'Ошибка при создании сделки',
@@ -250,12 +401,12 @@ def create_deal(request):
 def delete_deal(request, deal_id):
     """Удаление сделки"""
     deal = get_object_or_404(Deal, id=deal_id)
-    
+
     deal_title = deal.title
     deal.delete()
-    
+
     logger.info(f"Deal deleted: {deal_id} - {deal_title} by {request.user}")
-    
+
     return Response({
         'message': 'Сделка успешно удалена'
     }, status=status.HTTP_200_OK)
@@ -276,44 +427,44 @@ def get_contacts_for_select(request):
     serializer = SimpleContactSerializer(contacts, many=True)
     return Response(serializer.data)
 
- 
+
 
 @api_view(['GET'])
 @permission_classes([IsManager])
 def analytics_overview(request):
     """Общая аналитика по CRM"""
     user = request.user
-    
+
     # Общие данные
     total_contacts = Contact.objects.count()
     total_deals = Deal.objects.count()
     total_services = Service.objects.filter(is_active=True).count()
-    
+
     # Сделки по статусам
     deals_by_status = Deal.objects.values('status').annotate(
         count=Count('id'),
         total_amount=Sum('amount')
     )
-    
+
     # Контакты по статусам
     contacts_by_status = Contact.objects.values('status').annotate(
         count=Count('id')
     )
-    
+
     # Сумма всех успешных сделок
     total_revenue = Deal.objects.filter(status=Deal.DEAL_WON).aggregate(
         total=Sum('amount')
     )['total'] or 0
-    
+
     # Средняя стоимость сделки
     avg_deal_amount = Deal.objects.aggregate(
         avg=Avg('amount')
     )['avg'] or 0
-    
+
     # Конверсия (процент выигранных сделок от всех сделок)
     won_deals = Deal.objects.filter(status=Deal.DEAL_WON).count()
     conversion_rate = (won_deals / total_deals * 100) if total_deals > 0 else 0
-    
+
     return Response({
         'overview': {
             'total_contacts': total_contacts,
@@ -332,7 +483,7 @@ def analytics_overview(request):
 def analytics_timeline(request):
     """Аналитика по времени (последние 30 дней)"""
     thirty_days_ago = timezone.now() - timedelta(days=30)
-    
+
     # Сделки за последние 30 дней
     recent_deals = Deal.objects.filter(
         created_at__gte=thirty_days_ago
@@ -342,7 +493,7 @@ def analytics_timeline(request):
         count=Count('id'),
         total_amount=Sum('amount')
     ).order_by('date')
-    
+
     # Контакты за последние 30 дней
     recent_contacts = Contact.objects.filter(
         created_at__gte=thirty_days_ago
@@ -351,7 +502,7 @@ def analytics_timeline(request):
     }).values('date').annotate(
         count=Count('id')
     ).order_by('date')
-    
+
     # Выигранные сделки за последние 30 дней
     won_deals = Deal.objects.filter(
         status=Deal.DEAL_WON,
@@ -362,7 +513,7 @@ def analytics_timeline(request):
         count=Count('id'),
         total_amount=Sum('amount')
     ).order_by('date')
-    
+
     return Response({
         'deals_timeline': list(recent_deals),
         'contacts_timeline': list(recent_contacts),
@@ -380,14 +531,14 @@ def analytics_top_contacts(request):
         won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
         won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
     ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
-    
+
     # Топ контактов по сумме сделок
     contacts_by_deal_amount = Contact.objects.annotate(
         total_deal_amount=Sum('deals__amount'),
         deal_count=Count('deals'),
         won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
     ).filter(total_deal_amount__gt=0).order_by('-total_deal_amount')[:10]
-    
+
     return Response({
         'by_deal_count': [
             {
@@ -425,14 +576,14 @@ def analytics_top_services(request):
         won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
         won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
     ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
-    
+
     # Топ услуг по доходу
     services_by_revenue = Service.objects.filter(is_active=True).annotate(
         total_amount=Sum('deals__amount'),
         deal_count=Count('deals'),
         won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
     ).filter(total_amount__gt=0).order_by('-total_amount')[:10]
-    
+
     return Response({
         'by_popularity': [
             {
@@ -466,22 +617,22 @@ def analytics_deal_performance(request):
     # Анализ по месяцам
     current_year = timezone.now().year
     monthly_performance = []
-    
+
     for month in range(1, 13):
         month_deals = Deal.objects.filter(
             created_at__year=current_year,
             created_at__month=month
         )
-        
+
         total_deals = month_deals.count()
         won_deals = month_deals.filter(status=Deal.DEAL_WON).count()
         lost_deals = month_deals.filter(status=Deal.DEAL_LOST).count()
         total_amount = month_deals.filter(status=Deal.DEAL_WON).aggregate(
             total=Sum('amount')
         )['total'] or 0
-        
+
         conversion_rate = (won_deals / total_deals * 100) if total_deals > 0 else 0
-        
+
         monthly_performance.append({
             'month': month,
             'total_deals': total_deals,
@@ -490,7 +641,7 @@ def analytics_deal_performance(request):
             'total_amount': float(total_amount),
             'conversion_rate': round(conversion_rate, 2)
         })
-    
+
     # Анализ по вероятности
     probability_analysis = []
     for prob_range in [(0, 25), (26, 50), (51, 75), (76, 100)]:
@@ -498,17 +649,17 @@ def analytics_deal_performance(request):
             probability__gte=prob_range[0],
             probability__lte=prob_range[1]
         )
-        
+
         won_deals = deals.filter(status=Deal.DEAL_WON).count()
         conversion_rate = (won_deals / deals.count() * 100) if deals.count() > 0 else 0
-        
+
         probability_analysis.append({
             'range': f"{prob_range[0]}-{prob_range[1]}%",
             'total_deals': deals.count(),
             'won_deals': won_deals,
             'conversion_rate': round(conversion_rate, 2)
         })
-    
+
     return Response({
         'monthly_performance': monthly_performance,
         'probability_analysis': probability_analysis

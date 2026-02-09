@@ -245,3 +245,6 @@ http://localhost:8000/api/documents/10/list/
 
 загрузка документов 
 http://localhost:8000/api/documents/download/1/
+
+
+

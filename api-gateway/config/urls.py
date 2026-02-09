@@ -7,7 +7,7 @@ def health_check(request):
         'status': 'healthy',
         'service': 'api-gateway',
         'services': {
-            'user-service': 'http://localhost:8004',
+            'user-service': 'http://localhost:8000',
         }
     })
 
