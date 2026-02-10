@@ -29,7 +29,7 @@ Start-Service -ServiceName "Contact Service" -Path "D:\django\crm\services\conta
 Start-Service -ServiceName "Marketing" -Path "D:\django\crm\services\marketing" -Command "python manage.py runserver 0.0.0.0:8007"
 
 Start-Service -ServiceName "docements" -Path "D:\django\crm\services\documents" -Command "python manage.py runserver 0.0.0.0:8008"
-# Ждем немного перед запуском фронтенда
+# Ждем немного перед запуском фронтенда 
 Start-Sleep 5
 
 # Запуск Vue.js фронтенда
