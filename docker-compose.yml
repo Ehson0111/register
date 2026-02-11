@@ -100,6 +100,8 @@ services:
       context: ./frontend/vue-project
     ports:
       - "3000:3000"
+    environment:
+      VITE_PROXY_TARGET: "http://api-gateway:8000"
     depends_on:
       - api-gateway
 

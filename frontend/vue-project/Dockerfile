@@ -1,5 +1,5 @@
 FROM node:20-alpine
-
+ENV DOCKER=true
 WORKDIR /app
 
 COPY package*.json /app/
