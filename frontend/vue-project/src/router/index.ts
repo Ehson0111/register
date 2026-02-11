@@ -84,6 +84,18 @@ const routes = [
         component: () => import('@/views/manager/ProfileView.vue')
       }
     ]
+  },
+  {
+    path: '/client',
+    component: () => import('@/layouts/ClientLayout.vue'),
+    redirect: '/client/dashboard',
+    meta: { requiresAuth: true, role: 'client' },
+    children: [
+      { path: 'dashboard', name: 'ClientDashboard', component: () => import('@/views/client/ClientDashboardView.vue') },
+      { path: 'deals', name: 'ClientDeals', component: () => import('@/views/client/ClientDealsView.vue') },
+      { path: 'services', name: 'ClientServices', component: () => import('@/views/client/ClientServicesView.vue') },
+      { path: 'profile', name: 'ClientProfile', component: () => import('@/views/client/ClientProfileView.vue') }
+    ]
   }
 ]
 
@@ -99,9 +111,14 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/manager/dashboard')
+    const role = authStore.user?.role
+    next(role === 'client' ? '/client/dashboard' : '/manager/dashboard')
   } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
-    next('/login')
+    if (authStore.user?.role === 'client') next('/client/dashboard')
+    else if (authStore.user?.role === 'manager') next('/manager/dashboard')
+    else next('/login')
+  } else if (to.path === '/client') {
+    next('/client/dashboard')
   } else {
     next()
   }

@@ -23,7 +23,8 @@ urlpatterns = [
 
     path("client/profile/", views.client_profile, name="client-profile"),
     path("client/deals/", views.client_deals, name="client_deals"),
-    path("client/request/", views.create_client_request, name="client-request") ,
+    path("client/services/", views.client_services_list, name="client-services"),
+    path("client/request/", views.create_client_request, name="client-request"),
     # НОВЫЕ URL - безопасное добавление
     path('services/add/', views.create_service, name='service-add'),
     path('services/remove/<int:service_id>/', views.delete_service, name='service-delete'),

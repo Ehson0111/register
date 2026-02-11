@@ -111,7 +111,10 @@
 
         <!-- User Menu -->
         <div class="p-4 border-t border-gray-200">
-          <div class="flex items-center space-x-3">
+          <router-link
+            to="/manager/profile"
+            class="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+          >
             <div
               class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"
             >
@@ -125,6 +128,8 @@
               </p>
               <p class="text-sm text-gray-500 truncate">Менеджер</p>
             </div>
+          </router-link>
+          <div class="flex justify-end mt-2">
             <button
               @click="handleLogout"
               class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
@@ -188,6 +193,11 @@ const currentPageTitle = computed(() => {
     NewDeal: "Новая сделка",
     DealDetail: "Детали сделки",
     ManagerServices: "Услуги",
+    ManagerCalendar: "Календарь",
+    ManagerAnalytics: "Аналитика",
+    ManagerMarketing: "Маркетинг",
+    ManagerDocuments: "Документы",
+    ManagerProfile: "Профиль",
   };
   return titles[routeName] || "Панель управления";
 });
