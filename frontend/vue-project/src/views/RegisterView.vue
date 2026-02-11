@@ -14,6 +14,7 @@ export default {
   name: 'RegisterView',
   components: {
     RegisterForm
-  }
+  }  
+  
 }
 </script>
