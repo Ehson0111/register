@@ -13,7 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-j4qv2$-!q_yfd0n&*qt^n1#mya66nqah9r3b1m1@-s!$s0pe$2'
 
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = [
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'marketing', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'documents',
+]
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -73,7 +76,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent.parent / 'databases' / 'marketing.db',  # ← contact.db
+        'NAME': BASE_DIR / 'databases' / 'marketing.db',  # ← contact.db
     }
 }
 REST_FRAMEWORK = {

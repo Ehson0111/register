@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -89,18 +90,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent / 'databases' / 'gateway.db',
+        'NAME': BASE_DIR / 'databases' / 'gateway.db',
     }
 }
 
 MICROSERVICES = {
-    'user-service': 'http://127.0.0.1:8004',  # user server 
-    'contact-service': 'http://127.0.0.1:8005',  # calendar
-    'tasks-service' : 'http://127.0.0.1:8006', # tasks service 
-    'marketing' : 'http://127.0.0.1:8007', # marketing
-    'documents': 'http://127.0.0.1:8008',  # documents
-    
-    
+    # defaults for local dev; can be overridden in Docker via env vars
+    'user-service': os.getenv('USER_SERVICE_URL', 'http://127.0.0.1:8004'),
+    'contact-service': os.getenv('CONTACT_SERVICE_URL', 'http://127.0.0.1:8005'),
+    'tasks-service': os.getenv('TASKS_SERVICE_URL', 'http://127.0.0.1:8006'),
+    'marketing': os.getenv('MARKETING_SERVICE_URL', 'http://127.0.0.1:8007'),
+    'documents': os.getenv('DOCUMENTS_SERVICE_URL', 'http://127.0.0.1:8008'),
 }
 
 # Password validation

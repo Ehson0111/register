@@ -1,0 +1,108 @@
+services:
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      # avoid conflict if you already run MinIO on 9000/9001
+      - "9100:9000"
+      - "9101:9001"
+    volumes:
+      - minio-data:/data
+
+  user-service:
+    build:
+      context: ./services/user-service
+    ports:
+      - "8004:8004"
+    environment:
+      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+      EMAIL_HOST: "mailhog"
+      EMAIL_PORT: "1025"
+      EMAIL_USE_TLS: "false"
+      DEFAULT_FROM_EMAIL: "no-reply@crm.local"
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
+
+  contact-service:
+    build:
+      context: ./services/contact_service
+    ports:
+      - "8005:8005"
+    depends_on:
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8005"
+
+  calendar:
+    build:
+      context: ./services/calendar
+    ports:
+      - "8006:8006"
+    depends_on:
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8006"
+
+  marketing:
+    build:
+      context: ./services/marketing
+    ports:
+      - "8007:8007"
+    environment:
+      GATEWAY_URL: "http://api-gateway:8000"
+    depends_on:
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8007"
+
+  documents:
+    build:
+      context: ./services/documents
+    ports:
+      - "8008:8008"
+    environment:
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "client-documents"
+      MINIO_SECURE: "false"
+    depends_on:
+      - minio
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8008"
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      USER_SERVICE_URL: "http://user-service:8004"
+      CONTACT_SERVICE_URL: "http://contact-service:8005"
+      TASKS_SERVICE_URL: "http://calendar:8006"
+      MARKETING_SERVICE_URL: "http://marketing:8007"
+      DOCUMENTS_SERVICE_URL: "http://documents:8008"
+    depends_on:
+      - user-service
+      - contact-service
+      - calendar
+      - marketing
+      - documents
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    build:
+      context: ./frontend/vue-project
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+
+volumes:
+  minio-data:
+

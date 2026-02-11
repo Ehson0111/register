@@ -138,7 +138,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-j4qv2$-!q_yfd0n&*qt^n1#mya66nqah9r3b1m1@-s!$s0pe$2'
 
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = [
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'documents', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'marketing',
+]
 
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -197,7 +200,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent.parent / 'databases' / 'documetns.db',  # 
+        'NAME': BASE_DIR / 'databases' / 'documetns.db',  # 
     }
 }
 REST_FRAMEWORK = {
@@ -226,12 +229,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# MinIO настройки 
-MINIO_ENDPOINT = "localhost:9000"         
-MINIO_ACCESS_KEY = "minioadmin"
-MINIO_SECRET_KEY = "minioadmin"
-MINIO_BUCKET = "client-documents"
-MINIO_SECURE = False  
+# MinIO настройки (можно переопределять через env — нужно для Docker)
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "client-documents")
+MINIO_SECURE = os.getenv("MINIO_SECURE", "false").lower() in ("1", "true", "yes")
 
 
 

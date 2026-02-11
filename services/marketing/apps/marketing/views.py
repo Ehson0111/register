@@ -688,6 +688,7 @@ from datetime import datetime, timedelta
 import json
 import threading
 import logging
+import os
 
 from .models import Template, Campaign, CampaignRecipient
 from .serializers import (
@@ -698,6 +699,9 @@ from .serializers import (
 from .services import MarketingService
 
 logger = logging.getLogger(__name__)
+
+# Used for internal calls to contact-service via gateway.
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://localhost:8000")
 
 
 class TemplateViewSet(viewsets.ModelViewSet):
@@ -1050,7 +1054,7 @@ class SendCampaignView(APIView):
                         headers[header_name] = header_value
 
                 # Пример URL для получения информации о клиенте
-                target_url = f'http://localhost:8000/api/contacts/{client_id}/'
+                target_url = f'{GATEWAY_URL}/api/contacts/{client_id}/'
                 params = dict(request.GET.items())  # Получаем query параметры (если есть)
 
                 # Логируем запрос для отладки
@@ -1223,7 +1227,7 @@ class IndividualSendView(APIView):
                     headers[header_name] = header_value
 
             # Пример URL для получения информации о клиенте
-            target_url = f'http://localhost:8000/api/contacts/{client_id}/'
+            target_url = f'{GATEWAY_URL}/api/contacts/{client_id}/'
             params = dict(request.GET.items())
 
             # Логируем запрос для отладки
@@ -1377,7 +1381,7 @@ class QuickMessageView(APIView):
                     if header_value:
                         headers[header_name] = header_value
 
-                target_url = f'http://localhost:8000/api/contacts/{client_id}/'
+                target_url = f'{GATEWAY_URL}/api/contacts/{client_id}/'
                 
                 response = requests.get(
                     target_url,

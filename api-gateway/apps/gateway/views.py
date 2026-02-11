@@ -168,7 +168,8 @@ class ProxyView(View):
 
             # Копируем важные headers
             for header, value in response.headers.items():
-                if header.lower() not in ['content-length', 'transfer-encoding', 'content-encoding']:
+                # Drop hop-by-hop headers (WSGI forbids them)
+                if header.lower() not in ['content-length', 'transfer-encoding', 'content-encoding', 'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'upgrade']:
                     django_response[header] = value
     
             # Особенно Content-Disposition для имени файла

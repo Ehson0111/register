@@ -17,7 +17,10 @@ SECRET_KEY = 'django-insecure-j4qv2$-!q_yfd0n&*qt^n1#mya66nqah9r3b1m1@-s!$s0pe$2
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = [
+    'localhost', '127.0.0.1', '0.0.0.0',
+    'user-service', 'api-gateway', 'contact-service', 'calendar', 'marketing', 'documents',
+]
 
 
 DJANGO_APPS = [
@@ -161,7 +164,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent.parent / 'databases' / 'user.db',
+        'NAME': BASE_DIR / 'databases' / 'user.db',
     }
 }
 
@@ -216,6 +219,23 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# Email (OTP / password reset)
+# In dev we default to console backend (prints emails to server logs).
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@crm.local")
+
+# OTP settings
+OTP_CODE_TTL_SECONDS = int(os.getenv("OTP_CODE_TTL_SECONDS", "600"))  # 10 minutes
+OTP_MAX_ATTEMPTS = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))
 
 # JWT Settings 
  

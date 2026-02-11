@@ -1,3 +1,9 @@
+import random
+from datetime import timedelta
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -11,6 +17,21 @@ from .serializers import (
 import logging
 logger = logging.getLogger(__name__)
 
+
+def _generate_code() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+
+def _send_code_email(email: str, code: str):
+    send_mail(
+        subject="Подтверждение регистрации",
+        message=f"Ваш код подтверждения: {code}\n\nКод действует ограниченное время.",
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+        recipient_list=[email],
+        fail_silently=False,
+    )
+
+
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
@@ -22,11 +43,32 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            logger.info(f"User registered successfully: {user.email}")
+            # Require email verification
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+
+            # Create / replace OTP stored in DB (reuse EmailOTP from authentication app)
+            from apps.authentication.models import EmailOTP
+
+            EmailOTP.objects.filter(email=user.email, purpose=EmailOTP.PURPOSE_REGISTER, used=False).update(used=True)
+            ttl = getattr(settings, "OTP_CODE_TTL_SECONDS", 600)
+            code = _generate_code()
+            EmailOTP.objects.create(
+                email=user.email,
+                purpose=EmailOTP.PURPOSE_REGISTER,
+                code=code,
+                expires_at=timezone.now() + timedelta(seconds=ttl),
+                used=False,
+            )
+            _send_code_email(user.email, code)
+
+            logger.info(f"User registered (inactive), verification sent: {user.email}")
             return Response({
                 'success': True,
-                'message': 'User registered successfully',
-                'user_id': user.id
+                'message': 'Код подтверждения отправлен на почту',
+                'verification_required': True,
+                'email': user.email,
+                'user_id': user.id,
             }, status=status.HTTP_201_CREATED)
         else:
             logger.error(f"Registration validation errors: {serializer.errors}")
@@ -34,6 +76,50 @@ class RegisterView(generics.CreateAPIView):
                 'success': False,
                 'errors': serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyRegistrationView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = (request.data.get("email") or "").strip().lower()
+        code = (request.data.get("code") or "").strip()
+        if not email or not code:
+            return Response({"error": "Email и code обязательны"}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.authentication.models import EmailOTP
+
+        otp = EmailOTP.objects.filter(
+            email=email, purpose=EmailOTP.PURPOSE_REGISTER, used=False
+        ).order_by("-created_at").first()
+        if not otp:
+            return Response({"error": "Код не найден"}, status=status.HTTP_400_BAD_REQUEST)
+        if otp.is_expired():
+            otp.used = True
+            otp.save(update_fields=["used"])
+            return Response({"error": "Код истёк"}, status=status.HTTP_400_BAD_REQUEST)
+
+        max_attempts = getattr(settings, "OTP_MAX_ATTEMPTS", 5)
+        if otp.attempts >= max_attempts:
+            otp.used = True
+            otp.save(update_fields=["used"])
+            return Response({"error": "Слишком много попыток. Запросите новый код."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp.code != code:
+            otp.attempts += 1
+            otp.save(update_fields=["attempts"])
+            return Response({"error": "Неверный код"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        otp.used = True
+        otp.save(update_fields=["used"])
+
+        return Response({"success": True, "message": "Email подтверждён. Теперь можно войти."})
     
 class ProfileView(generics.RetrieveAPIView):
     serializer_class = UserWithProfileSerializer

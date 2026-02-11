@@ -9,8 +9,20 @@ const authService = {
     return await api.post('/users/register/', userData)
   },
 
+  async registerVerify(payload) {
+    return await api.post('/users/register/verify/', payload)
+  },
+
   async refreshToken(refresh) {
     return await api.post('/auth/refresh/', { refresh })
+  },
+
+  async passwordResetRequest(email) {
+    return await api.post('/auth/password-reset/request/', { email })
+  },
+
+  async passwordResetConfirm(payload) {
+    return await api.post('/auth/password-reset/confirm/', payload)
   },
 
   async getProfile() {

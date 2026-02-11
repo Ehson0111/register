@@ -1,10 +1,49 @@
+import random
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core import exceptions
+from django.core.mail import send_mail
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
+
 from apps.users.models import User
+from .models import EmailOTP
+
+
+def _generate_code() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+
+def _issue_otp(email: str, purpose: str) -> EmailOTP:
+    # Invalidate previous unused codes of same purpose
+    EmailOTP.objects.filter(email=email, purpose=purpose, used=False).update(used=True)
+    code = _generate_code()
+    ttl = getattr(settings, "OTP_CODE_TTL_SECONDS", 600)
+    otp = EmailOTP.objects.create(
+        email=email,
+        purpose=purpose,
+        code=code,
+        expires_at=timezone.now() + timedelta(seconds=ttl),
+        used=False,
+    )
+    return otp
+
+
+def _send_code_email(email: str, subject: str, code: str):
+    send_mail(
+        subject=subject,
+        message=f"Ваш код: {code}\n\nКод действует ограниченное время.",
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+        recipient_list=[email],
+        fail_silently=False,
+    )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -104,3 +143,83 @@ def refresh_token(request):
         })
     except Exception as e:
         return Response({'error': 'Invalid refresh token'}, status=401)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """
+    Запрос на сброс пароля.
+    Всегда возвращает success=true (чтобы не раскрывать существование email).
+    """
+    email = (request.data.get("email") or "").strip().lower()
+    if not email:
+        return Response({"error": "Email обязателен"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email=email).exists():
+        otp = _issue_otp(email=email, purpose=EmailOTP.PURPOSE_RESET)
+        _send_code_email(email=email, subject="Сброс пароля", code=otp.code)
+
+    return Response({"success": True, "message": "Если email существует, код отправлен на почту."})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    """
+    Подтверждение сброса пароля по коду (6 цифр) и установка нового пароля.
+    """
+    email = (request.data.get("email") or "").strip().lower()
+    code = (request.data.get("code") or "").strip()
+    new_password = request.data.get("new_password") or ""
+    new_password_confirm = request.data.get("new_password_confirm") or ""
+
+    if not email or not code:
+        return Response({"error": "Email и code обязательны"}, status=status.HTTP_400_BAD_REQUEST)
+    if not new_password or not new_password_confirm:
+        return Response({"error": "Новый пароль и подтверждение обязательны"}, status=status.HTTP_400_BAD_REQUEST)
+    if new_password != new_password_confirm:
+        return Response({"error": "Пароли не совпадают"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        otp = EmailOTP.objects.filter(
+            email=email, purpose=EmailOTP.PURPOSE_RESET, used=False
+        ).order_by("-created_at").first()
+        if not otp:
+            return Response({"error": "Код не найден"}, status=status.HTTP_400_BAD_REQUEST)
+        if otp.is_expired():
+            otp.used = True
+            otp.save(update_fields=["used"])
+            return Response({"error": "Код истёк"}, status=status.HTTP_400_BAD_REQUEST)
+
+        max_attempts = getattr(settings, "OTP_MAX_ATTEMPTS", 5)
+        if otp.attempts >= max_attempts:
+            otp.used = True
+            otp.save(update_fields=["used"])
+            return Response({"error": "Слишком много попыток. Запросите новый код."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp.code != code:
+            otp.attempts += 1
+            otp.save(update_fields=["attempts"])
+            return Response({"error": "Неверный код"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # validate password
+        try:
+            validate_password(new_password)
+        except exceptions.ValidationError as e:
+            return Response({"error": list(e.messages)}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+        otp.used = True
+        otp.save(update_fields=["used"])
+
+        return Response({"success": True, "message": "Пароль обновлён"})
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

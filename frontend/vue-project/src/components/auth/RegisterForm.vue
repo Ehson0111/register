@@ -7,9 +7,10 @@
     </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
+      <template v-if="step === 'form'">
       <!-- Email Field -->
-        v-model="formData.email"
       <BaseInput
+        v-model="formData.email"
         type="email"
         label="Email Address"
         placeholder="Enter your email"
@@ -182,6 +183,47 @@
           </router-link>
         </p>
       </div>
+      </template>
+
+      <template v-else>
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p class="text-blue-700 text-sm">
+            We sent a 6-digit code to <b>{{ verifyEmail }}</b>. Enter it to activate your account.
+          </p>
+        </div>
+
+        <BaseInput
+          v-model="verificationCode"
+          type="text"
+          label="Verification code"
+          placeholder="6-digit code"
+          :error="errors.code"
+          :required="true"
+        />
+
+        <!-- Error Message -->
+        <div v-if="errors.general" class="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p class="text-red-600 text-sm">{{ errors.general }}</p>
+        </div>
+
+        <BaseButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          :loading="loading"
+          :disabled="!verificationCode"
+          block
+          class="bg-black text-white hover:bg-gray-800 focus:ring-black"
+        >
+          Verify
+        </BaseButton>
+
+        <div class="text-center text-sm">
+          <router-link to="/login" class="text-black hover:text-gray-700 font-medium">
+            Sign in here
+          </router-link>
+        </div>
+      </template>
     </form>
   </div>
 </template>
@@ -193,6 +235,7 @@ import BaseButton from '../common/BaseButton.vue'
 import { useAuthStore } from '../../store/auth'
 import { useRouter } from 'vue-router'
 import { useToast } from '../../composables/useToast.js'
+import authService from '../../services/auth.js'
 
 export default {
   name: 'RegisterForm',
@@ -219,6 +262,9 @@ export default {
     const loading = ref(false)
     const showPassword = ref(false)
     const showConfirmPassword = ref(false)
+    const step = ref('form') // form | verify
+    const verifyEmail = ref('')
+    const verificationCode = ref('')
 
     const isFormValid = computed(() => {
       return (
@@ -282,31 +328,49 @@ export default {
     }
 
     const handleSubmit = async () => {
-      if (!validateForm()) return
+      if (step.value === 'form') {
+        if (!validateForm()) return
 
+        try {
+          loading.value = true
+          errors.value = {}
+
+          const result = await authStore.register({
+            email: formData.value.email,
+            username: formData.value.username,
+            first_name: formData.value.first_name,
+            last_name: formData.value.last_name,
+            password: formData.value.password,
+            password_confirm: formData.value.password_confirm
+          })
+
+          if (result.success) {
+            verifyEmail.value = formData.value.email
+            step.value = 'verify'
+            showSuccess('Verification code sent to email.')
+          } else {
+            errors.value.general = result.error || 'Registration failed'
+          }
+        } catch (error) {
+          console.error('Registration error:', error)
+          errors.value.general = 'An unexpected error occurred'
+          showError('Registration failed. Please try again.')
+        } finally {
+          loading.value = false
+        }
+        return
+      }
+
+      // verify
+      if (!verificationCode.value) return
       try {
         loading.value = true
         errors.value = {}
-
-        const result = await authStore.register({
-          email: formData.value.email,
-          username: formData.value.username,
-          first_name: formData.value.first_name,
-          last_name: formData.value.last_name,
-          password: formData.value.password,
-          password_confirm: formData.value.password_confirm
-        })
-
-        if (result.success) {
-          showSuccess('Account created successfully! Please sign in.')
-          router.push('/login')
-        } else {
-          errors.value.general = result.error || 'Registration failed'
-        }
+        await authService.registerVerify({ email: verifyEmail.value, code: verificationCode.value })
+        showSuccess('Email verified. You can sign in.')
+        router.push('/login')
       } catch (error) {
-        console.error('Registration error:', error)
-        errors.value.general = 'An unexpected error occurred'
-        showError('Registration failed. Please try again.')
+        errors.value.general = error.response?.data?.error || 'Invalid code'
       } finally {
         loading.value = false
       }
@@ -319,6 +383,9 @@ export default {
       showPassword,
       showConfirmPassword,
       isFormValid,
+      step,
+      verifyEmail,
+      verificationCode,
       handleSubmit
     }
   }

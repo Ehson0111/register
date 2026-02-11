@@ -19,6 +19,12 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPasswordView.vue'),
+    meta: { requiresGuest: true }
+  },
+  {
     path: '/manager',
     component: () => import('@/layouts/ManagerLayout.vue'),
     meta: { requiresAuth: true, role: 'manager' },
