@@ -164,6 +164,15 @@ def client_deals(request):
         }, status=500)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsClient])
+def client_services_list(request):
+    """Список активных услуг для клиента (выбор при создании заявки)."""
+    services = Service.objects.filter(is_active=True).order_by('name')
+    serializer = SimpleServiceSerializer(services, many=True)
+    return Response(serializer.data)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsClient])
 def create_client_request(request):
