@@ -258,19 +258,21 @@
               <span>Отметить как проигранную</span>
             </button>
             <button
-              @click="editDeal"
+              @click="editDeal(dealdetail)"
               class="w-full flex items-center space-x-3 px-4 py-3 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
             >
               <PencilSquareIcon class="w-5 h-5" />
               <span>Редактировать сделку</span>
             </button>
             <button
+              @click="openMarketingForDeal"
               class="w-full flex items-center space-x-3 px-4 py-3 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
             >
               <DocumentTextIcon class="w-5 h-5" />
               <span>Создать коммерческое предложение</span>
             </button>
             <button
+              @click="openMarketingForDeal"
               class="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <EnvelopeIcon class="w-5 h-5" />
@@ -343,7 +345,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
-import dealService, { type Deal } from "../../../src/services/dealService";
+import dealService from "../../services/dealService";
 
 import DealFormModal from './components/DealFormModal.vue'
 
@@ -361,16 +363,16 @@ import {
 } from "@heroicons/vue/24/outline";
 
 
-const editingDeal=ref<Deal | null>(null)
+const editingDeal = ref<any | null>(null)
 const showCreateModal=ref(false)
 
 
 const route = useRoute();
 const router = useRouter();
 const { showSuccess, showError } = useToast();
-const deals = ref<Deal[]>([])
+const deals = ref<any[]>([])
 
-const dealdetail = ref<Deal | null>(null);
+const dealdetail = ref<any | null>(null);
 const loading = ref(true);
 const closeModal = () => {
   showCreateModal.value = false
@@ -542,13 +544,18 @@ const changeDealStatus = async (status: "won" | "lost") => {
   }
 };
 
-const editDeal = (deal: Deal) => {
-  // if (dealdetail.value) {
-  //   router.push(`/manager/deals/${dealdetail.value.id}/edit`);
-  // }
-  
-  editingDeal.value=deal
-  showCreateModal.value=true
+const editDeal = (deal: any | null) => {
+  if (!deal) return
+  editingDeal.value = deal
+  showCreateModal.value = true
+};
+
+const openMarketingForDeal = () => {
+  if (!dealdetail.value) return
+  router.push({
+    name: 'ManagerMarketing',
+    query: { recipientId: String(dealdetail.value.contact) }
+  })
 };
 
 // Загрузка данных

@@ -21,7 +21,8 @@
         <!-- Navigation -->
         <nav class="flex-1 px-4 py-6 space-y-2">
           <router-link
-            to="/manager/dashboard"
+            to="/manager/dashboard" 
+          
             class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
             :class="{
               'bg-blue-50 text-blue-600': $route.path.includes('dashboard'),
@@ -183,6 +184,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
+//: Чтобы в шапке страницы писать не ManagerDeals, а нормальное «Сделки».
 const currentPageTitle = computed(() => {
   const routeName = route.name as string;
   const titles: Record<string, string> = {

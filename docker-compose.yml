@@ -12,7 +12,6 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      # avoid conflict if you already run MinIO on 9000/9001
       - "9100:9000"
       - "9101:9001"
     volumes:
@@ -24,7 +23,7 @@ services:
     ports:
       - "8004:8004"
     environment:
-      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend" 
       EMAIL_HOST: "mailhog"
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
@@ -55,7 +54,7 @@ services:
     ports:
       - "8007:8007"
     environment:
-      GATEWAY_URL: "http://api-gateway:8000"
+      GATEWAY_URL: "http://api-gateway:8000" # os.environ.get('GATEWAY_URL').
     depends_on:
       - user-service
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8007"

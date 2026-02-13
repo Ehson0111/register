@@ -17,7 +17,6 @@ class ProxyView(View):
     def dispatch(self, request, *args, **kwargs):
         logger.info(f"gateway request: {request.method} { request.path}")   
         logger.info(f"headers: {dict(request.headers)}")
-        # logger.info(f"body: {request.body.decode('utf-8') if request.body else 'no body'}")
         # print(f"{request.method} { request.path}")
         # print(f" {dict(request.headers)}")
         service_name= self.get_service_name(request)

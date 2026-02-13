@@ -216,9 +216,7 @@ export default {
         });
 
         if (result.success) {
-          // const redirect = router.currentRoute.value.query.redirect || "/dashboard";
-          // router.push(redirect);
-
+ 
           const userRole = authStore.user?.role;
           if (userRole === "manager") {
             router.push("/manager/dashboard");

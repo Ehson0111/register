@@ -6,12 +6,14 @@
       <div class="flex flex-col h-full">
         <!-- Logo -->
         <div class="flex items-center justify-center h-16 border-b border-gray-200">
-          <div class="flex items-center space-x-2">
+      
+         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-sm">CRM</span>
             </div>
             <span class="text-xl font-bold text-gray-800">BusinessCRM</span>
           </div>
+      
         </div>
 
         <!-- Navigation -->
@@ -26,7 +28,7 @@
           </router-link>
 
           <router-link
-            to="/client/deals"
+            to="/client/deals" 
             class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
             :class="{ 'bg-blue-50 text-blue-600': $route.path.includes('deals') }"
           >
@@ -107,9 +109,10 @@ import {
   UserCircleIcon
 } from '@heroicons/vue/24/outline'
 
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
+const route = useRoute()// Информация о текущем маршруте
+ 
+const router = useRouter()  // Навигация
+const authStore = useAuthStore() // Состояние авторизации
 
 const currentPageTitle = computed(() => {
   const routeName = route.name as string
@@ -126,14 +129,14 @@ const userInitials = computed(() => {
   const name = authStore.userName || 'Клиент'
   return name
     .split(' ')
-    .map((part) => part.charAt(0))
+    .map((part) => part.charAt(0)) // ["И", "П", "И"]
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2) 
 })
-
+// выход из системы
 const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
+  await authStore.logout() 
+  router.push('/login') 
 }
 </script>

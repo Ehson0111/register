@@ -128,11 +128,15 @@
                       v-model="formData.status"
                       required
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      :class="{ 'border-red-300': errors.status }"
                     >
                       <option value="lead">Lead</option>
                       <option value="client">Client</option>
                       <option value="partner">Partner</option>
                     </select>
+                    <p v-if="errors.status" class="text-red-600 text-sm mt-1">
+                      {{ errors.status }}
+                    </p>
                   </div>
                 </div>
 
@@ -280,6 +284,10 @@ const validateForm = (): boolean => {
     errors.value.email = 'Email обязателен'
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
     errors.value.email = 'Введите корректный email'
+  }
+
+  if (!formData.value.status || !formData.value.status.trim()) {
+    errors.value.status = 'Статус обязателен'
   }
 
   return Object.keys(errors.value).length === 0

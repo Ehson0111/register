@@ -71,7 +71,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Добавьте остальные функции которые есть в вашем оригинальном коде
     async function logout() {
       console.log('Logging out user')
       token.value = null
@@ -142,7 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
       return false;
     }
   }
-  // ВАЖНО: Верните все значения в конце!
+  // все значения в конце
   return {
     // State
     user,
@@ -161,4 +160,4 @@ export const useAuthStore = defineStore('auth', () => {
     fetchProfile,
     refreshAccessToken
   }
-}) // ← Закрывающая скобка для defineStore  
+})  

@@ -59,7 +59,39 @@
         <!-- Сделки контакта -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 class="text-lg font-medium text-gray-900 mb-4">Сделки</h2>
-          <p class="text-gray-500">Функционал сделок будет добавлен позже...</p>
+          <div v-if="dealsLoading" class="text-sm text-gray-500">
+            Загрузка сделок...
+          </div>
+          <div v-else-if="contactDeals.length === 0" class="text-sm text-gray-500">
+            У этого контакта пока нет сделок.
+          </div>
+          <ul v-else class="divide-y divide-gray-100">
+            <li
+              v-for="deal in contactDeals"
+              :key="deal.id"
+              class="py-3 flex items-center justify-between"
+            >
+              <div>
+                <button
+                  class="text-sm font-medium text-blue-600 hover:underline"
+                  @click="$router.push(`/manager/deals/${deal.id}`)"
+                >
+                  {{ deal.title }}
+                </button>
+                <p class="text-xs text-gray-500">
+                  {{ deal.service_name }} · {{ deal.status_display }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-semibold text-gray-900">
+                  {{ formatCurrency(deal.amount) }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ deal.expected_close_date ? formatDate(deal.expected_close_date) : 'Без даты' }}
+                </p>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -84,19 +116,45 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Действия</h3>
           <div class="space-y-2">
-            <button class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded">
+            <button
+              class="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded"
+              @click="openCreateDeal"
+            >
               Создать сделку
             </button>
-            <button class="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded">
+            <button
+              class="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
+              @click="sendEmailToContact"
+            >
               Отправить email
             </button>
-            <button class="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded">
+            <button
+              class="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
+              @click="openEditContact"
+            >
               Добавить заметку
             </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Модалка создания/редактирования сделки для контакта -->
+    <DealFormModal
+      :show="showDealModal"
+      :deal="null"
+      :defaultContactId="contact?.id || null"
+      @close="closeDealModal"
+      @saved="handleDealSaved"
+    />
+
+    <!-- Модалка редактирования контакта (для заметок и пр.) -->
+    <ContactFormModal
+      :show="showContactModal"
+      :contact="contact"
+      @close="closeContactModal"
+      @saved="handleContactSaved"
+    />
   </div>
 
   <div v-else-if="loading" class="text-center py-8">
@@ -111,14 +169,21 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-// import contactService, { type Contact } from '../../../services/contactService'
+import { useRoute, useRouter } from 'vue-router'
 import contactService, { type Contact } from '../../services/contactService'
+import dealService from '../../services/dealService'
+import DealFormModal from './components/DealFormModal.vue'
+import ContactFormModal from './components/ContactFormModal.vue'
 
 
 const route = useRoute()
+const router = useRouter()
 const contact = ref<Contact | null>(null)
 const loading = ref(true)
+const contactDeals = ref<any[]>([])
+const dealsLoading = ref(false)
+const showDealModal = ref(false)
+const showContactModal = ref(false)
 
 const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
@@ -133,10 +198,70 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ru-RU')
 }
 
+const formatCurrency = (amount: number) => {
+  return contactService.formatCurrency(amount)
+}
+
+const loadContactDeals = async (contactId: number) => {
+  try {
+    dealsLoading.value = true
+    contactDeals.value = await dealService.getDealsByContact(contactId)
+  } catch (error) {
+    console.error('Ошибка загрузки сделок контакта:', error)
+  } finally {
+    dealsLoading.value = false
+  }
+}
+
+const openCreateDeal = () => {
+  if (!contact.value) return
+  showDealModal.value = true
+}
+
+const closeDealModal = () => {
+  showDealModal.value = false
+}
+
+const handleDealSaved = async () => {
+  closeDealModal()
+  if (contact.value) {
+    await loadContactDeals(contact.value.id)
+  }
+}
+
+const sendEmailToContact = () => {
+  if (!contact.value) return
+  router.push({
+    name: 'ManagerMarketing',
+    query: { recipientId: String(contact.value.id) }
+  })
+}
+
+const openEditContact = () => {
+  if (!contact.value) return
+  showContactModal.value = true
+}
+
+const closeContactModal = () => {
+  showContactModal.value = false
+}
+
+const handleContactSaved = async () => {
+  closeContactModal()
+  if (!contact.value) return
+  try {
+    const updated = await contactService.getContact(contact.value.id)
+    contact.value = updated
+  } catch (error) {
+    console.error('Ошибка обновления контакта:', error)
+  }
+}
+
 onMounted(async () => {
   try {
     const contactId = parseInt(route.params.id as string)
     contact.value = await contactService.getContact(contactId)
+    await loadContactDeals(contactId)
   } catch (error) {
     console.error('Ошибка загрузки контакта:', error)
   } finally {

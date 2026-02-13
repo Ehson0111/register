@@ -247,12 +247,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import marketingService, {
   type Campaign,
   type CampaignStats,
   type MarketingTemplate
 } from '../../services/marketingService'
 import contactService, { type Contact } from '../../services/contactService'
+
+const route = useRoute()
 
 const showCreateCampaign = ref(false)
 const loading = ref(true)
@@ -321,6 +324,14 @@ function openCreateModal() {
   showCreateCampaign.value = true
 }
 
+function openQuickForRecipient(recipientId: number) {
+  showCreateCampaign.value = true
+  campaignMode.value = 'quick'
+  form.value = { template_id: '', subject: '', content: '', recipient_ids: [recipientId], campaign_name: '' }
+  quickForm.value = { subject: '', message: '' }
+  submitError.value = ''
+}
+
 function useTemplate(template: MarketingTemplate) {
   form.value.template_id = template.id
   form.value.subject = template.subject || ''
@@ -372,5 +383,14 @@ async function submitCampaign() {
   }
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  await loadData()
+  const recipientIdParam = route.query.recipientId
+  if (typeof recipientIdParam === 'string') {
+    const idNum = Number(recipientIdParam)
+    if (!Number.isNaN(idNum)) {
+      openQuickForRecipient(idNum)
+    }
+  }
+})
 </script>

@@ -1,4 +1,6 @@
-// useToast.js - исправленная версия
+// useToast.js 
+
+//система уведомлений 
 import { ref, computed } from 'vue'
 
 // Global toast state
@@ -23,7 +25,7 @@ export function useToast() {
     toastState.value.show = false
   }
 
-  const showSuccess = (message, duration = 5000) => showToastMessage(message, 'success', duration)
+  const showSuccess = (message, duration = 5000) => showToastMessage(message, 'success', duration) //ShowSuccess('успешно')
   const showError = (message, duration = 5000) => showToastMessage(message, 'error', duration)
   const showWarning = (message, duration = 5000) => showToastMessage(message, 'warning', duration)
   const showInfo = (message, duration = 5000) => showToastMessage(message, 'info', duration)
@@ -35,14 +37,14 @@ export function useToast() {
 
   return {
     // State (reactive)
-    showToast,
-    toastMessage,
-    toastType,
+    showToast,    // состояние: показывать?
+    toastMessage,  // состояние: текст
+    toastType,// состояние: тип
 
     // Actions
     showToast: showToastMessage,
     hideToast,
-    showSuccess,
+    showSuccess, // действие: показать успех
     showError,
     showWarning,
     showInfo

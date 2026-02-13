@@ -227,13 +227,14 @@ import {
   DialogTitle,
 } from '@headlessui/vue'
 import { useToast } from '../../../composables/useToast'
-import dealService, { type Deal, type CreateDealData } from '../../../services/dealService'
+import dealService from '../../../services/dealService'
 import contactService, { type Contact } from '../../../services/contactService'
 import serviceService, { type Service } from '../../../services/serviceService'
 
 interface Props {
   show: boolean
-  deal?: Deal | null
+  deal?: any | null
+  defaultContactId?: number | null
 }
 
 const props = defineProps<Props>()
@@ -244,7 +245,7 @@ const emit = defineEmits<{
 
 const { showSuccess, showError } = useToast()
 
-const formData = ref<CreateDealData>({
+const formData = ref<any>({
   title: '',
   description: '',
   contact: 0,
@@ -289,18 +290,17 @@ watch(() => props.show, (newVal) => {
   if (newVal) {
     if (props.deal) {
       // Заполняем форму данными сделки для редактирования
-
- 
-      formData.value = { 
+      formData.value = {
         ...props.deal,
         contact: props.deal.contact,
-        service: props.deal.service,
-
-      }  
-
-  } else {
-      // Сбрасываем форму для создания
+        service: props.deal.service
+      }
+    } else {
+      // Сбрасываем форму для создания и подставляем контакт, если передан
       resetForm()
+      if (props.defaultContactId && props.defaultContactId > 0) {
+        formData.value.contact = props.defaultContactId
+      }
     }
   }
 })
