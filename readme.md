@@ -13,8 +13,8 @@ CRM-проект на микросервисной архитектуре
 
 ### Бэкенд
 - **Django REST Framework**
-- **JWT** (Simple JWT)
-- **PostgreSQL** / SQLite (dev)
+- **JWT** 
+- **SQLite**  
 - **MinIO SDK** (S3)
 - **SMTP** (Yandex / MailHog)
 
@@ -24,9 +24,8 @@ CRM-проект на микросервисной архитектуре
 - **Vue Router**
 - **Axios** (интерсепторы, авто-рефреш)
 - **Tailwind CSS**
-- **Chart.js** (графики)
 
-### Инфраструктура
+### cтруктура
 - **Docker** + **Docker Compose**
 - **MinIO** (S3-совместимое хранилище)
 - **MailHog** (тестовый SMTP)
