@@ -62,7 +62,7 @@ class Deal(models.Model):
     
     DEAL_STATUS_CHOICES = [
         (DEAL_NEW, 'New'),
-        (DEAL_IN_PROGRESS, 'In Progress'),
+        (DEAL_IN_PROGRESS, 'In Progress'), 
         (DEAL_WON, 'Won'),
         (DEAL_LOST, 'Lost'),
         (DEAL_ON_HOLD, 'On Hold'),

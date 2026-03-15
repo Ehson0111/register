@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "Applications Service (Django) — Mail Applications API",
+    "_postman_id": "c3a7e5d6-9a6b-4d8c-8d3b-0e5f3b6a7a10",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Bearer token (set manually)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/applications/", "host": ["{{baseUrl}}"], "path": ["api", "applications", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Applications CRUD",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/", "host": ["{{baseUrl}}"], "path": ["api", "applications", ""] }
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Тема\",\n  \"date\": \"2026-02-14T10:00:00+03:00\",\n  \"text\": \"Текст заявки\",\n  \"sender_email\": \"69aeaa09eb6146cd4fd99c6b@forms.yandex.com\",\n  \"is_processed\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/applications/", "host": ["{{baseUrl}}"], "path": ["api", "applications", ""] }
+          }
+        },
+        {
+          "name": "Retrieve",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/{{id}}/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "{{id}}", ""] }
+          }
+        },
+        {
+          "name": "Update (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Обновленная тема\",\n  \"date\": \"2026-02-14T10:00:00+03:00\",\n  \"text\": \"Обновленный текст\",\n  \"sender_email\": \"69aeaa09eb6146cd4fd99c6b@forms.yandex.com\",\n  \"is_processed\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/applications/{{id}}/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "{{id}}", ""] }
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/{{id}}/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "{{id}}", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Filters / Search / Stats",
+      "item": [
+        {
+          "name": "Filter by status (is_processed=false)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/?is_processed=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", ""],
+              "query": [{ "key": "is_processed", "value": "false" }]
+            }
+          }
+        },
+        {
+          "name": "Search (q)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/search_by_status/?q=текст&status=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "search_by_status", ""],
+              "query": [
+                { "key": "q", "value": "текст" },
+                { "key": "status", "value": "all" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/stats/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "stats", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mark read/unread (single & bulk)",
+      "item": [
+        {
+          "name": "Mark as read (single)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/{{id}}/mark_as_read/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "{{id}}", "mark_as_read", ""] }
+          }
+        },
+        {
+          "name": "Mark as unread (single)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/{{id}}/mark_as_unread/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "{{id}}", "mark_as_unread", ""] }
+          }
+        },
+        {
+          "name": "Bulk mark read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"ids\": [1, 2, 3]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/applications/mark_multiple_as_read/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "mark_multiple_as_read", ""] }
+          }
+        },
+        {
+          "name": "Bulk mark unread",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"ids\": [1, 2, 3]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/applications/mark_multiple_as_unread/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "mark_multiple_as_unread", ""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mail parser",
+      "item": [
+        {
+          "name": "Fetch from mail (save new)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/applications/fetch_from_mail/", "host": ["{{baseUrl}}"], "path": ["api", "applications", "fetch_from_mail", ""] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "PASTE_JWT_TOKEN_HERE" },
+    { "key": "id", "value": "1" }
+  ]
+}
+

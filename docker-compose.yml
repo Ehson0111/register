@@ -75,6 +75,22 @@ services:
       - user-service
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8008"
 
+  applications:
+    build:
+      context: ./services/applications
+    ports:
+      - "8009:8009"
+    environment:
+      # IMAP credentials for Yandex Mail (use app password)
+      YANDEX_IMAP_HOST: "imap.yandex.ru"
+      YANDEX_TARGET_SENDER: "69aeaa09eb6146cd4fd99c6b@forms.yandex.com"
+      # Put these into your .env in real usage:
+      # YANDEX_EMAIL: "your@yandex.ru"
+      # YANDEX_PASSWORD: "app-password"
+    depends_on:
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8009"
+
   api-gateway:
     build:
       context: ./api-gateway
@@ -92,6 +108,7 @@ services:
       - calendar
       - marketing
       - documents
+      - applications
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
   frontend:
