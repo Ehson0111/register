@@ -79,95 +79,95 @@ class TemplateViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-# class CampaignViewSet(viewsets.ModelViewSet):
-#     """ViewSet для истории рассылок"""
-#     permission_classes = [IsAuthenticated]
-#     serializer_class = CampaignSerializer
-#     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
-#     search_fields = ['name', 'subject']
-#     filterset_fields = ['campaign_type', 'status']
-#     ordering_fields = ['sent_at', 'created_at', 'success_count']
-#     ordering = ['-sent_at', '-created_at']
+class CampaignViewSet(viewsets.ModelViewSet):
+    """ViewSet для истории рассылок"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = CampaignSerializer
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
+    search_fields = ['name', 'subject']
+    filterset_fields = ['campaign_type', 'status']
+    ordering_fields = ['sent_at', 'created_at', 'success_count']
+    ordering = ['-sent_at', '-created_at']
     
-#     def get_queryset(self):
-#         """Только кампании текущего пользователя"""
-#         user = self.request.user
-#         return Campaign.objects.filter(manager_id=user.id)
+    def get_queryset(self):
+        """Только кампании текущего пользователя"""
+        user = self.request.user
+        return Campaign.objects.filter(manager_id=user.id)
     
-#     @action(detail=True, methods=['GET'])
-#     def recipients(self, request, pk=None):
-#         """Получить детальную информацию о получателях"""
-#         campaign = self.get_object()
+    @action(detail=True, methods=['GET'])
+    def recipients(self, request, pk=None):
+        """Получить детальную информацию о получателях"""
+        campaign = self.get_object()
         
-#         # Получаем получателей с пагинацией
-#         recipients = campaign.campaign_recipients.all()
+        # Получаем получателей с пагинацией
+        recipients = campaign.campaign_recipients.all()
         
-#         from .serializers import CampaignRecipientSerializer
-#         serializer = CampaignRecipientSerializer(recipients, many=True)
+        from .serializers import CampaignRecipientSerializer
+        serializer = CampaignRecipientSerializer(recipients, many=True)
         
-#         # Статистика по статусам
-#         status_stats = {}
-#         for status_code, status_name in CampaignRecipient.STATUS_CHOICES:
-#             count = recipients.filter(status=status_code).count()
-#             if count > 0:
-#                 status_stats[status_code] = {
-#                     'name': status_name,
-#                     'count': count,
-#                     'percentage': round((count / recipients.count()) * 100, 2)
-#                 }
+        # Статистика по статусам
+        status_stats = {}
+        for status_code, status_name in CampaignRecipient.STATUS_CHOICES:
+            count = recipients.filter(status=status_code).count()
+            if count > 0:
+                status_stats[status_code] = {
+                    'name': status_name,
+                    'count': count,
+                    'percentage': round((count / recipients.count()) * 100, 2)
+                }
         
-#         return Response({
-#             'campaign': campaign.name,
-#             'total_recipients': recipients.count(),
-#             'status_stats': status_stats,
-#             'recipients': serializer.data
-#         })
+        return Response({
+            'campaign': campaign.name,
+            'total_recipients': recipients.count(),
+            'status_stats': status_stats,
+            'recipients': serializer.data
+        })
     
-#     @action(detail=False, methods=['GET'])
-#     def stats(self, request):
-#         """Статистика по всем кампаниям"""
-#         user = request.user
+    @action(detail=False, methods=['GET'])
+    def stats(self, request):
+        """Статистика по всем кампаниям"""
+        user = request.user
         
-#         # Все кампании пользователя
-#         campaigns = self.get_queryset()
+        # Все кампании пользователя
+        campaigns = self.get_queryset()
         
-#         # Кампании за последние 30 дней
-#         last_30_days = timezone.now() - timedelta(days=30)
-#         recent_campaigns = campaigns.filter(created_at__gte=last_30_days)
+        # Кампании за последние 30 дней
+        last_30_days = timezone.now() - timedelta(days=30)
+        recent_campaigns = campaigns.filter(created_at__gte=last_30_days)
         
-#         stats = {
-#             'total_campaigns': campaigns.count(),
-#             'total_recipients': sum(c.recipient_count for c in campaigns),
-#             'total_sent': sum(c.success_count for c in campaigns),
+        stats = {
+            'total_campaigns': campaigns.count(),
+            'total_recipients': sum(c.recipient_count for c in campaigns),
+            'total_sent': sum(c.success_count for c in campaigns),
             
-#             'recent_campaigns': recent_campaigns.count(),
-#             'recent_recipients': sum(c.recipient_count for c in recent_campaigns),
-#             'recent_sent': sum(c.success_count for c in recent_campaigns),
+            'recent_campaigns': recent_campaigns.count(),
+            'recent_recipients': sum(c.recipient_count for c in recent_campaigns),
+            'recent_sent': sum(c.success_count for c in recent_campaigns),
             
-#             'by_type': {
-#                 'individual': campaigns.filter(campaign_type='individual').count(),
-#                 'bulk': campaigns.filter(campaign_type='bulk').count(),
-#             },
+            'by_type': {
+                'individual': campaigns.filter(campaign_type='individual').count(),
+                'bulk': campaigns.filter(campaign_type='bulk').count(),
+            },
             
-#             'by_status': {
-#                 'draft': campaigns.filter(status='draft').count(),
-#                 'sent': campaigns.filter(status='sent').count(),
-#                 'sending': campaigns.filter(status='sending').count(),
-#                 'failed': campaigns.filter(status='failed').count(),
-#             }
-#         }
+            'by_status': {
+                'draft': campaigns.filter(status='draft').count(),
+                'sent': campaigns.filter(status='sent').count(),
+                'sending': campaigns.filter(status='sending').count(),
+                'failed': campaigns.filter(status='failed').count(),
+            }
+        }
         
-#         return Response(stats)
+        return Response(stats)
     
-#     @action(detail=False, methods=['GET'])
-#     def recent(self, request):
-#         """Последние 10 кампаний"""
-#         campaigns = self.get_queryset().filter(
-#             status='sent'
-#         ).order_by('-sent_at')[:10]
+    @action(detail=False, methods=['GET'])
+    def recent(self, request):
+        """Последние 10 кампаний"""
+        campaigns = self.get_queryset().filter(
+            status='sent'
+        ).order_by('-sent_at')[:10]
         
-#         serializer = self.get_serializer(campaigns, many=True)
-#         return Response(serializer.data)
+        serializer = self.get_serializer(campaigns, many=True)
+        return Response(serializer.data)
 
 
 def send_campaign_async(campaign_id, recipient_ids, client_info_map=None, template_variables=None):
