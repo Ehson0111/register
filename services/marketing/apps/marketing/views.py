@@ -40,7 +40,7 @@ class TemplateViewSet(viewsets.ModelViewSet):
     filterset_fields = ['template_type', 'is_active']
     
     def get_queryset(self):
-        """Только шаблоны текущего пользователя"""
+        """Только шаблоны текущего пользователяsdd"""
         user = self.request.user
         return Template.objects.filter(manager_id=user.id)
     
