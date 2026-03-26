@@ -43,13 +43,4 @@ Write-Host "Calendar: http://localhost:8006" -ForegroundColor Cyan
 Write-Host "marketing: http://localhost:8007" -ForegroundColor Cyan
 Write-Host "docements: http://localhost:8008" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
-
-Получаем список контейнеров, исключая minio и mailhog
-# $containers = docker ps --format "{{.Names}}" | Where-Object {$_ -notlike "*minio*" -and $_ -notlike "*mailhog*"}
-
-# foreach ($container in $containers) {
-#     Start-Process PowerShell -ArgumentList "-NoExit", "docker logs -f $container"
-#     Start-Sleep -Milliseconds 300
-# }
-
-# Write-Host "Открыто $($containers.Count) окон с логами контейнеров" -ForegroundColor Green
+ 

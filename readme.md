@@ -258,3 +258,63 @@ docker run -d -p 9000:9000 -p 9001:9001 ^
 - `GET http://localhost:8000/api/documents/download/1/`
 
  
+
+
+
+
+форма для заявки 
+https://forms.yandex.ru/u/69aeaa09eb6146cd4fd99c6b
+
+яндекс форма  
+https://forms.yandex.ru/admin/69aeaa09eb6146cd4fd99c6b/edit?preview=true
+
+
+
+
+
+
+
+
+заявки 
+
+post http://127.0.0.1:8009/api/applications/fetch_from_mail/
+
+
+{
+    "total": 4,
+    "new": 1,
+    "duplicates": 3
+}
+
+
+list applications 
+http://127.0.0.1:8009/api/applications/\
+
+{
+    "count": 3,
+    "next": null,
+    "previous": null,
+    "results": [
+        
+        {
+            "id": 1,
+            "subject": "\tНапример: \"Новая заявка с сайта\"",
+            "date": "2026-03-09T14:36:13+03:00",
+            "text": "",
+            "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+            "is_processed": false,
+            "created_at": "2026-03-12T12:49:12.878299+03:00",
+            "updated_at": "2026-03-12T12:49:12.879307+03:00"
+        },
+        {
+            "id": 2,
+            "subject": "\tНапример: \"Новая заявка с сайта\"",
+            "date": "2026-03-09T14:28:58+03:00",
+            "text": "",
+            "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+            "is_processed": false,
+            "created_at": "2026-03-12T12:49:13.693146+03:00",
+            "updated_at": "2026-03-12T12:49:13.693146+03:00"
+        }
+    ]
+}
