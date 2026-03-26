@@ -108,6 +108,20 @@
             <DocumentTextIcon class="w-5 h-5 mr-3" />
             <span class="font-medium">Документы</span>
           </router-link>
+
+          <router-link
+            to="/manager/applications"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('applications'),
+            }"
+          >
+            <DocumentTextIcon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Заявки</span>
+          </router-link>
+
+
+
         </nav>
 
         <!-- User Menu -->
@@ -200,6 +214,7 @@ const currentPageTitle = computed(() => {
     ManagerMarketing: "Маркетинг",
     ManagerDocuments: "Документы",
     ManagerProfile: "Профиль",
+    Applications: "Заявки",
   };
   return titles[routeName] || "Панель управления";
 });
