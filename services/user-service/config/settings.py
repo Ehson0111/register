@@ -107,11 +107,13 @@ REST_FRAMEWORK = {
 # }
 
 
+JWT_SIGNING_KEY = os.getenv("JWT_SIGNING_KEY", SECRET_KEY)
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'SIGNING_KEY': JWT_SIGNING_KEY,
 }
 # Дополнительные CORS настройки
 CORS_ALLOW_HEADERS = [

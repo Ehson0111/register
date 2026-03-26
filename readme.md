@@ -289,13 +289,56 @@ post http://127.0.0.1:8009/api/applications/fetch_from_mail/
 
 list applications 
 http://127.0.0.1:8009/api/applications/\
-
 {
-    "count": 3,
+    "count": 5,
     "next": null,
     "previous": null,
     "results": [
-        
+        {
+            "id": 5,
+            "subject": "Новая заявка:  тест",
+            "date": "2026-03-26T08:12:57+03:00",
+            "text": "Новая заявка:  тест\nПоступила новая заявка.\nID ответа:  2352584677\nНазвание сделки: тест\nКонтакт:  +7 913 984-98-05\nУслуга: разработка тестов\nСумма сделки: 10000\nПочта: client@example.com\nОжидаемая дата закрытия: 2026-03-29\nОписание:\nвеб сайт для тестов\nЭто письмо содержит ответы на опрос, созданный пользователем Yandex Forms. Яндекс не несёт ответственности за содержание письма.",
+            "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+            "is_processed": false,
+            "created_at": "2026-03-26T09:56:54.519567+03:00",
+            "updated_at": "2026-03-26T09:56:54.519630+03:00"
+        },
+    ]
+
+
+
+}
+
+
+http://127.0.0.1:8009/api/applications/?search=заявка
+
+
+{
+    "count": 4,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 4,
+            "subject": "\tНапример: \"Новая заявка с сайта\"",
+            "date": "2026-03-26T07:58:07+03:00",
+            "text": "",
+            "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+            "is_processed": false,
+            "created_at": "2026-03-26T08:10:59.020225+03:00",
+            "updated_at": "2026-03-26T08:10:59.020386+03:00"
+        },
+        {
+            "id": 3,
+            "subject": "\tНапример: \"Новая заявка с сайта\"",
+            "date": "2026-03-12T12:38:56+03:00",
+            "text": "",
+            "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+            "is_processed": false,
+            "created_at": "2026-03-12T12:49:14.356198+03:00",
+            "updated_at": "2026-03-12T12:49:14.356198+03:00"
+        },
         {
             "id": 1,
             "subject": "\tНапример: \"Новая заявка с сайта\"",
@@ -317,4 +360,19 @@ http://127.0.0.1:8009/api/applications/\
             "updated_at": "2026-03-12T12:49:13.693146+03:00"
         }
     ]
+}
+
+
+
+
+http://127.0.0.1:8009/api/applications/1/
+{
+    "id": 1,
+    "subject": "\tНапример: \"Новая заявка с сайта\"",
+    "date": "2026-03-09T14:36:13+03:00",
+    "text": "",
+    "sender_email": "69aeaa09eb6146cd4fd99c6b@forms.yandex.com",
+    "is_processed": false,
+    "created_at": "2026-03-12T12:49:12.878299+03:00",
+    "updated_at": "2026-03-12T12:49:12.879307+03:00"
 }

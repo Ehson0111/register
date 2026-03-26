@@ -191,8 +191,7 @@ import {
   CalendarIcon,
   ChartBarIcon,
   MegaphoneIcon,
-  DocumentTextIcon,
-  UserCircleIcon
+  DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 const route = useRoute();
 const router = useRouter();
@@ -215,6 +214,7 @@ const currentPageTitle = computed(() => {
     ManagerDocuments: "Документы",
     ManagerProfile: "Профиль",
     Applications: "Заявки",
+    ManagerApplications: "Заявки",
   };
   return titles[routeName] || "Панель управления";
 });

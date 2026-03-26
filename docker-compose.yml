@@ -28,6 +28,7 @@ services:
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
       DEFAULT_FROM_EMAIL: "no-reply@crm.local"
+      JWT_SIGNING_KEY: "crm-jwt-shared-dev-key-2026"
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
 
   contact-service:
@@ -75,6 +76,21 @@ services:
       - user-service
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8008"
 
+  applications:
+    build:
+      context: ./services/applications
+    ports:
+      - "8009:8009"
+    environment:
+      JWT_SIGNING_KEY: "crm-jwt-shared-dev-key-2026"
+      YANDEX_IMAP_HOST: "imap.yandex.ru"
+      YANDEX_EMAIL: "ehsonboboev7@yandex.ru"
+      YANDEX_PASSWORD: "hbewwdgiloviutid"
+      YANDEX_TARGET_SENDER: "69aeaa09eb6146cd4fd99c6b@forms.yandex.com"
+    depends_on:
+      - user-service
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8009"
+
   api-gateway:
     build:
       context: ./api-gateway
@@ -101,8 +117,10 @@ services:
       - "3000:3000"
     environment:
       VITE_PROXY_TARGET: "http://api-gateway:8000"
+      VITE_APPLICATIONS_API_URL: "http://localhost:8009/api/applications/"
     depends_on:
       - api-gateway
+      - applications
 
 volumes:
   minio-data:

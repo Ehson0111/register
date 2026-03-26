@@ -85,6 +85,11 @@ const routes = [
         component: () => import('@/views/manager/DocumentsView.vue')
       },
       {
+        path: 'applications',
+        name: 'ManagerApplications',
+        component: () => import('@/views/manager/Applications.vue')
+      },
+      {
         path: 'profile',
         name: 'ManagerProfile',
         component: () => import('@/views/manager/ProfileView.vue')

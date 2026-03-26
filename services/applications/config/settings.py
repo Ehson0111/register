@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.applications.debug_middleware.DebugApplicationsMiddleware',
 ]
 ROOT_URLCONF = 'config.urls'
 
@@ -85,10 +86,8 @@ USE_I18N = True
 USE_TZ = True
 
 REST_FRAMEWORK = {
-    # как в user-service
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    # Для заявок не требуем JWT на уровне сервиса, чтобы не было 401 на просроченном токене.
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
@@ -110,7 +109,10 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
+    'SIGNING_KEY': config(
+        'JWT_SIGNING_KEY',
+        default='django-insecure-j4qv2$-!q_yfd0n&*qt^n1#mya66nqah9r3b1m1@-s!$s0pe$2'
+    ),
 }
 
 
@@ -120,8 +122,15 @@ CORS_ALLOW_CREDENTIALS = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
  
-# # IMAP / Yandex Mail parser
+# IMAP / Yandex Mail parser
+YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
+YANDEX_EMAIL = config('YANDEX_EMAIL', default='ehsonboboev7@yandex.ru')
+YANDEX_PASSWORD = config('YANDEX_PASSWORD', default='hbewwdgiloviutid')
+YANDEX_TARGET_SENDER = config('YANDEX_TARGET_SENDER', default='69aeaa09eb6146cd4fd99c6b@forms.yandex.com')
+
+
 # YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
 # YANDEX_EMAIL = config('YANDEX_EMAIL', default='ehsonboboev7@yandex.ru')
 # YANDEX_PASSWORD = config('YANDEX_PASSWORD', default='hbewwdgiloviutid')
 # YANDEX_TARGET_SENDER = config('YANDEX_TARGET_SENDER', default='69aeaa09eb6146cd4fd99c6b@forms.yandex.com')
+

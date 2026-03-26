@@ -4,8 +4,14 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PIP_DEFAULT_TIMEOUT=120
 ENV PIP_RETRIES=10
+ENV PIP_INDEX_URL=http://pypi.tuna.tsinghua.edu.cn/simple
+ENV PIP_TRUSTED_HOST="pypi.tuna.tsinghua.edu.cn pypi.org files.pythonhosted.org"
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/databases
 

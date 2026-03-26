@@ -82,6 +82,12 @@ class YandexMailParser:
         self.imap_host = imap_host
         self.target_sender = target_sender or "69aeaa09eb6146cd4fd99c6b@forms.yandex.com"
         self.imap = None
+ # IMAP / Yandex Mail parser
+# YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
+# YANDEX_EMAIL = config('YANDEX_EMAIL', default='ehsonboboev7@yandex.ru')
+# YANDEX_PASSWORD = config('YANDEX_PASSWORD', default='hbewwdgiloviutid')
+# YANDEX_TARGET_SENDER = config('YANDEX_TARGET_SENDER', default='69aeaa09eb6146cd4fd99c6b@forms.yandex.com')
+
 
     def connect(self):
         """Подключение к почте"""
