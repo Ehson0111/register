@@ -349,6 +349,10 @@ const openApprove = (item: ApplicationItem) => {
 
 const ensureContactId = async (draft: Draft): Promise<number> => {
   try {
+    debugLog("H8", "Applications.vue:ensureContactId", "createContact start", {
+      hasEmail: !!draft.email,
+      hasPhone: !!draft.phone,
+    });
     const created = await contactService.createContact({
       first_name: draft.firstName || "Новый",
       last_name: draft.lastName || "Клиент",
@@ -360,21 +364,41 @@ const ensureContactId = async (draft: Draft): Promise<number> => {
       address: "",
       notes: "Создано из заявки",
     });
+    debugLog("H8", "Applications.vue:ensureContactId", "createContact success", {
+      contactId: created?.contact?.id ?? null,
+    });
     return created.contact.id;
   } catch (error) {
+    debugLog("H8", "Applications.vue:ensureContactId", "createContact failed, searching existing", {
+      status: (error as any)?.response?.status ?? null,
+      message: (error as any)?.message || "unknown",
+    });
     const contacts = await contactService.getContacts({ search: draft.email });
     const existing = contacts.find((c) => c.email?.toLowerCase() === draft.email.toLowerCase());
+    debugLog("H8", "Applications.vue:ensureContactId", "search existing contact result", {
+      found: !!existing,
+      contactId: existing?.id ?? null,
+    });
     if (!existing) throw error;
     return existing.id;
   }
 };
 
 const resolveServiceId = async (serviceName: string): Promise<number> => {
+  debugLog("H9", "Applications.vue:resolveServiceId", "load services for resolve", {
+    requestedService: serviceName || "",
+  });
   const services = await serviceService.getServicesForSelect();
   if (!services.length) {
+    debugLog("H9", "Applications.vue:resolveServiceId", "no services available", {});
     throw new Error("Нет доступных услуг для создания сделки");
   }
   const byName = services.find((s: any) => (s.name || "").toLowerCase() === serviceName.toLowerCase());
+  debugLog("H9", "Applications.vue:resolveServiceId", "service resolved", {
+    total: services.length,
+    matchedByName: !!byName,
+    selectedId: byName?.id || services[0].id,
+  });
   return byName?.id || services[0].id;
 };
 
@@ -387,9 +411,19 @@ const confirmApprove = async () => {
   }
   try {
     approving.value = true;
+    debugLog("H10", "Applications.vue:confirmApprove", "approve flow start", {
+      appId: draft.id,
+      hasEmail: !!draft.email,
+      amount: draft.amount,
+    });
     const contactId = await ensureContactId(draft);
     const serviceId = await resolveServiceId(draft.serviceName);
 
+    debugLog("H10", "Applications.vue:confirmApprove", "createDeal start", {
+      contactId,
+      serviceId,
+      expectedCloseDate: draft.expectedCloseDate || null,
+    });
     await contactService.createDeal({
       title: draft.title || "Новая заявка",
       description: draft.description || "",
@@ -400,8 +434,15 @@ const confirmApprove = async () => {
       status: "new",
       expected_close_date: draft.expectedCloseDate || undefined,
     });
+    debugLog("H10", "Applications.vue:confirmApprove", "createDeal success", {});
 
+    debugLog("H11", "Applications.vue:confirmApprove", "markProcessed start", {
+      appId: draft.id,
+    });
     await applicationsService.markProcessed(draft.id, true);
+    debugLog("H11", "Applications.vue:confirmApprove", "markProcessed success", {
+      appId: draft.id,
+    });
     decisionMap.value[draft.id] = "approved";
     saveDecisions();
     approvalDraft.value = null;
@@ -409,6 +450,11 @@ const confirmApprove = async () => {
     showSuccess("Заявка одобрена: контакт и сделка созданы");
   } catch (error) {
     console.error("Ошибка одобрения заявки", error);
+    debugLog("H12", "Applications.vue:confirmApprove", "approve flow failed", {
+      status: (error as any)?.response?.status ?? null,
+      message: (error as any)?.message || "unknown",
+      data: (error as any)?.response?.data || null,
+    });
     showError("Не удалось одобрить заявку");
   } finally {
     approving.value = false;

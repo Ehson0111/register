@@ -28,7 +28,8 @@ services:
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
       DEFAULT_FROM_EMAIL: "no-reply@crm.local"
-      JWT_SIGNING_KEY: "crm-jwt-shared-dev-key-2026"
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
 
   contact-service:
@@ -38,6 +39,8 @@ services:
       - "8005:8005"
     depends_on:
       - user-service
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8005"
 
   calendar:
@@ -47,6 +50,8 @@ services:
       - "8006:8006"
     depends_on:
       - user-service
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8006"
 
   marketing:
@@ -58,6 +63,8 @@ services:
       GATEWAY_URL: "http://api-gateway:8000" # os.environ.get('GATEWAY_URL').
     depends_on:
       - user-service
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8007"
 
   documents:
@@ -74,6 +81,8 @@ services:
     depends_on:
       - minio
       - user-service
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8008"
 
   applications:
@@ -82,13 +91,14 @@ services:
     ports:
       - "8009:8009"
     environment:
-      JWT_SIGNING_KEY: "crm-jwt-shared-dev-key-2026"
       YANDEX_IMAP_HOST: "imap.yandex.ru"
       YANDEX_EMAIL: "ehsonboboev7@yandex.ru"
       YANDEX_PASSWORD: "hbewwdgiloviutid"
       YANDEX_TARGET_SENDER: "69aeaa09eb6146cd4fd99c6b@forms.yandex.com"
     depends_on:
       - user-service
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8009"
 
   api-gateway:
@@ -108,6 +118,8 @@ services:
       - calendar
       - marketing
       - documents
+    volumes:
+      - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
   frontend:
