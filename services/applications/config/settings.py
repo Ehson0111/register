@@ -119,9 +119,4 @@ CORS_ALLOW_CREDENTIALS = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# # IMAP / Yandex Mail parser
-# YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
-# YANDEX_EMAIL = config('YANDEX_EMAIL', default='ehsonboboev7@yandex.ru')
-# YANDEX_PASSWORD = config('YANDEX_PASSWORD', default='hbewwdgiloviutid')
-# YANDEX_TARGET_SENDER = config('YANDEX_TARGET_SENDER', default='69aeaa09eb6146cd4fd99c6b@forms.yandex.com')
+ 
