@@ -201,6 +201,24 @@
           </p>
           <p class="text-gray-500 italic" v-else>Описание отсутствует</p>
         </div>
+
+        <!-- История изменений -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">История изменений</h2>
+          <div v-if="auditLoading" class="text-sm text-gray-500">Загрузка истории...</div>
+          <div v-else-if="auditTrail.length === 0" class="text-sm text-gray-500">
+            По этой сделке пока нет записей в истории.
+          </div>
+          <ul v-else class="divide-y divide-gray-100">
+            <li v-for="item in auditTrail" :key="item.id" class="py-3 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ auditActionText(item.action) }}</p>
+                <p class="text-xs text-gray-500">Кто: {{ item.actor || "system" }}</p>
+              </div>
+              <p class="text-xs text-gray-500 whitespace-nowrap">{{ formatDateTime(item.created_at) }}</p>
+            </li>
+          </ul>
+        </div>
       </div>
  
 
@@ -346,6 +364,7 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
 import dealService from "../../services/dealService";
+import contactService, { type AuditTrailItem } from "../../services/contactService";
 
 import DealFormModal from './components/DealFormModal.vue'
 
@@ -374,6 +393,8 @@ const deals = ref<any[]>([])
 
 const dealdetail = ref<any | null>(null);
 const loading = ref(true);
+const auditTrail = ref<AuditTrailItem[]>([]);
+const auditLoading = ref(false);
 const closeModal = () => {
   showCreateModal.value = false
   editingDeal.value = null
@@ -515,6 +536,19 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const formatDateTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString("ru-RU");
+};
+
+const auditActionText = (action: string) => {
+  const map: Record<string, string> = {
+    deal_created: "Сделка создана",
+    deal_status_changed: "Изменен статус сделки",
+    contact_updated: "Изменен связанный контакт",
+  };
+  return map[action] || action;
+};
+
 // Действия со сделкой
 const changeDealStatus = async (status: "won" | "lost") => {
   
@@ -538,9 +572,39 @@ const changeDealStatus = async (status: "won" | "lost") => {
     showSuccess(`Сделка успешно отмечена как ${statusNames[status]}`);
     // Перезагружаем данные
     loadDeal();
+    loadAuditTrail(dealdetail.value.id);
   } catch (error) {
     console.error("Ошибка изменения статуса:", error);
     showError("Не удалось изменить статус сделки");
+  }
+};
+
+const loadAuditTrail = async (dealId: number) => {
+  try {
+    auditLoading.value = true;
+    // #region agent log
+    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
+      body: JSON.stringify({
+        sessionId: "ad25e9",
+        runId: "run3",
+        hypothesisId: "H14",
+        location: "DealDetailView.vue:loadAuditTrail",
+        message: "loading deal audit trail",
+        data: { dealId },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    auditTrail.value = await contactService.getAuditTrail({
+      entity_type: "deal",
+      entity_id: dealId,
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки истории сделки:", error);
+  } finally {
+    auditLoading.value = false;
   }
 };
 
@@ -566,6 +630,7 @@ const loadDeal = async () => {
     console.log("Загрузка сделки ID:", dealId);
     dealdetail.value = await dealService.getDeal(dealId);
     console.log("Загруженная сделка:", dealdetail.value);
+    await loadAuditTrail(dealId);
   } catch (error) {
     console.error("Ошибка загрузки сделки:", error);
     showError("Не удалось загрузить данные сделки");

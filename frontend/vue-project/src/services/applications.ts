@@ -67,9 +67,18 @@ class ApplicationService {
     return response.data;
   }
 
-  async markProcessed(id: number, isProcessed = true): Promise<ApplicationItem> {
+  async markProcessed(
+    id: number,
+    isProcessed = true,
+    options?: { actor?: string; action?: "approved" | "rejected" | "processed" }
+  ): Promise<ApplicationItem> {
     const response = await applicationsApi.patch<ApplicationItem>(`${id}/`, {
       is_processed: isProcessed,
+    }, {
+      headers: {
+        ...(options?.actor ? { "X-Audit-Actor": options.actor } : {}),
+        ...(options?.action ? { "X-Audit-Action": options.action } : {}),
+      },
     });
     return response.data;
   }

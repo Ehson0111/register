@@ -1,7 +1,7 @@
 
 
 from rest_framework import serializers
-from .models import Contact, Service, Deal
+from .models import Contact, Service, Deal, AuditTrail
 
 class ContactListSerializer(serializers.ModelSerializer):
     """Упрощенный сериализатор для списка контактов"""
@@ -256,3 +256,17 @@ class SimpleContactSerializer(serializers.ModelSerializer):
     
     def get_full_name(self, obj):
         return obj.get_full_name()
+
+
+class AuditTrailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditTrail
+        fields = [
+            "id",
+            "actor",
+            "action",
+            "entity_type",
+            "entity_id",
+            "metadata",
+            "created_at",
+        ]

@@ -12,6 +12,7 @@ urlpatterns = [
 
     re_path(r'^services/', views.proxy_view, name='services-proxy'),
     re_path(r'^deals/', views.proxy_view, name='deals-proxy'),
+    re_path(r'^audit-trail/.*', views.proxy_view, name='audit-trail-proxy'),
     
     re_path(r'^marketing/', views.proxy_view, name='marketing'),
     re_path(r'^client/', views.proxy_view, name='client'),

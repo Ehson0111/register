@@ -56,7 +56,8 @@ class ProxyView(View):
         if (path.startswith('/api/contacts/') or 
             path.startswith('/api/client/') or 
             path.startswith('/api/services/') or 
-            path.startswith('/api/deals/')):
+            path.startswith('/api/deals/') or
+            path.startswith('/api/audit-trail/')):
             return 'contact-service'
         
         if (path.startswith('/api/marketing/')) :

@@ -172,6 +172,7 @@ import { useToast } from "../../composables/useToast";
 import applicationsService, { type ApplicationItem } from "../../services/applications";
 import contactService from "../../services/contactService";
 import serviceService from "../../services/serviceService";
+import { useAuthStore } from "../../store/auth";
 
 type Decision = "approved" | "rejected";
 type Draft = {
@@ -188,6 +189,7 @@ type Draft = {
 };
 
 const { showSuccess, showError, showWarning } = useToast();
+const authStore = useAuthStore();
 const loading = ref(false);
 const syncing = ref(false);
 const approving = ref(false);
@@ -439,7 +441,10 @@ const confirmApprove = async () => {
     debugLog("H11", "Applications.vue:confirmApprove", "markProcessed start", {
       appId: draft.id,
     });
-    await applicationsService.markProcessed(draft.id, true);
+    await applicationsService.markProcessed(draft.id, true, {
+      actor: authStore.userName || "manager",
+      action: "approved",
+    });
     debugLog("H11", "Applications.vue:confirmApprove", "markProcessed success", {
       appId: draft.id,
     });
@@ -464,7 +469,10 @@ const confirmApprove = async () => {
 const reject = async (item: ApplicationItem) => {
   if (!confirm("Отклонить заявку?")) return;
   try {
-    await applicationsService.markProcessed(item.id, true);
+    await applicationsService.markProcessed(item.id, true, {
+      actor: authStore.userName || "manager",
+      action: "rejected",
+    });
     decisionMap.value[item.id] = "rejected";
     saveDecisions();
     await loadApplications();

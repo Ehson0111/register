@@ -178,6 +178,16 @@ export interface ContactDealsStats {
   success_rate: number
 }
 
+export interface AuditTrailItem {
+  id: number
+  actor: string
+  action: string
+  entity_type: string
+  entity_id: number | null
+  metadata: Record<string, any>
+  created_at: string
+}
+
 class ContactService {
   // ==================== CONTACTS ====================
   
@@ -302,6 +312,68 @@ class ContactService {
   async getContactDealsStats(contactId: number): Promise<ContactDealsStats> {
     const response = await api.get(`/contacts/${contactId}/deals/stats/`)
     return response.data
+  }
+
+  async getAuditTrail(params?: { entity_type?: string; entity_id?: number; action?: string }): Promise<AuditTrailItem[]> {
+    // #region agent log
+    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
+      body: JSON.stringify({
+        sessionId: "ad25e9",
+        runId: "run4",
+        hypothesisId: "H15",
+        location: "contactService.ts:getAuditTrail:before",
+        message: "requesting audit trail",
+        data: {
+          entity_type: params?.entity_type || null,
+          entity_id: params?.entity_id || null,
+          action: params?.action || null
+        },
+        timestamp: Date.now()
+      })
+    }).catch(() => {})
+    // #endregion
+    try {
+      const response = await api.get('/audit-trail/', { params })
+      // #region agent log
+      fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
+        body: JSON.stringify({
+          sessionId: "ad25e9",
+          runId: "run5",
+          hypothesisId: "H15",
+          location: "contactService.ts:getAuditTrail:after",
+          message: "audit trail loaded",
+          data: { count: Array.isArray(response.data) ? response.data.length : -1, status: response.status },
+          timestamp: Date.now()
+        })
+      }).catch(() => {})
+      // #endregion
+      return response.data
+    } catch (error: any) {
+      // #region agent log
+      fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
+        body: JSON.stringify({
+          sessionId: "ad25e9",
+          runId: "run5",
+          hypothesisId: "H16",
+          location: "contactService.ts:getAuditTrail:error",
+          message: "audit trail request failed",
+          data: {
+            status: error?.response?.status ?? null,
+            url: error?.config?.url ?? null,
+            message: error?.message ?? "unknown",
+          },
+          timestamp: Date.now()
+        })
+      }).catch(() => {})
+      // #endregion
+      throw error
+    }
   }
 
   // ==================== UTILITIES ====================

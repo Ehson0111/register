@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
-from .models import Applications
-from .serializers import ApplicationsListSerializer
+from .models import Applications, ApplicationAudit
+from .serializers import ApplicationsListSerializer, ApplicationAuditSerializer
 from .email_parser import YandexMailParser
 import json
 from pathlib import Path
@@ -81,6 +81,35 @@ class ApplicationsViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_processed=is_processed)
 
         return queryset
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        was_processed = instance.is_processed
+        response = super().partial_update(request, *args, **kwargs)
+        instance.refresh_from_db()
+
+        if not was_processed and instance.is_processed:
+            actor = request.headers.get("X-Audit-Actor", "")
+            action = request.headers.get("X-Audit-Action", "").lower()
+            if action not in {
+                ApplicationAudit.ACTION_APPROVED,
+                ApplicationAudit.ACTION_REJECTED,
+                ApplicationAudit.ACTION_PROCESSED,
+            }:
+                action = ApplicationAudit.ACTION_PROCESSED
+            ApplicationAudit.objects.create(
+                application=instance,
+                actor=actor,
+                action=action,
+                metadata={"source": "applications_api"},
+            )
+        return response
+
+    @action(detail=False, methods=["get"])
+    def audit_trail(self, request):
+        queryset = ApplicationAudit.objects.select_related("application").all()[:200]
+        serializer = ApplicationAuditSerializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def fetch_from_mail(self, request):

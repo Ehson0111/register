@@ -1,5 +1,5 @@
 from rest_framework import serializers 
-from .models import Applications 
+from .models import Applications, ApplicationAudit 
 
 class ApplicationsListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,3 +15,9 @@ class ApplicationsListSerializer(serializers.ModelSerializer):
             'updated_at',
         ] 
         read_only_fields = ['created_at', 'updated_at']
+
+
+class ApplicationAuditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationAudit
+        fields = ["id", "application", "actor", "action", "metadata", "created_at"]

@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from .models import Contact, Deal, Service
+from .models import Contact, Deal, Service, AuditTrail
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -18,11 +18,29 @@ from .models import Contact, Service, Deal
 from .serializers import (
     ContactListSerializer, ContactDetailSerializer, AddContactSerializer,
     ServiceSerializer, DealListSerializer, DealDetailSerializer, CreateDealSerializer
-    ,SimpleContactSerializer,SimpleServiceSerializer
+    ,SimpleContactSerializer,SimpleServiceSerializer, AuditTrailSerializer
 )
 from .permissions import IsManager,IsClient
 
 logger = logging.getLogger(__name__)
+
+
+def _actor_name(request):
+    user = getattr(request, "user", None)
+    if user and getattr(user, "is_authenticated", False):
+        full = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
+        return full or getattr(user, "email", "") or getattr(user, "username", "") or "manager"
+    return "system"
+
+
+def _audit(request, action, entity_type, entity_id=None, metadata=None):
+    AuditTrail.objects.create(
+        actor=_actor_name(request),
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        metadata=metadata or {},
+    )
 
 # Контакты (оставляем как есть, но добавляем фильтры)
 class ContactListView(generics.ListCreateAPIView):
@@ -40,12 +58,42 @@ class ContactDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         return ContactDetailSerializer
 
+    def perform_update(self, serializer):
+        contact = serializer.save()
+        _audit(
+            self.request,
+            AuditTrail.ACTION_CONTACT_UPDATED,
+            "contact",
+            contact.id,
+            {"email": contact.email, "status": contact.status},
+        )
+
+    def perform_destroy(self, instance):
+        contact_id = instance.id
+        email = instance.email
+        instance.delete()
+        _audit(
+            self.request,
+            AuditTrail.ACTION_CONTACT_DELETED,
+            "contact",
+            contact_id,
+            {"email": email},
+        )
+
 @api_view(['DELETE'])
 @permission_classes([IsManager])
 def ContactDeleteViews(request, item_id):
     """Удаление контакта"""
     contact = get_object_or_404(Contact, id=item_id)
+    contact_email = contact.email
     contact.delete()
+    _audit(
+        request,
+        AuditTrail.ACTION_CONTACT_DELETED,
+        "contact",
+        item_id,
+        {"email": contact_email},
+    )
 
     return Response({
         'message': 'Контакт успешно удален'
@@ -222,6 +270,13 @@ def add_to_contact(request):
     if serializer.is_valid():
         contact = serializer.save()
         logger.info(f"Contact created: {contact.id} by user {request.user}")
+        _audit(
+            request,
+            AuditTrail.ACTION_CONTACT_CREATED,
+            "contact",
+            contact.id,
+            {"email": contact.email, "status": contact.status},
+        )
 
         return Response({
             'message': 'Контакт успешно создан',
@@ -319,6 +374,13 @@ def change_deal_status(request, deal_id):
         deal.actual_close_date = timezone.now().date()
 
     deal.save()
+    _audit(
+        request,
+        AuditTrail.ACTION_DEAL_STATUS_CHANGED,
+        "deal",
+        deal.id,
+        {"old_status": old_status, "new_status": new_status},
+    )
 
     logger.info(f"Deal {deal_id} status changed from {old_status} to {new_status} by {request.user}")
 
@@ -393,6 +455,13 @@ def create_deal(request):
     if serializer.is_valid():
         deal = serializer.save()
         logger.info(f"Deal created: {deal.id} - {deal.title}")
+        _audit(
+            request,
+            AuditTrail.ACTION_DEAL_CREATED,
+            "deal",
+            deal.id,
+            {"status": deal.status, "contact_id": deal.contact_id},
+        )
 
         return Response({
             'message': 'Сделка успешно создана',
@@ -435,6 +504,15 @@ def get_contacts_for_select(request):
     contacts = Contact.objects.all()
     serializer = SimpleContactSerializer(contacts, many=True)
     return Response(serializer.data)
+
+
+class AuditTrailListView(generics.ListAPIView):
+    queryset = AuditTrail.objects.all()
+    serializer_class = AuditTrailSerializer
+    permission_classes = [IsManager]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["actor", "action", "entity_type"]
+    filterset_fields = ["action", "entity_type", "entity_id"]
 
 
 

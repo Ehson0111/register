@@ -120,3 +120,31 @@ class Deal(models.Model):
         }
         return status_colors.get(self.status, 'blue')
 
+
+class AuditTrail(models.Model):
+    ACTION_CONTACT_CREATED = "contact_created"
+    ACTION_CONTACT_UPDATED = "contact_updated"
+    ACTION_CONTACT_DELETED = "contact_deleted"
+    ACTION_DEAL_CREATED = "deal_created"
+    ACTION_DEAL_STATUS_CHANGED = "deal_status_changed"
+    ACTIONS = [
+        (ACTION_CONTACT_CREATED, "Contact created"),
+        (ACTION_CONTACT_UPDATED, "Contact updated"),
+        (ACTION_CONTACT_DELETED, "Contact deleted"),
+        (ACTION_DEAL_CREATED, "Deal created"),
+        (ACTION_DEAL_STATUS_CHANGED, "Deal status changed"),
+    ]
+
+    actor = models.CharField(max_length=255, blank=True, default="")
+    action = models.CharField(max_length=64, choices=ACTIONS)
+    entity_type = models.CharField(max_length=64)
+    entity_id = models.IntegerField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.action} ({self.entity_type}:{self.entity_id})"
+

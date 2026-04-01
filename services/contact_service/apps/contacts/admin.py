@@ -9,7 +9,7 @@
 #     search_fields = ('first_name', 'last_name', 'email')
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Contact, Service, Deal
+from .models import Contact, Service, Deal, AuditTrail
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
@@ -232,3 +232,11 @@ class DealAdmin(admin.ModelAdmin):
 #     list_filter = ['status', 'service', 'created_at']
 #     search_fields = ['title', 'contact__first_name', 'contact__last_name']
 #     autocomplete_fields = ['contact', 'service']
+
+
+@admin.register(AuditTrail)
+class AuditTrailAdmin(admin.ModelAdmin):
+    list_display = ["created_at", "actor", "action", "entity_type", "entity_id"]
+    list_filter = ["action", "entity_type", "created_at"]
+    search_fields = ["actor", "action", "entity_type"]
+    readonly_fields = ["created_at", "actor", "action", "entity_type", "entity_id", "metadata"]

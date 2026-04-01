@@ -93,6 +93,24 @@
             </li>
           </ul>
         </div>
+
+        <!-- История изменений -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-medium text-gray-900 mb-4">История изменений</h2>
+          <div v-if="auditLoading" class="text-sm text-gray-500">Загрузка истории...</div>
+          <div v-else-if="auditTrail.length === 0" class="text-sm text-gray-500">
+            По контакту пока нет зафиксированных изменений.
+          </div>
+          <ul v-else class="divide-y divide-gray-100">
+            <li v-for="item in auditTrail" :key="item.id" class="py-3 flex items-start justify-between gap-4">
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ auditActionText(item.action) }}</p>
+                <p class="text-xs text-gray-500">Кто: {{ item.actor || "system" }}</p>
+              </div>
+              <p class="text-xs text-gray-500 whitespace-nowrap">{{ formatDateTime(item.created_at) }}</p>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Боковая панель -->
@@ -170,7 +188,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import contactService, { type Contact } from '../../services/contactService'
+import contactService, { type Contact, type AuditTrailItem } from '../../services/contactService'
 import dealService from '../../services/dealService'
 import DealFormModal from './components/DealFormModal.vue'
 import ContactFormModal from './components/ContactFormModal.vue'
@@ -184,6 +202,8 @@ const contactDeals = ref<any[]>([])
 const dealsLoading = ref(false)
 const showDealModal = ref(false)
 const showContactModal = ref(false)
+const auditTrail = ref<AuditTrailItem[]>([])
+const auditLoading = ref(false)
 
 const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
@@ -196,6 +216,21 @@ const getStatusClass = (status: string) => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ru-RU')
+}
+
+const formatDateTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString('ru-RU')
+}
+
+const auditActionText = (action: string) => {
+  const map: Record<string, string> = {
+    contact_created: 'Контакт создан',
+    contact_updated: 'Контакт изменен',
+    contact_deleted: 'Контакт удален',
+    deal_created: 'Создана сделка по контакту',
+    deal_status_changed: 'Изменен статус сделки',
+  }
+  return map[action] || action
 }
 
 const formatCurrency = (amount: number) => {
@@ -213,6 +248,35 @@ const loadContactDeals = async (contactId: number) => {
   }
 }
 
+const loadAuditTrail = async (contactId: number) => {
+  try {
+    auditLoading.value = true
+    // #region agent log
+    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
+      body: JSON.stringify({
+        sessionId: "ad25e9",
+        runId: "run3",
+        hypothesisId: "H13",
+        location: "ContactDetailView.vue:loadAuditTrail",
+        message: "loading contact audit trail",
+        data: { contactId },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+    auditTrail.value = await contactService.getAuditTrail({
+      entity_type: 'contact',
+      entity_id: contactId,
+    })
+  } catch (error) {
+    console.error('Ошибка загрузки истории:', error)
+  } finally {
+    auditLoading.value = false
+  }
+}
+
 const openCreateDeal = () => {
   if (!contact.value) return
   showDealModal.value = true
@@ -226,6 +290,7 @@ const handleDealSaved = async () => {
   closeDealModal()
   if (contact.value) {
     await loadContactDeals(contact.value.id)
+    await loadAuditTrail(contact.value.id)
   }
 }
 
@@ -252,6 +317,7 @@ const handleContactSaved = async () => {
   try {
     const updated = await contactService.getContact(contact.value.id)
     contact.value = updated
+    await loadAuditTrail(contact.value.id)
   } catch (error) {
     console.error('Ошибка обновления контакта:', error)
   }
@@ -262,6 +328,7 @@ onMounted(async () => {
     const contactId = parseInt(route.params.id as string)
     contact.value = await contactService.getContact(contactId)
     await loadContactDeals(contactId)
+    await loadAuditTrail(contactId)
   } catch (error) {
     console.error('Ошибка загрузки контакта:', error)
   } finally {

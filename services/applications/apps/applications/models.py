@@ -18,3 +18,28 @@ class Applications(models.Model):
     
     def __str__(self):
         return f"{self.subject[:50]} - {self.date.strftime('%d.%m.%Y')}"
+
+
+class ApplicationAudit(models.Model):
+    ACTION_APPROVED = "approved"
+    ACTION_REJECTED = "rejected"
+    ACTION_PROCESSED = "processed"
+    ACTIONS = [
+        (ACTION_APPROVED, "Approved"),
+        (ACTION_REJECTED, "Rejected"),
+        (ACTION_PROCESSED, "Processed"),
+    ]
+
+    application = models.ForeignKey(
+        Applications, on_delete=models.CASCADE, related_name="audits", null=True, blank=True
+    )
+    actor = models.CharField(max_length=255, blank=True, default="")
+    action = models.CharField(max_length=32, choices=ACTIONS)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.action} app#{self.application_id}"
