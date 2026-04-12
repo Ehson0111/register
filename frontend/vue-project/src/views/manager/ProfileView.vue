@@ -138,7 +138,7 @@
             </span>
           </div>
           <h3 class="text-lg font-medium text-gray-900">{{ profile.full_name || `${profile.first_name} ${profile.last_name}` }}</h3>
-          <p class="text-gray-600">{{ profile.position || 'Менеджер' }}</p>
+          <p class="text-gray-600">{{ profile.position || roleTitle(profile.role) }}</p>
         </div>
 
         <!-- Статистика -->
@@ -148,7 +148,7 @@
           <div class="space-y-3">
             <div class="flex justify-between">
               <span class="text-gray-600">Роль</span>
-              <span class="font-medium">{{ profile.role || 'Менеджер' }}</span>
+              <span class="font-medium">{{ roleTitle(profile.role) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">Email</span>
@@ -194,6 +194,13 @@ const passwordLoading = ref(false)
 const passwordError = ref('')
 const passwordSuccess = ref(false)
 
+function roleTitle(code: string) {
+  if (code === 'admin') return 'Администратор'
+  if (code === 'manager') return 'Менеджер'
+  if (code === 'client') return 'Клиент'
+  return 'Сотрудник'
+}
+
 const userInitials = computed(() => {
   const name = profile.value.full_name || `${profile.value.first_name} ${profile.value.last_name}`.trim()
   if (!name) return 'М'
@@ -219,7 +226,7 @@ async function loadProfile() {
         email: response.data.email || '',
         phone: response.data.profile?.phone || '',
         position: response.data.profile?.position || '',
-        role: response.data.role || 'manager'
+        role: response.data.role || ''
       }
     }
   } catch (e: any) {

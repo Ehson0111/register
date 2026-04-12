@@ -218,7 +218,7 @@ export default {
         if (result.success) {
  
           const userRole = authStore.user?.role;
-          if (userRole === "manager") {
+          if (userRole === "manager" || userRole === "admin") {
             router.push("/manager/dashboard");
           } else if (userRole === "client") {
             router.push("/client/dashboard");

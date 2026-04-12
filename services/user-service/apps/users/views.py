@@ -8,10 +8,14 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import User, UserProfile
+from .permissions import IsManagerOrAdmin, IsAdmin
 from .serializers import (
     UserWithProfileSerializer,
     UserProfileSerializer,
-    UserRegistrationSerializer
+    UserRegistrationSerializer,
+    UserListSerializer,
+    StaffCreateUserSerializer,
+    StaffUserActiveSerializer,
 )
 
 import logging
@@ -135,3 +139,46 @@ class ProfileUpdateView(generics.UpdateAPIView):
     def get_object(self):
         profile, created = UserProfile.objects.get_or_create(user=self.request.user)
         return profile
+
+
+class StaffUserListCreateView(generics.ListCreateAPIView):
+    """
+    Список пользователей и создание: менеджер — только клиенты; администратор — менеджеры и клиенты.
+    """
+
+    permission_classes = [IsAuthenticated, IsManagerOrAdmin]
+
+    def get_queryset(self):
+        return User.objects.all().order_by('-date_joined')
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return StaffCreateUserSerializer
+        return UserListSerializer
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context=self.get_serializer_context())
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        logger.info("Staff created user id=%s email=%s role=%s", user.id, user.email, user.role)
+        out = UserListSerializer(user, context={'request': request})
+        return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+class StaffUserActiveUpdateView(generics.UpdateAPIView):
+    """Включение/отключение учётной записи — только администратор."""
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = User.objects.all()
+    serializer_class = StaffUserActiveSerializer
+    http_method_names = ['patch', 'head', 'options']
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx

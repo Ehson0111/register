@@ -120,7 +120,16 @@
             <span class="font-medium">Заявки</span>
           </router-link>
 
-
+          <router-link
+            to="/manager/users"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/users'),
+            }"
+          >
+            <UserPlusIcon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Пользователи</span>
+          </router-link>
 
         </nav>
 
@@ -141,7 +150,7 @@
               <p class="text-sm font-medium text-gray-900 truncate">
                 {{ authStore.userName }}
               </p>
-              <p class="text-sm text-gray-500 truncate">Менеджер</p>
+              <p class="text-sm text-gray-500 truncate">{{ portalRoleLabel }}</p>
             </div>
           </router-link>
           <div class="flex justify-end mt-2">
@@ -191,11 +200,19 @@ import {
   CalendarIcon,
   ChartBarIcon,
   MegaphoneIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  UserPlusIcon
 } from '@heroicons/vue/24/outline'
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+
+const portalRoleLabel = computed(() => {
+  const r = authStore.user?.role;
+  if (r === "admin") return "Администратор";
+  if (r === "manager") return "Менеджер";
+  return "Сотрудник";
+});
 
 //: Чтобы в шапке страницы писать не ManagerDeals, а нормальное «Сделки».
 const currentPageTitle = computed(() => {
@@ -215,6 +232,7 @@ const currentPageTitle = computed(() => {
     ManagerProfile: "Профиль",
     Applications: "Заявки",
     ManagerApplications: "Заявки",
+    ManagerUsers: "Пользователи",
   };
   return titles[routeName] || "Панель управления";
 });

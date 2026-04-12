@@ -1,7 +1,4 @@
 from django.contrib import admin
-
-# Register your models here.
-from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, UserProfile
 
@@ -19,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
 
     # Поля для отображения в списке пользователей
     list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active', "role",'date_joined')
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'date_joined')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'role', 'date_joined')
 
     # Поля для поиска
     search_fields = ('email', 'first_name', 'last_name')
@@ -30,7 +27,7 @@ class UserAdmin(BaseUserAdmin):
     # Переопределяем fieldsets для формы редактирования
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'role')}),
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),
@@ -41,7 +38,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2'),
+            'fields': ('email', 'first_name', 'last_name', 'role', 'password1', 'password2'),
         }),
     )
 

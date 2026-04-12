@@ -21,7 +21,7 @@ class EmailService:
         self.smtp_server = 'smtp.yandex.ru'
         self.smtp_port = 465
         self.smtp_username = 'ehsonboboev7@yandex.ru'
-        self.smtp_password = 'token'
+        self.smtp_password = 'hbewwdgiloviutid'
         
     def send_email(self, to_email, subject, content, is_html=False):
         try:

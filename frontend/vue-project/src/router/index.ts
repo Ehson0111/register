@@ -27,7 +27,7 @@ const routes = [
   {
     path: '/manager',
     component: () => import('@/layouts/ManagerLayout.vue'),
-    meta: { requiresAuth: true, role: 'manager' },
+    meta: { requiresAuth: true, managerPortal: true },
     children: [
       {
         path: 'dashboard',
@@ -93,6 +93,11 @@ const routes = [
         path: 'profile',
         name: 'ManagerProfile',
         component: () => import('@/views/manager/ProfileView.vue')
+      },
+      {
+        path: 'users',
+        name: 'ManagerUsers',
+        component: () => import('@/views/manager/UsersTeamView.vue')
       }
     ]
   },
@@ -124,9 +129,14 @@ router.beforeEach((to, from, next) => {
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
     const role = authStore.user?.role
     next(role === 'client' ? '/client/dashboard' : '/manager/dashboard')
-  } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
-    if (authStore.user?.role === 'client') next('/client/dashboard')
-    else if (authStore.user?.role === 'manager') next('/manager/dashboard')
+  } else if (to.meta.role === 'client' && authStore.user?.role !== 'client') {
+    const r = authStore.user?.role
+    if (r === 'manager' || r === 'admin') next('/manager/dashboard')
+    else next('/login')
+  } else if (to.meta.managerPortal) {
+    const r = authStore.user?.role
+    if (r === 'manager' || r === 'admin') next()
+    else if (r === 'client') next('/client/dashboard')
     else next('/login')
   } else if (to.path === '/client') {
     next('/client/dashboard')
