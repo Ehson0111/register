@@ -1,7 +1,23 @@
 
 
 from rest_framework import serializers
-from .models import Contact, Service, Deal, AuditTrail
+from .models import Contact, Service, Deal, AuditTrail, ContactCompanyDetails
+
+
+class ContactCompanyDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactCompanyDetails
+        fields = [
+            'company_name',
+            'inn',
+            'kpp',
+            'ogrn',
+            'status_text',
+            'address',
+            'okved',
+            'director',
+            'updated_at',
+        ]
 
 class ContactListSerializer(serializers.ModelSerializer):
     """Упрощенный сериализатор для списка контактов"""
@@ -19,6 +35,7 @@ class ContactListSerializer(serializers.ModelSerializer):
             "last_name",
             'email',
             'phone',
+            'inn',
             
             'address',
             'notes',
@@ -40,6 +57,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     deals = serializers.SerializerMethodField()
+    company_details = ContactCompanyDetailsSerializer(read_only=True)
     
     class Meta:
         model = Contact
@@ -50,6 +68,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             'full_name',
             'email',
             'phone',
+            'inn',
             'status',
             
             'status_display',
@@ -57,6 +76,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             'position',
             'address',
             'notes',
+            'company_details',
             'deals',
             'created_at'
         ]
@@ -87,6 +107,7 @@ class AddContactSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
+            'inn',
             'status',
             'company',
             'position',

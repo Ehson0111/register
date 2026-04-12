@@ -7,6 +7,7 @@ export interface Contact {
   last_name: string
   email: string
   phone: string
+  inn?: string
   status: string
   status_display: string
   company: string
@@ -16,6 +17,19 @@ export interface Contact {
   full_name: string
   active_deals_count: number
   created_at: string
+  company_details?: ContactCompanyDetails
+}
+
+export interface ContactCompanyDetails {
+  company_name: string
+  inn: string
+  kpp: string
+  ogrn: string
+  status_text: string
+  address: string
+  okved: string
+  director: string
+  updated_at: string
 }
 
 export interface SimpleContact {
@@ -29,6 +43,7 @@ export interface CreateContactData {
   last_name: string
   email: string
   phone: string
+  inn?: string
   company: string
   status: string
   position: string
@@ -217,6 +232,11 @@ class ContactService {
 
   async getContactsForSelect(): Promise<SimpleContact[]> {
     const response = await api.get('/contacts/select/')
+    return response.data
+  }
+
+  async loadCompanyDataByInn(contactId: number, inn?: string): Promise<{ message: string; company_details: ContactCompanyDetails }> {
+    const response = await api.post(`/contacts/${contactId}/load-company-data/`, { inn })
     return response.data
   }
 

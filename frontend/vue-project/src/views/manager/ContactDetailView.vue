@@ -33,6 +33,10 @@
               <p class="text-gray-900">{{ contact.company || 'Не указана' }}</p>
             </div>
             <div>
+              <label class="text-sm font-medium text-gray-500">ИНН</label>
+              <p class="text-gray-900">{{ contact.inn || 'Не указан' }}</p>
+            </div>
+            <div>
               <label class="text-sm font-medium text-gray-500">Должность</label>
               <p class="text-gray-900">{{ contact.position || 'Не указана' }}</p>
             </div>
@@ -52,6 +56,49 @@
             <div class="md:col-span-2">
               <label class="text-sm font-medium text-gray-500">Заметки</label>
               <p class="text-gray-900">{{ contact.notes || 'Нет заметок' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium text-gray-900">Дополнительные данные по ИНН</h2>
+            <button
+              class="px-3 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              @click="loadCompanyData"
+              :disabled="companyLoading"
+            >
+              {{ companyLoading ? 'Загрузка...' : 'Загрузить по ИНН' }}
+            </button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-gray-500">Наименование</label>
+              <p class="text-gray-900">{{ contact.company_details?.company_name || 'Не найдено' }}</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-500">КПП</label>
+              <p class="text-gray-900">{{ contact.company_details?.kpp || 'Не найдено' }}</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-500">ОГРН</label>
+              <p class="text-gray-900">{{ contact.company_details?.ogrn || 'Не найдено' }}</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-500">Статус компании</label>
+              <p class="text-gray-900">{{ contact.company_details?.status_text || 'Не найдено' }}</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-sm font-medium text-gray-500">Руководитель</label>
+              <p class="text-gray-900">{{ contact.company_details?.director || 'Не найдено' }}</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-sm font-medium text-gray-500">ОКВЭД</label>
+              <p class="text-gray-900">{{ contact.company_details?.okved || 'Не найдено' }}</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="text-sm font-medium text-gray-500">Юридический адрес</label>
+              <p class="text-gray-900">{{ contact.company_details?.address || 'Не найдено' }}</p>
             </div>
           </div>
         </div>
@@ -192,12 +239,15 @@ import contactService, { type Contact, type AuditTrailItem } from '../../service
 import dealService from '../../services/dealService'
 import DealFormModal from './components/DealFormModal.vue'
 import ContactFormModal from './components/ContactFormModal.vue'
+import { useToast } from '../../composables/useToast'
 
 
 const route = useRoute()
 const router = useRouter()
+const { showSuccess, showError } = useToast()
 const contact = ref<Contact | null>(null)
 const loading = ref(true)
+const companyLoading = ref(false)
 const contactDeals = ref<any[]>([])
 const dealsLoading = ref(false)
 const showDealModal = ref(false)
@@ -320,6 +370,27 @@ const handleContactSaved = async () => {
     await loadAuditTrail(contact.value.id)
   } catch (error) {
     console.error('Ошибка обновления контакта:', error)
+  }
+}
+
+const loadCompanyData = async () => {
+  if (!contact.value) return
+  if (!contact.value.inn) {
+    showError('У контакта не указан ИНН')
+    return
+  }
+
+  try {
+    companyLoading.value = true
+    await contactService.loadCompanyDataByInn(contact.value.id, contact.value.inn)
+    contact.value = await contactService.getContact(contact.value.id)
+    showSuccess('Данные по ИНН обновлены')
+    await loadAuditTrail(contact.value.id)
+  } catch (error) {
+    console.error('Ошибка загрузки данных по ИНН:', error)
+    showError('Не удалось загрузить данные по ИНН')
+  } finally {
+    companyLoading.value = false
   }
 }
 

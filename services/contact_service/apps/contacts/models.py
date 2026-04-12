@@ -6,6 +6,7 @@ class Contact(models.Model):
     last_name = models.CharField(max_length=100)
     email = models.EmailField("Email")
     phone = models.CharField(max_length=20, blank=True)
+    inn = models.CharField(max_length=12, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  
     
     STATUS_LEAD = 'lead'
@@ -36,6 +37,28 @@ class Contact(models.Model):
     
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class ContactCompanyDetails(models.Model):
+    contact = models.OneToOneField(Contact, on_delete=models.CASCADE, related_name='company_details')
+    company_name = models.CharField(max_length=500, blank=True, default="Не найдено")
+    inn = models.CharField(max_length=12, blank=True, default="Не найдено")
+    kpp = models.CharField(max_length=20, blank=True, default="Не найдено")
+    ogrn = models.CharField(max_length=20, blank=True, default="Не найдено")
+    status_text = models.CharField(max_length=255, blank=True, default="Не найдено")
+    address = models.TextField(blank=True, default="Не найдено")
+    okved = models.CharField(max_length=500, blank=True, default="Не найдено")
+    director = models.CharField(max_length=255, blank=True, default="Не найдено")
+    raw_data = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = "Дополнительные данные компании"
+        verbose_name_plural = "Дополнительные данные компаний"
+
+    def __str__(self):
+        return f"Company details for contact #{self.contact_id}"
 
 
 class Service(models.Model):

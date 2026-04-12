@@ -95,6 +95,18 @@
                     />
                   </div>
 
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      ИНН
+                    </label>
+                    <input
+                      v-model="formData.inn"
+                      type="text"
+                      maxlength="12"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
                   <!-- Компания -->
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -227,6 +239,7 @@ const formData = ref<CreateContactData>({
   last_name: '',
   email: '',
   phone: '',
+  inn: '',
   company: '',
   position: '',
   status: 'lead',
@@ -256,6 +269,7 @@ const resetForm = () => {
     last_name: '',
     email: '',
     phone: '',
+    inn: '',
     company: '',
     position: '',
     status: 'lead',
