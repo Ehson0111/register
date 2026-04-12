@@ -1,189 +1,384 @@
-api-gateway
-apps
-__pycache__
-gateway
-__pycache__
-migrations
-__init__.py
-admin.py
-apps.py
-middleware.py
-models.py
-tests.py
-urls.py
-views.py
-__init__.py
-config
-__pycache__
-__init__.py
-asgi.py
-settings.py
-urls.py
-views.py
-wsgi.py
-venv
-manage.py
-req.txt
-databases
-contact.db
-gateway.db
-user.db
-frontend/vue-project
-.vscode
-extensions.json
-public
-favicon.ico
-src
-assets
-styles
-base.css
-logo.svg
-main.css
-components
-auth
-RegisterForm.vue
-login1Form.vue
-common
-BaseButton.vue
-BaseInput.vue
-LoadingSpinner.vue
-ProductImage.vue
-Toast.vue
-composables
-useToast.js
-icons
-IconCommunity.vue
-IconDocumentation.vue
-IconEcosystem.vue
-IconSupport.vue
-IconTooling.vue
-HelloWorld.vue
-TheWelcome.vue
-WelcomeItem.vue
-composables
-useToast.js
-layouts
-ManagerLayout.vue
-router
-index.ts
-services
-api.js
-auth.js
-contactService.ts
-dealService.ts
-serviceService.ts
-store
-auth.js
-views
-manager
-components
-AnalyticsView.vue
-CalendarView.vue
-ContactDetailView.vue
-ContactsView.vue
-DashboardView.vue
-DealDetailView.vue
-DealFormView.vue
-DealsView.vue
-DocumentsView.vue
-MarketingView.vue
-ProfileView.vue
-ServicesView.vue
-AboutView.vue
-DashboardView.vue
-DealDetailView.vue
-HomeView.vue
-Login1View.vue
-RegisterView.vue
-App.vue
-main.ts
-.gitignore
-README.md
-env.d.ts
-index.html
-package-lock.json
-package.json
-tsconfig.app.json
-tsconfig.json
-tsconfig.node.json
-vite.config.ts
-services
-calendar
-apps
-__pycache__
-calendarUser
-__pycache__
-migrations
-__init__.py
-admin.py
-apps.py
-models.py
-permissions.py
-serializers.py
-tests.py
-urls.py
-views.py
-__init__.py
-config
-__pycache__
-__init__.py
-asgi.py
-settings.py
-urls.py
-wsgi.py
-venv
-manage.py
-req.txt
-contact_service
-apps
-config
-venv
-bin
-lib/python3.12/site-packages
-lib64
-pyvenv.cfg
-manage.py
-req.txt
-t.txt
-user-service
-apps
-__pycache__
-authentication
-__pycache__
-migrations
-__init__.py
-admin.py
-apps.py
-models.py
-tests.py
-urls.py
-views.py
-users
-__pycache__
-migrations
-__init__.py
-admin.py
-apps.py
-models.py
-serializers.py
-tests.py
-urls.py
-views.py
-__init__.py  
-csrf_disable_middleware.py
-config
-__pycache__
-__init__.py
-asgi.py
-import requests.py
-settings.py
-urls.py
-wsgi.py
-venv
-manage.py
-req.txt
-run_services.sh
-sfsd.txt
-start.ps1
-ваю.py
-ыефке
+<mxGraphModel dx="992" dy="596" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="edge-root-dashboard" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-dashboard">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-auth" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-auth">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-apps" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-apps">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-contacts" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-contacts">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-client" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-client">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-services" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-services">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-deals" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-deals">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-audit" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-audit">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-calendar" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-calendar">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-marketing" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-marketing">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-docs" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-docs">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-gateway" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-gateway">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="edge-root-integration" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-integration">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="root-app" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Веб-приложение Business CRM" vertex="1">
+      <mxGeometry height="60" width="220" x="1900" y="80" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-dashboard" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Главный модуль / дашборд&#xa;[реализовано частично]" vertex="1">
+      <mxGeometry height="70" width="210" x="150" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-auth" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Авторизация и пользователи&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="420" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-apps" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Модуль заявок&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="960" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-contacts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль контактов&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+      <mxGeometry height="70" width="210" x="1230" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-client" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Клиентский функционал&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="1500" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-services" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль услуг&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="1770" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-deals" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль сделок&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="2040" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-audit" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Audit Trail / журнал действий&#xa; " vertex="1">
+      <mxGeometry height="70" width="230" x="2310" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-calendar" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Календарь и задачи&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="2600" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-marketing" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Маркетинговый модуль&#xa;[реализовано частично]" vertex="1">
+      <mxGeometry height="70" width="220" x="2870" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-docs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Модуль документов&#xa;[реализовано частично]" vertex="1">
+      <mxGeometry height="70" width="220" x="3150" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-gateway" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="API Gateway&#xa; " vertex="1">
+      <mxGeometry height="70" width="210" x="3500" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="mod-integration" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Интеграции&#xa;[реализовано частично]" vertex="1">
+      <mxGeometry height="70" width="220" x="3700" y="280" as="geometry" />
+    </mxCell>
+    <mxCell id="d1" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="d2" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="d3" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="d1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="сводка по CRM&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="60" y="490" as="geometry" />
+    </mxCell>
+    <mxCell id="d1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="аналитика по сделкам и контактам&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="220" y="490" as="geometry" />
+    </mxCell>
+    <mxCell id="d1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="отдельная dashboard-страница&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="90" y="580" as="geometry" />
+    </mxCell>
+    <mxCell id="a1" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a2" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a3" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a4" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="a1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="регистрация&#xa; " vertex="1">
+      <mxGeometry height="60" width="130" x="390" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="a1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="подтверждение email по OTP&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="530" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="a1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="вход и refresh JWT&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="390" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="a1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="сброс пароля&#xa; " vertex="1">
+      <mxGeometry height="60" width="130" x="550" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="r1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="795" y="350" as="sourcePoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="r2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-2">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="795" y="350" as="sourcePoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="r3" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-3">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="795" y="350" as="sourcePoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="ap1" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ap2" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ap3" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ap4" edge="1" parent="1" source="ap1-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="ap1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+      <mxGeometry height="60" width="140" x="995" y="500" as="geometry" />
+    </mxCell>
+    <mxCell id="ap1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="получение заявок из почты&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+      <mxGeometry height="60" width="170" x="980" y="580" as="geometry" />
+    </mxCell>
+    <mxCell id="ap1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="автосоздание контакта/сделки&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+      <mxGeometry height="60" width="190" x="970" y="670" as="geometry" />
+    </mxCell>
+    <mxCell id="c1" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="c2" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="c3" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="c1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD контактов&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="1241" y="380" as="geometry" />
+    </mxCell>
+    <mxCell id="c1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="1265" y="470" as="geometry" />
+    </mxCell>
+    <mxCell id="c1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="история изменений&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="1280" y="560" as="geometry" />
+    </mxCell>
+    <mxCell id="cl1" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cl2" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cl3" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cl1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="профиль клиента&#xa; " vertex="1">
+      <mxGeometry height="60" width="130" x="1480" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="cl1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="просмотр своих сделок&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="1620" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="cl1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="создание запроса на услугу&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="1540" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="s1" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="s2" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="s3" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="s1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD услуг&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="1760" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="s1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="деактивация вместо удаления&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="1890" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="s1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список для select&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="1820" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="dl1" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="dl2" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="dl3" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="dl4" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="dl1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD сделок&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="2020" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="dl1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="смена статуса&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="2150" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="dl1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="статистика по контактам&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="2020" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="dl1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="автодата закрытия&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="2180" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="au1" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="au2" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="au3" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="au1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="лог действий по контактам&#xa; " vertex="1">
+      <mxGeometry height="60" width="160" x="2300" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="au1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="лог действий по сделкам&#xa; " vertex="1">
+      <mxGeometry height="60" width="160" x="2470" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="au1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация журнала&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="2385" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="cal1" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cal2" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cal3" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cal4" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="cal1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD задач&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="2580" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="cal1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="today / upcoming / overdue&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="2710" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="cal1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="статистика задач&#xa; " vertex="1">
+      <mxGeometry height="60" width="130" x="2580" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="cal1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="уведомления и напоминания&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="2720" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="m1" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="m2" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="m3" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="m4" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="m1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="шаблоны рассылок&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="2860" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="m1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="кампании и история&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="3010" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="m1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="быстрые и массовые сообщения&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="2860" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="m1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="отправка всем клиентам одной кнопкой&#xa;[частично]" vertex="1">
+      <mxGeometry height="60" width="200" x="3050" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="doc1" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="doc2" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="doc3" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="doc4" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="doc1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="загрузка документа&#xa; " vertex="1">
+      <mxGeometry height="60" width="140" x="3140" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="doc1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список документов клиента&#xa; " vertex="1">
+      <mxGeometry height="60" width="170" x="3290" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="doc1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="скачивание документа&#xa; " vertex="1">
+      <mxGeometry height="60" width="150" x="3140" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="doc1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="удаление / версии документов&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="3300" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="g1" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="g2" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="g3" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="g1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="маршрутизация между сервисами&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="3490" y="670" as="geometry" />
+    </mxCell>
+    <mxCell id="g1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="проксирование JWT и параметров&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="3680" y="670" as="geometry" />
+    </mxCell>
+    <mxCell id="g1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="потоковая передача файлов&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="3585" y="760" as="geometry" />
+    </mxCell>
+    <mxCell id="i1" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="i2" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-2">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="i3" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-3">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="i4" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-4">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="i1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Yandex Mail импорт заявок&#xa; " vertex="1">
+      <mxGeometry height="60" width="180" x="3690" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="i1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Email OTP&#xa; " vertex="1">
+      <mxGeometry height="60" width="120" x="3880" y="430" as="geometry" />
+    </mxCell>
+    <mxCell id="i1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="MinIO хранилище документов&#xa; " vertex="1">
+      <mxGeometry height="60" width="190" x="3690" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="i1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Telegram / SMS как отдельные интеграции&#xa;[не реализовано / частично]" vertex="1">
+      <mxGeometry height="60" width="220" x="3890" y="520" as="geometry" />
+    </mxCell>
+    <mxCell id="KmtFV-qr0vTjS91AaGdY-2" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-1" value="">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1065" y="350" as="sourcePoint" />
+        <mxPoint x="1065" y="650" as="targetPoint" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="ap1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список и просмотр заявок&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+      <mxGeometry height="60" width="160" x="985" y="420" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>

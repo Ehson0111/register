@@ -30,10 +30,6 @@ class DocumentUploadView(APIView):
         )
 
         bucket = settings.MINIO_BUCKET
-        
-            # bucket_exists() — проверка существования
-
-            # make_bucket() — создание если не существует   
         if not minio_client.bucket_exists(bucket):  
             minio_client.make_bucket(bucket)
 
@@ -51,7 +47,6 @@ class DocumentUploadView(APIView):
                     content_type=file_obj.content_type or 'application/octet-stream',
                 )
 
-            # Сохранение метаданных 
             document = ClientDocument.objects.create(
                 client_id=client_id,
                 original_filename=file_obj.name,
@@ -76,7 +71,17 @@ class DocumentListView(APIView):
         serializer = ClientDocumentSerializer(documents, many=True, context={'request': request})
         return Response(serializer.data)
     
-    
+              # Генератор для стриминга файла по чанкам (по 1 МБ)
+            
+            
+            # Допустим, файл 2.7 МБ
+# file_stream() вызывается Django
+
+# 1-й вызов: yield первые 1 МБ → отдаём клиенту
+# 2-й вызов: yield вторые 1 МБ → отдаём клиенту  
+# 3-й вызов: yield последние 0.7 МБ → отдаём клиенту
+# 4-й вызов: StopIteration → конец файла
+# finally: закрываем соединение
 class DocumentDownloadView(APIView):
     """
     Скачивание документа по ID.
@@ -102,22 +107,9 @@ class DocumentDownloadView(APIView):
         try:
             # Проверяем существование объекта и получаем метаданные (включая размер)
             stat = minio_client.stat_object(settings.MINIO_BUCKET, document.object_name)
-
             # Получаем объект для стриминга
             obj = minio_client.get_object(settings.MINIO_BUCKET, document.object_name)
-
-            # Генератор для стриминга файла по чанкам (по 1 МБ)
-            
-            
-            # Допустим, файл 2.7 МБ
-# file_stream() вызывается Django
-
-# 1-й вызов: yield первые 1 МБ → отдаём клиенту
-# 2-й вызов: yield вторые 1 МБ → отдаём клиенту  
-# 3-й вызов: yield последние 0.7 МБ → отдаём клиенту
-# 4-й вызов: StopIteration → конец файла
-# finally: закрываем соединение
-
+   
             def file_stream():
                 try:
                     for data in obj.stream(1024 * 1024):
@@ -126,18 +118,14 @@ class DocumentDownloadView(APIView):
                 finally:
                     obj.close()
                     obj.release_conn()
-
-            # Формируем streaming-ответ
             response = StreamingHttpResponse(
                 streaming_content=file_stream(),
                 content_type=document.content_type or 'application/octet-stream'
             )
-
             # Устанавливаем заголовки для скачивания
             response['Content-Disposition'] = f'attachment; filename="{document.original_filename}"'
             response['Content-Length'] = stat.size
             response['Accept-Ranges'] = 'bytes'  # Поддержка range-запросов (опционально)
-
             return response
 
         except S3Error as e:

@@ -17,18 +17,14 @@ class ProxyView(View):
     def dispatch(self, request, *args, **kwargs):
         logger.info(f"gateway request: {request.method} { request.path}")   
         logger.info(f"headers: {dict(request.headers)}")
-        # print(f"{request.method} { request.path}")
-        # print(f" {dict(request.headers)}")
         service_name= self.get_service_name(request)
-        
         if not service_name:
             logger.error(f'service not found for path:{ request.path}')
         
-        print(f" {service_name}")
-
+        # print(f" {service_name}")
 
         service_url=settings.MICROSERVICES.get(service_name)
-        print(f" {service_name} {service_url}")
+        # print(f" {service_name} {service_url}")
 
         if not service_url :
             logger.error(f"Service { service_name } not configured")
@@ -39,9 +35,9 @@ class ProxyView(View):
 
         target_url= f"{service_url}{target_path}"
 
-        print(f"  target_url {target_url}")
+        # print(f"  target_url {target_url}")
 
-        logger.info(f"Proxying to: {target_path}")
+        # logger.info(f"Proxying to: {target_path}")
 
         return self.proxy_request(request, target_url)
     
@@ -50,9 +46,6 @@ class ProxyView(View):
         
         if path.startswith('/api/auth/') or path.startswith('/api/users/'):
             return 'user-service'
-        
-        # if 
-
         if (path.startswith('/api/contacts/') or 
             path.startswith('/api/client/') or 
             path.startswith('/api/services/') or 
@@ -84,7 +77,6 @@ class ProxyView(View):
 
         try: 
             headers={}
-
             important_headers=[
                 'Authorization', 'Content-Type', 'Accept', 'User-Agent',
                 'Accept-Language', 'Accept-Encoding'

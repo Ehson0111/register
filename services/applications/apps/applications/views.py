@@ -74,7 +74,6 @@ class ApplicationsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Дополнительный удобный фильтр по статусу через is_processed=true|false
         is_processed = self.request.query_params.get('is_processed')
         if is_processed is not None:
             is_processed = is_processed.lower() == 'true'
