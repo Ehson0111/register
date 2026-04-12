@@ -12,7 +12,7 @@ urlpatterns = [
     path('contacts/add/', views.add_to_contact, name='contact-add'),
     
     # Услуги
-    path('вд/', views.ServiceListView.as_view(), name='service-list'),
+    path('services/', views.ServiceListView.as_view(), name='service-list'),
     path('services/<int:pk>/', views.ServiceDetailView.as_view(), name='service-detail'),
     
     # Сделки
