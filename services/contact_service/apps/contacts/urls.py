@@ -16,10 +16,12 @@ urlpatterns = [
     path('services/<int:pk>/', views.ServiceDetailView.as_view(), name='service-detail'),
     
     # Сделки
+    path('deal-stages/', views.DealStageListCreateView.as_view(), name='deal-stage-list'),
     path('deals/', views.DealListView.as_view(), name='deal-list'),
     path('deals/<int:pk>/', views.DealDetailView.as_view(), name='deal-detail'),
     path('contacts/<int:contact_id>/deals/stats/', views.contact_deals_stats, name='contact-deals-stats'),
     path('deals/<int:deal_id>/change-status/', views.change_deal_status, name='change-deal-status'), 
+    path('deals/<int:deal_id>/change-stage/', views.change_deal_stage, name='change-deal-stage'),
 
 
     path("client/profile/", views.client_profile, name="client-profile"),

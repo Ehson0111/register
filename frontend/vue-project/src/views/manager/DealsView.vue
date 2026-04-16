@@ -7,13 +7,21 @@
         <h1 class="text-2xl font-bold text-gray-900">Сделки</h1>
         <p class="text-gray-600 mt-1">Управление коммерческими предложениями</p>
       </div>
-      <button 
-        @click="showCreateModal = true"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
-      >
-        <PlusIcon class="w-5 h-5" />
-        <span>Новая сделка</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <router-link
+          to="/manager/deals-kanban"
+          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Канбан
+        </router-link>
+        <button 
+          @click="showCreateModal = true"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+        >
+          <PlusIcon class="w-5 h-5" />
+          <span>Новая сделка</span>
+        </button>
+      </div>
     </div>
 
     <!-- Фильтры и поиск -->
@@ -335,7 +343,7 @@ const loadServices = async () => {
 }
 
 // Поиск с задержкой
-let searchTimeout: NodeJS.Timeout
+let searchTimeout: ReturnType<typeof setTimeout>
 const handleSearch = () => {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(() => {

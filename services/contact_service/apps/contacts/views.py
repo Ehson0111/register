@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from .models import Contact, Deal, Service, AuditTrail, ContactCompanyDetails
+from .models import Contact, Deal, DealStage, Service, AuditTrail, ContactCompanyDetails
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -21,10 +21,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.shortcuts import get_object_or_404
 
-from .models import Contact, Service, Deal
+from .models import Contact, Service, Deal, DealStage
 from .serializers import (
     ContactListSerializer, ContactDetailSerializer, AddContactSerializer,
-    ServiceSerializer, DealListSerializer, DealDetailSerializer, CreateDealSerializer
+    ServiceSerializer, DealStageSerializer, DealListSerializer, DealDetailSerializer, CreateDealSerializer
     ,SimpleContactSerializer,SimpleServiceSerializer, AuditTrailSerializer
 )
 from .permissions import IsManager,IsClient
@@ -501,13 +501,21 @@ class ServiceDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ServiceSerializer
     permission_classes = [IsManager]
 
+
+class DealStageListCreateView(generics.ListCreateAPIView):
+    queryset = DealStage.objects.all().order_by("order", "id")
+    serializer_class = DealStageSerializer
+    permission_classes = [IsManager]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name"]
+
 #   View для сделок
 class DealListView(generics.ListCreateAPIView):
     queryset = Deal.objects.all()
     permission_classes = [IsManager]
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ['title', 'description', 'contact__first_name', 'contact__last_name']
-    filterset_fields = ['status', 'service', 'contact']
+    filterset_fields = ['status', 'service', 'contact', 'stage']
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -520,7 +528,7 @@ class DealListView(generics.ListCreateAPIView):
         contact_id = self.request.query_params.get('contact_id')
         if contact_id:
             queryset = queryset.filter(contact_id=contact_id)
-        return queryset.select_related('contact', 'service')
+        return queryset.select_related('contact', 'service', 'stage')
 
 class DealDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Deal.objects.all()
@@ -530,7 +538,7 @@ class DealDetailView(generics.RetrieveUpdateDestroyAPIView):
         return DealDetailSerializer
 
     def get_queryset(self):
-        return Deal.objects.select_related('contact', 'service')
+        return Deal.objects.select_related('contact', 'service', 'stage')
 
 @api_view(['GET'])
 @permission_classes([IsManager])
@@ -586,6 +594,37 @@ def change_deal_status(request, deal_id):
     return Response({
         'message': 'Статус сделки обновлен',
         'deal': DealDetailSerializer(deal).data
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsManager])
+def change_deal_stage(request, deal_id):
+    deal = get_object_or_404(Deal, id=deal_id)
+    stage_id = request.data.get("stage_id")
+
+    if stage_id in (None, "", -1, "-1"):
+        stage = None
+    else:
+        stage = get_object_or_404(DealStage, id=stage_id)
+    previous_stage = deal.stage.name if deal.stage else None
+    deal.stage = stage
+    deal.save(update_fields=["stage", "updated_at"])
+
+    _audit(
+        request,
+        AuditTrail.ACTION_DEAL_STATUS_CHANGED,
+        "deal",
+        deal.id,
+        {
+            "old_stage": previous_stage,
+            "new_stage": stage.name if stage else None,
+        },
+    )
+
+    return Response({
+        "message": "Этап сделки обновлен",
+        "deal": DealDetailSerializer(deal).data,
     })
 
 

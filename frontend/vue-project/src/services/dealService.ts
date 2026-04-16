@@ -1,5 +1,7 @@
 import contactService from './contactService'
-import type { Deal, CreateDealData } from './contactService'
+import type { Deal, CreateDealData, DealStage } from './contactService'
+
+export type { Deal, CreateDealData, DealStage } from './contactService'
 
 class DealService {
   async getDeals(params?: any) {
@@ -24,6 +26,18 @@ class DealService {
 
   async changeDealStatus(dealId: number, status: string) {
     return contactService.changeDealStatus(dealId, status)
+  }
+
+  async getDealStages() {
+    return contactService.getDealStages()
+  }
+
+  async createDealStage(data: Pick<DealStage, 'name' | 'order' | 'color'> & { is_default?: boolean }) {
+    return contactService.createDealStage(data)
+  }
+
+  async changeDealStage(dealId: number, stageId: number) {
+    return contactService.changeDealStage(dealId, stageId)
   }
 
   // Дополнительные методы специфичные для сделок
@@ -55,7 +69,7 @@ class DealService {
         statusAmounts[deal.status] = 0
       }
       statusCounts[deal.status]++
-      statusAmounts[deal.status] += deal.amount
+      statusAmounts[deal.status] = (statusAmounts[deal.status] || 0) + Number(deal.amount || 0)
     })
     
     return {
@@ -85,7 +99,7 @@ class DealService {
           if (!monthlyRevenue[month]) {
             monthlyRevenue[month] = 0
           }
-          monthlyRevenue[month] += deal.amount
+          monthlyRevenue[month] += Number(deal.amount || 0)
         }
       })
     

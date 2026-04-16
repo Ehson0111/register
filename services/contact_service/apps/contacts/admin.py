@@ -9,7 +9,7 @@
 #     search_fields = ('first_name', 'last_name', 'email')
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Contact, Service, Deal, AuditTrail
+from .models import Contact, Service, Deal, DealStage, AuditTrail
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
@@ -105,12 +105,21 @@ class ServiceAdmin(admin.ModelAdmin):
         return obj.deals.exclude(status__in=[Deal.DEAL_WON, Deal.DEAL_LOST]).count()
     active_deals_count.short_description = 'Активные сделки'
 
+
+@admin.register(DealStage)
+class DealStageAdmin(admin.ModelAdmin):
+    list_display = ["name", "order", "color", "is_default"]
+    list_editable = ["order", "color", "is_default"]
+    search_fields = ["name"]
+
+
 @admin.register(Deal)
 class DealAdmin(admin.ModelAdmin):
     list_display = [
         'title',
         'contact',
         'service',
+        'stage',
         'amount',
         'probability',
         'status_colored',
@@ -120,6 +129,7 @@ class DealAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'status', 
+        'stage',
         'service',
         'created_at',
         'expected_close_date'
@@ -145,7 +155,8 @@ class DealAdmin(admin.ModelAdmin):
             'fields': [
                 'title',
                 'contact',
-                'service'
+                'service',
+                'stage',
             ]
         }),
         ('Детали сделки', {

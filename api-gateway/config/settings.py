@@ -101,6 +101,7 @@ MICROSERVICES = {
     'tasks-service': os.getenv('TASKS_SERVICE_URL', 'http://127.0.0.1:8006'),
     'marketing': os.getenv('MARKETING_SERVICE_URL', 'http://127.0.0.1:8007'),
     'documents': os.getenv('DOCUMENTS_SERVICE_URL', 'http://127.0.0.1:8008'),
+    'chat-service': os.getenv('CHAT_SERVICE_URL', 'http://127.0.0.1:8010'),
 }
 
 # Password validation

@@ -101,6 +101,35 @@ services:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8009"
 
+  chat-service:
+    build:
+      context: ./services/chatService
+    ports:
+      - "8010:8010"
+    environment:
+      TELEGRAM_BRIDGE_SECRET: "${TELEGRAM_BRIDGE_SECRET:-crm-telegram-bridge-2026}"
+      TELEGRAM_MANAGER_IDS: "${TELEGRAM_MANAGER_IDS:-1}"
+      TELEGRAM_MANAGER_ROLE: "${TELEGRAM_MANAGER_ROLE:-manager}"
+    depends_on:
+      - user-service
+    volumes:
+      - ./databases:/app/databases
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+
+  tgbots:
+    build:
+      context: ./services/tgbots
+    environment:
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-8795868534:AAGhWziwIb7xFA-SFQ-VXh59Vfl9otrvDvg}"
+      TELEGRAM_BRIDGE_SECRET: "${TELEGRAM_BRIDGE_SECRET:-crm-telegram-bridge-2026}"
+      CHAT_SERVICE_URL: "http://chat-service:8010"
+      TELEGRAM_POLL_TIMEOUT: "5"
+      TELEGRAM_IDLE_SLEEP: "0.4"
+      TELEGRAM_WELCOME_TEXT: "Привет! Это CRM-бот. Напишите сообщение, и менеджер ответит вам в этом чате."
+    depends_on:
+      - chat-service
+    command: sh -c "python bot.py"
+
   api-gateway:
     build:
       context: ./api-gateway
@@ -112,12 +141,14 @@ services:
       TASKS_SERVICE_URL: "http://calendar:8006"
       MARKETING_SERVICE_URL: "http://marketing:8007"
       DOCUMENTS_SERVICE_URL: "http://documents:8008"
+      CHAT_SERVICE_URL: "http://chat-service:8010"
     depends_on:
       - user-service
       - contact-service
       - calendar
       - marketing
       - documents
+      - chat-service
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"

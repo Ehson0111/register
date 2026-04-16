@@ -86,7 +86,7 @@
                       >
                         <option value="">Выберите услугу</option>
                         <option v-for="service in services" :key="service.id" :value="service.id">
-                          {{ service.name }} - {{ formatCurrency(service.price) }}
+                          {{ service.name }} - {{ formatCurrency(Number(service.price)) }}
                         </option>
                       </select>
                       <p v-if="errors.service" class="text-red-600 text-sm mt-1">
@@ -139,8 +139,8 @@
                     </div>
                   </div>
 
-                  <!-- Статус и дата закрытия -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Статус, этап и дата закрытия -->
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">
                         Статус *
@@ -155,6 +155,21 @@
                         <option value="on_hold">On Hold</option>
                         <option value="won">Won</option>
                         <option value="lost">Lost</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Этап
+                      </label>
+                      <select
+                        v-model="formData.stage"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option :value="null">Без этапа</option>
+                        <option v-for="stage in stages" :key="stage.id" :value="stage.id">
+                          {{ stage.name }}
+                        </option>
                       </select>
                     </div>
 
@@ -228,7 +243,7 @@ import {
 } from '@headlessui/vue'
 import { useToast } from '../../../composables/useToast'
 import dealService from '../../../services/dealService'
-import contactService, { type Contact } from '../../../services/contactService'
+import contactService, { type Contact, type DealStage } from '../../../services/contactService'
 import serviceService, { type Service } from '../../../services/serviceService'
 
 interface Props {
@@ -253,11 +268,13 @@ const formData = ref<any>({
   amount: 0,
   probability: 50,
   status: 'new',
+  stage: null,
   expected_close_date: ''
 })
 
 const contacts = ref<Contact[]>([])
 const services = ref<Service[]>([])
+const stages = ref<DealStage[]>([])
 const errors = ref<Record<string, string>>({})
 const loading = ref(false)
 
@@ -275,6 +292,7 @@ const loadFormData = async () => {
       contactService.getContacts(),
       serviceService.getServices()
     ])
+    stages.value = await dealService.getDealStages()
 
     // print(contactsData)
     contacts.value = contactsData
@@ -293,7 +311,8 @@ watch(() => props.show, (newVal) => {
       formData.value = {
         ...props.deal,
         contact: props.deal.contact,
-        service: props.deal.service
+        service: props.deal.service,
+        stage: props.deal.stage ?? null
       }
     } else {
       // Сбрасываем форму для создания и подставляем контакт, если передан
@@ -314,6 +333,7 @@ const resetForm = () => {
     amount: 0,
     probability: 50,
     status: 'new',
+    stage: null,
     expected_close_date: ''
   }
   errors.value = {}

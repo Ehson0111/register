@@ -76,6 +76,21 @@ class Service(models.Model):
         return f"{self.name} - ${self.price}"
                 
 
+class DealStage(models.Model):
+    name = models.CharField("Stage Name", max_length=100, unique=True)
+    order = models.PositiveIntegerField("Order", default=0)
+    color = models.CharField("Color", max_length=20, default="#2563eb")
+    is_default = models.BooleanField("Default Stage", default=False)
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "Deal Stage"
+        verbose_name_plural = "Deal Stages"
+
+    def __str__(self):
+        return self.name
+
+
 class Deal(models.Model):
     DEAL_NEW = 'new'
     DEAL_IN_PROGRESS = 'in_progress'
@@ -102,6 +117,14 @@ class Deal(models.Model):
         on_delete=models.CASCADE, 
         related_name='deals',
         verbose_name="Service"
+    )
+    stage = models.ForeignKey(
+        DealStage,
+        on_delete=models.SET_NULL,
+        related_name="deals",
+        null=True,
+        blank=True,
+        verbose_name="Stage",
     )
     title = models.CharField("Deal Title", max_length=200)
     description = models.TextField("Description", blank=True)

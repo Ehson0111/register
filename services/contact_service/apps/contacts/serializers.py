@@ -1,7 +1,7 @@
 
 
 from rest_framework import serializers
-from .models import Contact, Service, Deal, AuditTrail, ContactCompanyDetails
+from .models import Contact, Service, Deal, DealStage, AuditTrail, ContactCompanyDetails
 
 
 class ContactCompanyDetailsSerializer(serializers.ModelSerializer):
@@ -147,6 +147,13 @@ class ServiceSerializer(serializers.ModelSerializer):
     def get_active_deals_count(self, obj):
         return obj.deals.exclude(status__in=[Deal.DEAL_WON, Deal.DEAL_LOST]).count()
 
+
+class DealStageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DealStage
+        fields = ["id", "name", "order", "color", "is_default"]
+
+
 class DealListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка сделок"""
     contact_name = serializers.CharField(source='contact.get_full_name', read_only=True)
@@ -155,6 +162,8 @@ class DealListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     status_color = serializers.SerializerMethodField()
     is_closed = serializers.BooleanField(read_only=True)
+    stage_name = serializers.CharField(source="stage.name", read_only=True)
+    stage_color = serializers.CharField(source="stage.color", read_only=True)
     # contactId=serializers.CharField(source='contact.id')
     
     class Meta:
@@ -177,6 +186,9 @@ class DealListSerializer(serializers.ModelSerializer):
             'status_display',
             'status_color',
             'is_closed',
+            "stage",
+            "stage_name",
+            "stage_color",
             'expected_close_date',
             'created_at'
         ]
@@ -191,6 +203,8 @@ class DealDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     status_color = serializers.SerializerMethodField()
     is_closed = serializers.BooleanField(read_only=True)
+    stage_name = serializers.CharField(source="stage.name", read_only=True)
+    stage_color = serializers.CharField(source="stage.color", read_only=True)
     
     days_open = serializers.SerializerMethodField()
     
@@ -211,6 +225,9 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'status_display',
             'status_color',
             'is_closed',
+            "stage",
+            "stage_name",
+            "stage_color",
             'expected_close_date',
             'actual_close_date',
             'days_open',
@@ -239,6 +256,7 @@ class CreateDealSerializer(serializers.ModelSerializer):
             'amount',
             'probability',
             'status',
+            "stage",
             'expected_close_date'
         ]
     
@@ -255,6 +273,12 @@ class CreateDealSerializer(serializers.ModelSerializer):
             })
         
         return data
+
+    def create(self, validated_data):
+        if not validated_data.get("stage"):
+            default_stage = DealStage.objects.filter(is_default=True).order_by("order", "id").first()
+            validated_data["stage"] = default_stage or DealStage.objects.order_by("order", "id").first()
+        return super().create(validated_data)
     
 
 

@@ -82,10 +82,21 @@ export interface Deal {
   status_display: string
   status_color: string
   is_closed: boolean
+  stage?: number | null
+  stage_name?: string
+  stage_color?: string
   expected_close_date: string
   actual_close_date: string
   created_at: string
   days_open: number
+}
+
+export interface DealStage {
+  id: number
+  name: string
+  order: number
+  color: string
+  is_default: boolean
 }
 
 export interface CreateDealData {
@@ -96,6 +107,7 @@ export interface CreateDealData {
   amount: number
   probability: number
   status: string
+  stage?: number | null
   expected_close_date?: string
 }
 
@@ -299,6 +311,21 @@ class ContactService {
 
   async changeDealStatus(dealId: number, status: string): Promise<any> {
     const response = await api.post(`/deals/${dealId}/change-status/`, { status })
+    return response.data
+  }
+
+  async getDealStages(): Promise<DealStage[]> {
+    const response = await api.get('/deal-stages/')
+    return response.data
+  }
+
+  async createDealStage(data: Pick<DealStage, 'name' | 'order' | 'color'> & { is_default?: boolean }): Promise<DealStage> {
+    const response = await api.post('/deal-stages/', data)
+    return response.data
+  }
+
+  async changeDealStage(dealId: number, stageId: number): Promise<any> {
+    const response = await api.post(`/deals/${dealId}/change-stage/`, { stage_id: stageId })
     return response.data
   }
 

@@ -47,11 +47,22 @@
             to="/manager/deals"
             class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
             :class="{
-              'bg-blue-50 text-blue-600': $route.path.includes('deals'),
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/deals') && !$route.path.includes('/manager/deals-kanban'),
             }"
           >
             <BriefcaseIcon class="w-5 h-5 mr-3" />
             <span class="font-medium">Сделки</span>
+          </router-link>
+
+          <router-link
+            to="/manager/deals-kanban"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/deals-kanban'),
+            }"
+          >
+            <Squares2X2Icon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Канбан сделок</span>
           </router-link>
 
           <router-link
@@ -107,6 +118,39 @@
           >
             <DocumentTextIcon class="w-5 h-5 mr-3" />
             <span class="font-medium">Документы</span>
+          </router-link>
+
+          <router-link
+            to="/manager/chats"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/chats'),
+            }"
+          >
+            <ChatBubbleLeftRightIcon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Чаты</span>
+          </router-link>
+
+          <router-link
+            to="/manager/emails"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/emails'),
+            }"
+          >
+            <EnvelopeIcon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Emails</span>
+          </router-link>
+
+          <router-link
+            to="/manager/meetings"
+            class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            :class="{
+              'bg-blue-50 text-blue-600': $route.path.includes('/manager/meetings'),
+            }"
+          >
+            <CalendarDaysIcon class="w-5 h-5 mr-3" />
+            <span class="font-medium">Встречи</span>
           </router-link>
 
           <router-link
@@ -201,7 +245,11 @@ import {
   ChartBarIcon,
   MegaphoneIcon,
   DocumentTextIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
+  CalendarDaysIcon,
+  Squares2X2Icon
 } from '@heroicons/vue/24/outline'
 const route = useRoute();
 const router = useRouter();
@@ -222,6 +270,7 @@ const currentPageTitle = computed(() => {
     ManagerContacts: "Контакты",
     ContactDetail: "Детали контакта",
     ManagerDeals: "Сделки",
+    ManagerDealsKanban: "Канбан сделок",
     NewDeal: "Новая сделка",
     DealDetail: "Детали сделки",
     ManagerServices: "Услуги",
@@ -229,6 +278,9 @@ const currentPageTitle = computed(() => {
     ManagerAnalytics: "Аналитика",
     ManagerMarketing: "Маркетинг",
     ManagerDocuments: "Документы",
+    ManagerChats: "Чаты",
+    ManagerEmails: "Emails",
+    ManagerMeetings: "Встречи",
     ManagerProfile: "Профиль",
     Applications: "Заявки",
     ManagerApplications: "Заявки",

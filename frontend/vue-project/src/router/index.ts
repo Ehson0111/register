@@ -50,6 +50,11 @@ const routes = [
         component: () => import('@/views/manager/DealsView.vue')
       },
       {
+        path: 'deals-kanban',
+        name: 'ManagerDealsKanban',
+        component: () => import('@/views/manager/DealsKanbanView.vue')
+      },
+      {
         path: 'deals/new',
         name: 'NewDeal',
         component: () => import('@/views/manager/DealFormView.vue')
@@ -83,6 +88,21 @@ const routes = [
         path: 'documents',
         name: 'ManagerDocuments',
         component: () => import('@/views/manager/DocumentsView.vue')
+      },
+      {
+        path: 'chats',
+        name: 'ManagerChats',
+        component: () => import('@/views/manager/ChatsView.vue')
+      },
+      {
+        path: 'emails',
+        name: 'ManagerEmails',
+        component: () => import('@/views/manager/EmailsView.vue')
+      },
+      {
+        path: 'meetings',
+        name: 'ManagerMeetings',
+        component: () => import('@/views/manager/MeetingsView.vue')
       },
       {
         path: 'applications',
