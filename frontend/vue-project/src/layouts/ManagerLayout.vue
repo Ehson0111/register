@@ -139,7 +139,7 @@
             }"
           >
             <EnvelopeIcon class="w-5 h-5 mr-3" />
-            <span class="font-medium">Emails</span>
+            <span class="font-medium">Почта</span>
           </router-link>
 
           <router-link
@@ -279,7 +279,7 @@ const currentPageTitle = computed(() => {
     ManagerMarketing: "Маркетинг",
     ManagerDocuments: "Документы",
     ManagerChats: "Чаты",
-    ManagerEmails: "Emails",
+    ManagerEmails: "Почта",
     ManagerMeetings: "Встречи",
     ManagerProfile: "Профиль",
     Applications: "Заявки",

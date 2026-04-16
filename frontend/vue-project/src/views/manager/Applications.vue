@@ -169,7 +169,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useToast } from "../../composables/useToast";
-import applicationsService, { type ApplicationItem } from "../../services/applications";
+import applicationsService, { type ApplicationAuditItem, type ApplicationItem } from "../../services/applications";
 import contactService from "../../services/contactService";
 import serviceService from "../../services/serviceService";
 import { useAuthStore } from "../../store/auth";
@@ -194,12 +194,10 @@ const loading = ref(false);
 const syncing = ref(false);
 const approving = ref(false);
 const allApplications = ref<ApplicationItem[]>([]);
+const auditTrail = ref<ApplicationAuditItem[]>([]);
 const searchQuery = ref("");
 const statusFilter = ref("all");
 const approvalDraft = ref<Draft | null>(null);
-const decisionMap = ref<Record<number, Decision>>({});
-
-const DECISIONS_KEY = "application_decisions_v1";
 
 const debugLog = (hypothesisId: string, location: string, message: string, data: Record<string, unknown>) => {
   // #region agent log
@@ -241,24 +239,20 @@ const parseApplication = (item: ApplicationItem) => {
   };
 };
 
-const loadDecisions = () => {
-  try {
-    decisionMap.value = JSON.parse(localStorage.getItem(DECISIONS_KEY) || "{}");
-  } catch {
-    decisionMap.value = {};
-  }
-};
-
-const saveDecisions = () => {
-  localStorage.setItem(DECISIONS_KEY, JSON.stringify(decisionMap.value));
+const getDecision = (applicationId: number): Decision | null => {
+  const audit = auditTrail.value.find((item) => item.application === applicationId);
+  if (!audit) return null;
+  if (audit.action === "approved") return "approved";
+  if (audit.action === "rejected") return "rejected";
+  return null;
 };
 
 const isLocked = (item: ApplicationItem) => {
-  return item.is_processed || !!decisionMap.value[item.id];
+  return item.is_processed || !!getDecision(item.id);
 };
 
 const statusText = (item: ApplicationItem) => {
-  const decision = decisionMap.value[item.id];
+  const decision = getDecision(item.id);
   if (decision === "approved") return "Одобрена";
   if (decision === "rejected") return "Отклонена";
   if (item.is_processed) return "Обработана";
@@ -266,7 +260,7 @@ const statusText = (item: ApplicationItem) => {
 };
 
 const statusClass = (item: ApplicationItem) => {
-  const decision = decisionMap.value[item.id];
+  const decision = getDecision(item.id);
   if (decision === "approved") return "bg-green-100 text-green-700";
   if (decision === "rejected") return "bg-red-100 text-red-700";
   if (item.is_processed) return "bg-gray-100 text-gray-700";
@@ -282,11 +276,15 @@ const filteredApplications = computed(() => {
     );
   }
   if (statusFilter.value === "new") return list.filter((a) => !isLocked(a));
-  if (statusFilter.value === "approved") return list.filter((a) => decisionMap.value[a.id] === "approved");
-  if (statusFilter.value === "rejected") return list.filter((a) => decisionMap.value[a.id] === "rejected");
+  if (statusFilter.value === "approved") return list.filter((a) => getDecision(a.id) === "approved");
+  if (statusFilter.value === "rejected") return list.filter((a) => getDecision(a.id) === "rejected");
   if (statusFilter.value === "processed") return list.filter((a) => a.is_processed);
   return list;
 });
+
+const loadAuditTrail = async () => {
+  auditTrail.value = await applicationsService.getApplicationAuditTrail();
+};
 
 const loadApplications = async () => {
   try {
@@ -296,7 +294,12 @@ const loadApplications = async () => {
       search: searchQuery.value,
       statusFilter: statusFilter.value,
     });
-    allApplications.value = await applicationsService.getApplications(params);
+    const [applications, audits] = await Promise.all([
+      applicationsService.getApplications(params),
+      applicationsService.getApplicationAuditTrail(),
+    ]);
+    allApplications.value = applications;
+    auditTrail.value = audits;
     debugLog("H6", "Applications.vue:loadApplications", "load success", {
       loaded: allApplications.value.length,
       filtered: filteredApplications.value.length,
@@ -448,10 +451,8 @@ const confirmApprove = async () => {
     debugLog("H11", "Applications.vue:confirmApprove", "markProcessed success", {
       appId: draft.id,
     });
-    decisionMap.value[draft.id] = "approved";
-    saveDecisions();
     approvalDraft.value = null;
-    await loadApplications();
+    await Promise.all([loadApplications(), loadAuditTrail()]);
     showSuccess("Заявка одобрена: контакт и сделка созданы");
   } catch (error) {
     console.error("Ошибка одобрения заявки", error);
@@ -473,9 +474,7 @@ const reject = async (item: ApplicationItem) => {
       actor: authStore.userName || "manager",
       action: "rejected",
     });
-    decisionMap.value[item.id] = "rejected";
-    saveDecisions();
-    await loadApplications();
+    await Promise.all([loadApplications(), loadAuditTrail()]);
     showSuccess("Заявка отклонена");
   } catch (error) {
     console.error("Ошибка отклонения заявки", error);
@@ -488,7 +487,6 @@ const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(amount);
 
 onMounted(async () => {
-  loadDecisions();
-  await loadApplications();
+  await Promise.all([loadApplications(), loadAuditTrail()]);
 });
 </script>

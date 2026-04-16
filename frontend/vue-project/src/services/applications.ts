@@ -11,6 +11,50 @@ export interface ApplicationItem {
   updated_at: string;
 }
 
+export interface ApplicationAuditItem {
+  id: number;
+  application: number | null;
+  actor: string;
+  action: "approved" | "rejected" | "processed";
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface MailFolderCounts {
+  all: number;
+  inbox: number;
+  sent: number;
+  important: number;
+  trash: number;
+}
+
+export interface MailItem {
+  id: number;
+  external_id: string;
+  message_id: string;
+  subject: string;
+  sender_name: string;
+  sender_email: string;
+  recipients: string;
+  date: string;
+  preview: string;
+  is_read: boolean;
+  is_important: boolean;
+  in_inbox: boolean;
+  in_sent: boolean;
+  in_trash: boolean;
+  primary_folder: string;
+}
+
+export interface MailDetail extends MailItem {
+  cc: string;
+  body_text: string;
+  body_html: string;
+  raw_flags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -20,6 +64,12 @@ interface PaginatedResponse<T> {
 
 const applicationsApi = axios.create({
   baseURL: import.meta.env.VITE_APPLICATIONS_API_URL || "http://127.0.0.1:8009/api/applications/",
+  timeout: 30000,
+  headers: { "Content-Type": "application/json" },
+});
+
+const mailApi = axios.create({
+  baseURL: (import.meta.env.VITE_APPLICATIONS_API_URL || "http://127.0.0.1:8009/api/applications/").replace(/applications\/?$/, ""),
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
@@ -80,6 +130,36 @@ class ApplicationService {
         ...(options?.action ? { "X-Audit-Action": options.action } : {}),
       },
     });
+    return response.data;
+  }
+
+  async getApplicationAuditTrail(): Promise<ApplicationAuditItem[]> {
+    const response = await applicationsApi.get<ApplicationAuditItem[]>("audit_trail/");
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async syncMailbox(): Promise<{ synced: number; created: number; updated: number }> {
+    const response = await mailApi.post("mail/sync/");
+    return response.data;
+  }
+
+  async getMailFolders(): Promise<MailFolderCounts> {
+    const response = await mailApi.get("mail/folders/");
+    return response.data;
+  }
+
+  async getMailMessages(params?: { folder?: string; search?: string }): Promise<MailItem[]> {
+    const response = await mailApi.get<MailItem[]>("mail/", { params });
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async getMailMessage(id: number): Promise<MailDetail> {
+    const response = await mailApi.get<MailDetail>(`mail/${id}/`);
+    return response.data;
+  }
+
+  async sendMail(data: { to: string; subject: string; body: string; cc?: string }): Promise<MailDetail> {
+    const response = await mailApi.post<MailDetail>("mail/send/", data);
     return response.data;
   }
 }

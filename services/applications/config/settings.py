@@ -127,6 +127,9 @@ YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
 YANDEX_EMAIL = config('YANDEX_EMAIL', default='ehsonboboev7@yandex.ru')
 YANDEX_PASSWORD = config('YANDEX_PASSWORD', default='hbewwdgiloviutid')
 YANDEX_TARGET_SENDER = config('YANDEX_TARGET_SENDER', default='69aeaa09eb6146cd4fd99c6b@forms.yandex.com')
+YANDEX_SMTP_HOST = config('YANDEX_SMTP_HOST', default='smtp.yandex.ru')
+YANDEX_SMTP_PORT = config('YANDEX_SMTP_PORT', default=465, cast=int)
+YANDEX_SMTP_USE_SSL = config('YANDEX_SMTP_USE_SSL', default=True, cast=bool)
 
 
 # YANDEX_IMAP_HOST = config('YANDEX_IMAP_HOST', default='imap.yandex.ru')
