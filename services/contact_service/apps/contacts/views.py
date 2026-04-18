@@ -28,6 +28,7 @@ from .serializers import (
     ,SimpleContactSerializer,SimpleServiceSerializer, AuditTrailSerializer
 )
 from .permissions import IsManager,IsClient
+from .work_process_events import emit_workflow_event
 
 logger = logging.getLogger(__name__)
 EGRUL_API_TEMPLATE = "https://egrul.org/{inn}.json"
@@ -590,6 +591,25 @@ def change_deal_status(request, deal_id):
     )
 
     logger.info(f"Deal {deal_id} status changed from {old_status} to {new_status} by {request.user}")
+    emit_workflow_event(
+        event_type="deal_status_changed",
+        payload={
+            "deal": {
+                "id": deal.id,
+                "title": deal.title,
+                "contact_id": deal.contact_id,
+                "service_id": deal.service_id,
+                "amount": str(deal.amount),
+            },
+            "old_status": old_status,
+            "new_status": new_status,
+            "changed_by": {
+                "id": getattr(request.user, "id", None),
+                "email": getattr(request.user, "email", ""),
+                "role": getattr(request.user, "role", ""),
+            },
+        },
+    )
 
     return Response({
         'message': 'Статус сделки обновлен',

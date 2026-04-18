@@ -25,7 +25,7 @@
             v-for="room in rooms"
             :key="room.id"
             class="p-4 cursor-pointer hover:bg-gray-50"
-            :class="selectedRoomId === room.id ? 'bg-blue-50' : ''"
+            :class="selectedRoomId === room.id ? 'bg-blue-700/45 chat-room-selected' : ''"
             @click="selectRoom(room.id)"
           >
             <div class="flex items-center gap-2">
@@ -161,7 +161,7 @@
                       {{ fullName(user) }} <span class="text-gray-500">({{ user.email }})</span>
                     </span>
                   </div>
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{{ roleLabel(user.role) }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-slate-300 text-slate-900">{{ roleLabel(user.role) }}</span>
                 </label>
               </div>
             </div>
@@ -438,3 +438,10 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', refreshNow)
 })
 </script>
+
+<style scoped>
+.chat-room-selected p,
+.chat-room-selected span {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+</style>

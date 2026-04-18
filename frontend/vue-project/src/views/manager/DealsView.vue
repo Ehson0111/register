@@ -304,7 +304,7 @@ const dealStatuses = [
   { value: 'in_progress', label: 'В работе', color: 'text-orange-600' },
   { value: 'won', label: 'Выиграны', color: 'text-green-600' },
   { value: 'lost', label: 'Проиграны', color: 'text-red-600' },
-  { value: 'on_hold', label: 'На паузе', color: 'text-gray-600' }
+  { value: 'on_hold', label: 'На паузе', color: 'text-slate-200' }
 ]
 
 // Загрузка данных
@@ -367,9 +367,9 @@ const getStatusClass = (status: string) => {
     in_progress: 'bg-orange-100 text-orange-800',
     won: 'bg-green-100 text-green-800',
     lost: 'bg-red-100 text-red-800',
-    on_hold: 'bg-gray-100 text-gray-800'
+    on_hold: 'bg-slate-300 text-slate-900'
   }
-  return classes[status] || 'bg-gray-100 text-gray-800'
+  return classes[status] || 'bg-slate-300 text-slate-900'
 }
 
 const getProbabilityColor = (probability: number) => {

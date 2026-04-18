@@ -118,6 +118,11 @@ const routes = [
         path: 'users',
         name: 'ManagerUsers',
         component: () => import('@/views/manager/UsersTeamView.vue')
+      },
+      {
+        path: "work-process",
+        name: "ManagerWorkProcesses",
+        component: () => import("@/views/manager/WorkProcessView.vue")
       }
     ]
   },

@@ -261,7 +261,7 @@ const getStatusClass = (status: string) => {
     client: 'bg-green-100 text-green-800',
     partner: 'bg-blue-100 text-blue-800'
   }
-  return classes[status] || 'bg-gray-100 text-gray-800'
+  return classes[status] || 'bg-slate-300 text-slate-900'
 }
 
 const formatDate = (dateString: string) => {

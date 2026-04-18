@@ -63,6 +63,9 @@ class ProxyView(View):
         if path.startswith('/api/chat/'):
             return 'chat-service'
 
+        if path.startswith('/api/work-process/'):
+            return 'work-process'
+
 
         if(path.startswith('/api/tasks')):
             return 'tasks-service'    

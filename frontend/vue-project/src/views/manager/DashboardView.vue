@@ -180,7 +180,7 @@ const getStatusColor = (color: string) => {
     orange: 'bg-orange-100 text-orange-800',
     blue: 'bg-blue-100 text-blue-800',
     red: 'bg-red-100 text-red-800',
-    gray: 'bg-gray-100 text-gray-800'
+    gray: 'bg-slate-300 text-slate-900'
   }
   return colors[color] || colors.gray
 }

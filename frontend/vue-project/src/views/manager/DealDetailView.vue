@@ -466,9 +466,9 @@ const getStatusClass = (status: string) => {
     in_progress: "bg-orange-100 text-orange-800",
     won: "bg-green-100 text-green-800",
     lost: "bg-red-100 text-red-800",
-    on_hold: "bg-gray-100 text-gray-800",
+    on_hold: "bg-slate-300 text-slate-900",
   };
-  return classes[status] || "bg-gray-100 text-gray-800";
+  return classes[status] || "bg-slate-300 text-slate-900";
 };
 
 const getStatusTextColor = (status: string) => {
@@ -477,9 +477,9 @@ const getStatusTextColor = (status: string) => {
     in_progress: "text-orange-600",
     won: "text-green-600",
     lost: "text-red-600",
-    on_hold: "text-gray-600",
+    on_hold: "text-slate-200",
   };
-  return colors[status] || "text-gray-600";
+  return colors[status] || "text-slate-200";
 };
 
 const getProbabilityColor = (probability: number) => {

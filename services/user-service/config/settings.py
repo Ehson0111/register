@@ -233,6 +233,12 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@crm.local")
 
+WORK_PROCESS_SERVICE_URL = os.getenv("WORK_PROCESS_SERVICE_URL", "http://127.0.0.1:8011")
+WORK_PROCESS_EVENT_SECRET = os.getenv(
+    "WORK_PROCESS_EVENT_SECRET",
+    "crm-work-process-secret-2026",
+)
+
 # OTP settings
 OTP_CODE_TTL_SECONDS = int(os.getenv("OTP_CODE_TTL_SECONDS", "600"))  # 10 minutes
 OTP_MAX_ATTEMPTS = int(os.getenv("OTP_MAX_ATTEMPTS", "5"))

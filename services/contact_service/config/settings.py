@@ -105,5 +105,11 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+WORK_PROCESS_SERVICE_URL = os.getenv("WORK_PROCESS_SERVICE_URL", "http://127.0.0.1:8011")
+WORK_PROCESS_EVENT_SECRET = os.getenv(
+    "WORK_PROCESS_EVENT_SECRET",
+    "crm-work-process-secret-2026",
+)
+
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

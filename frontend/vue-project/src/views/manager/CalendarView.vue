@@ -37,28 +37,28 @@
         <div class="flex flex-wrap gap-2 mb-4">
           <button
             @click="loadAllTasks"
-            :class="activeFilter === 'all' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-gray-100 text-gray-600 border-gray-300'"
+            :class="activeFilter === 'all' ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-300 text-slate-900 border-slate-400'"
             class="px-4 py-2 border rounded-lg text-sm font-medium transition-all"
           >
             Все задачи
           </button>
           <button
             @click="loadTodayTasks"
-            :class="activeFilter === 'today' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-gray-100 text-gray-600 border-gray-300'"
+            :class="activeFilter === 'today' ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-300 text-slate-900 border-slate-400'"
             class="px-4 py-2 border rounded-lg text-sm font-medium transition-all"
           >
             Сегодня
           </button>
           <button
             @click="loadUpcomingTasks"
-            :class="activeFilter === 'upcoming' ? 'bg-blue-100 text-blue-600 border-blue-300' : 'bg-gray-100 text-gray-600 border-gray-300'"
+            :class="activeFilter === 'upcoming' ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-300 text-slate-900 border-slate-400'"
             class="px-4 py-2 border rounded-lg text-sm font-medium transition-all"
           >
             Предстоящие
           </button>
           <button
             @click="loadOverdueTasks"
-            :class="activeFilter === 'overdue' ? 'bg-red-100 text-red-600 border-red-300' : 'bg-gray-100 text-gray-600 border-gray-300'"
+            :class="activeFilter === 'overdue' ? 'bg-red-600 text-white border-red-500' : 'bg-slate-300 text-slate-900 border-slate-400'"
             class="px-4 py-2 border rounded-lg text-sm font-medium transition-all"
           >
             Просроченные
@@ -561,7 +561,7 @@ const getPriorityBadge = (priority) => {
     medium: "bg-yellow-100 text-yellow-800",
     low: "bg-green-100 text-green-800",
   };
-  return badgeMap[priority] || "bg-gray-100 text-gray-800";
+  return badgeMap[priority] || "bg-slate-300 text-slate-900";
 };
 
 const formatTime = (time) => {

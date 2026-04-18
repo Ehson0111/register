@@ -28,6 +28,8 @@ services:
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
       DEFAULT_FROM_EMAIL: "no-reply@crm.local"
+      WORK_PROCESS_SERVICE_URL: "http://work-process:8011"
+      WORK_PROCESS_EVENT_SECRET: "${WORK_PROCESS_EVENT_SECRET:-crm-work-process-secret-2026}"
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8004"
@@ -39,6 +41,10 @@ services:
       - "8005:8005"
     depends_on:
       - user-service
+      - work-process
+    environment:
+      WORK_PROCESS_SERVICE_URL: "http://work-process:8011"
+      WORK_PROCESS_EVENT_SECRET: "${WORK_PROCESS_EVENT_SECRET:-crm-work-process-secret-2026}"
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8005"
@@ -116,6 +122,24 @@ services:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
 
+  work-process:
+    build:
+      context: ./services/work_process
+    ports:
+      - "8011:8011"
+    environment:
+      WORK_PROCESS_EVENT_SECRET: "${WORK_PROCESS_EVENT_SECRET:-crm-work-process-secret-2026}"
+      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+      EMAIL_HOST: "mailhog"
+      EMAIL_PORT: "1025"
+      EMAIL_USE_TLS: "false"
+      DEFAULT_FROM_EMAIL: "no-reply@crm.local"
+    depends_on:
+      - user-service
+    volumes:
+      - ./databases:/app/databases
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8011"
+
   tgbots:
     build:
       context: ./services/tgbots
@@ -142,6 +166,7 @@ services:
       MARKETING_SERVICE_URL: "http://marketing:8007"
       DOCUMENTS_SERVICE_URL: "http://documents:8008"
       CHAT_SERVICE_URL: "http://chat-service:8010"
+      WORK_PROCESS_URL: "http://work-process:8011"
     depends_on:
       - user-service
       - contact-service
@@ -149,6 +174,7 @@ services:
       - marketing
       - documents
       - chat-service
+      - work-process
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"

@@ -17,6 +17,7 @@ from .serializers import (
     StaffCreateUserSerializer,
     StaffUserActiveSerializer,
 )
+from .work_process_events import emit_workflow_event
 
 import logging
 logger = logging.getLogger(__name__)
@@ -166,6 +167,25 @@ class StaffUserListCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         logger.info("Staff created user id=%s email=%s role=%s", user.id, user.email, user.role)
+        emit_workflow_event(
+            event_type="user_created",
+            payload={
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role,
+                    "is_active": user.is_active,
+                },
+                "created_by": {
+                    "id": getattr(request.user, "id", None),
+                    "email": getattr(request.user, "email", ""),
+                    "role": getattr(request.user, "role", ""),
+                },
+            },
+        )
         out = UserListSerializer(user, context={'request': request})
         return Response(out.data, status=status.HTTP_201_CREATED)
 

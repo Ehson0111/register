@@ -29,10 +29,10 @@
           :key="folder.id"
           @click="selectFolder(folder.id)"
           class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors"
-          :class="activeFolder === folder.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'"
+          :class="activeFolder === folder.id ? 'bg-blue-700/45 text-white' : 'hover:bg-slate-600/30 text-gray-700'"
         >
           <span>{{ folder.label }}</span>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+          <span class="text-xs px-2 py-0.5 rounded-full bg-slate-300 text-slate-900">
             {{ folder.count }}
           </span>
         </button>
@@ -55,7 +55,7 @@
             :key="message.id"
             @click="openMessage(message.id)"
             class="w-full text-left px-4 py-4 border-b border-gray-100 hover:bg-gray-50"
-            :class="{ 'bg-blue-50': selectedMessage?.id === message.id }"
+            :class="{ 'bg-blue-700/45 email-selected-message': selectedMessage?.id === message.id }"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -308,3 +308,10 @@ onMounted(async () => {
   await Promise.all([loadFolderCounts(), loadMessages()])
 })
 </script>
+
+<style scoped>
+.email-selected-message p,
+.email-selected-message span {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+</style>
