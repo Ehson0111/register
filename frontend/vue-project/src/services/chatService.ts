@@ -18,7 +18,7 @@ export interface ChatMessage {
   sender_email: string
   sender_first_name: string
   sender_last_name: string
-  sender_role: 'manager' | 'admin' | 'telegram_client'
+  sender_role: 'manager' | 'admin' | 'telegram_client' | 'ai_assistant'
   sender_name: string
   text: string
   created_at: string
@@ -30,6 +30,7 @@ export interface ChatRoom {
   created_by_id: number
   created_by_email: string
   created_by_name: string
+  is_ai: boolean
   is_active: boolean
   created_at: string
   updated_at: string
@@ -76,6 +77,15 @@ class ChatService {
   async createRoom(title: string, participants: CreateRoomParticipant[]): Promise<ChatRoom> {
     const response = await api.post('/chat/rooms/', { title, participants })
     return response.data
+  }
+
+  async ensureAiRoom(): Promise<ChatRoom> {
+    const response = await api.post('/chat/rooms/ai/')
+    return response.data
+  }
+
+  async resetAiContext(roomId: number): Promise<void> {
+    await api.post(`/chat/rooms/${roomId}/ai/reset/`)
   }
 
   async getMessages(roomId: number): Promise<ChatMessage[]> {

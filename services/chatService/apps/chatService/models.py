@@ -10,6 +10,7 @@ CHAT_SENDER_ROLES = (
     ("manager", "Manager"),
     ("admin", "Admin"),
     ("telegram_client", "Telegram Client"),
+    ("ai_assistant", "AI Assistant"),
 )
 
 CHAT_PARTICIPANT_ROLES = (
@@ -24,6 +25,7 @@ class ChatRoom(models.Model):
     created_by_id = models.PositiveIntegerField()
     created_by_email = models.EmailField(blank=True)
     created_by_name = models.CharField(max_length=255, blank=True)
+    is_ai = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

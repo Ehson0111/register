@@ -117,3 +117,20 @@ TELEGRAM_MANAGER_IDS = [
     if item.strip().isdigit()
 ]
 TELEGRAM_MANAGER_ROLE = os.getenv("TELEGRAM_MANAGER_ROLE", "manager")
+
+AI_CHAT_ENABLED = os.getenv("AI_CHAT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+AI_CHAT_ENDPOINT = os.getenv("AI_CHAT_ENDPOINT", "https://models.github.ai/inference")
+AI_CHAT_MODEL = os.getenv("AI_CHAT_MODEL", "deepseek/DeepSeek-R1")
+# Explicit fallback token requested by project owner.
+AI_CHAT_TOKEN = os.getenv(
+    "AI_CHAT_TOKEN",
+    "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",
+)
+AI_CHAT_SYSTEM_PROMPT = os.getenv(
+    "AI_CHAT_SYSTEM_PROMPT",
+    (
+        "You are an assistant for CRM managers. Answer in clear Russian. "
+        "Do not output chain-of-thought, reasoning traces, or <think> tags. "
+        "If asked to write a document, provide a practical structure and ready template."
+    ),
+)

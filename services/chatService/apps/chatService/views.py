@@ -1,4 +1,5 @@
 from collections import defaultdict
+import re
 from django.db.models import Count
 from django.db.models import Q
 from django.db import transaction
@@ -8,6 +9,9 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from azure.ai.inference import ChatCompletionsClient
+from azure.core.credentials import AzureKeyCredential
 
 from .models import ChatMessage, ChatParticipant, ChatRoom, TelegramRoomBinding
 from .permissions import CRM_STAFF_ROLES, IsManagerOrAdmin
@@ -88,6 +92,49 @@ def _default_staff_participants():
     return participants
 
 
+def _sanitize_ai_output(text):
+    if not text:
+        return ""
+    without_think = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE)
+    return without_think.strip()
+
+
+def _build_ai_messages(room, user_text):
+    system_prompt = getattr(settings, "AI_CHAT_SYSTEM_PROMPT", "").strip()
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    history = list(room.messages.order_by("-created_at")[:10])
+    history.reverse()
+    for item in history:
+        role = "assistant" if item.sender_role == "ai_assistant" else "user"
+        messages.append({"role": role, "content": item.text})
+    messages.append({"role": "user", "content": user_text})
+    return messages
+
+
+def _generate_ai_reply(room, user_text):
+    if not getattr(settings, "AI_CHAT_ENABLED", False):
+        return "AI-чат временно отключен в конфигурации сервиса."
+
+    token = getattr(settings, "AI_CHAT_TOKEN", "").strip()
+    endpoint = getattr(settings, "AI_CHAT_ENDPOINT", "").strip()
+    model = getattr(settings, "AI_CHAT_MODEL", "").strip()
+    if not token or not endpoint or not model:
+        return "AI не настроен: отсутствуют AI_CHAT_TOKEN / AI_CHAT_ENDPOINT / AI_CHAT_MODEL."
+
+    client = ChatCompletionsClient(endpoint=endpoint, credential=AzureKeyCredential(token))
+    response = client.complete(
+        messages=_build_ai_messages(room, user_text),
+        model=model,
+        max_tokens=1024,
+    )
+    content = response.choices[0].message.content if response.choices else ""
+    cleaned = _sanitize_ai_output(content)
+    return cleaned or "Не удалось получить содержательный ответ. Попробуйте уточнить запрос."
+
+
 class ChatRoomListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsManagerOrAdmin]
 
@@ -160,6 +207,101 @@ class ChatRoomListCreateView(generics.ListCreateAPIView):
         return Response(ChatRoomListSerializer(output).data, status=status.HTTP_201_CREATED)
 
 
+class ChatAIRoomEnsureView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def post(self, request):
+        actor = request.user
+        actor_role = getattr(actor, "role", None)
+        if actor_role not in CRM_STAFF_ROLES:
+            return Response({"detail": "Недостаточно прав."}, status=status.HTTP_403_FORBIDDEN)
+
+        with transaction.atomic():
+            room = (
+                ChatRoom.objects.filter(is_active=True, is_ai=True, participants__user_id=actor.id)
+                .annotate(messages_count=Count("messages"))
+                .prefetch_related("participants", "messages")
+                .first()
+            )
+            if not room:
+                room = ChatRoom.objects.create(
+                    title="AI-помощник",
+                    created_by_id=actor.id,
+                    created_by_email=getattr(actor, "email", ""),
+                    created_by_name=_user_full_name(actor),
+                    is_ai=True,
+                )
+                ChatParticipant.objects.create(
+                    room=room,
+                    user_id=actor.id,
+                    email=getattr(actor, "email", ""),
+                    first_name=getattr(actor, "first_name", ""),
+                    last_name=getattr(actor, "last_name", ""),
+                    role=actor_role,
+                )
+                ChatMessage.objects.create(
+                    room=room,
+                    sender_id=0,
+                    sender_email="",
+                    sender_first_name="AI",
+                    sender_last_name="Assistant",
+                    sender_role="ai_assistant",
+                    text=(
+                        "Привет! Я AI-помощник в CRM.\n"
+                        "Могу помочь с текстами, письмами, документами, KPI и скриптами продаж.\n"
+                        "Например: 'Сделай шаблон коммерческого предложения для клиента'."
+                    ),
+                )
+                room.save(update_fields=["updated_at"])
+
+        output = (
+            ChatRoom.objects.filter(id=room.id)
+            .annotate(messages_count=Count("messages"))
+            .prefetch_related("participants", "messages")
+            .first()
+        )
+        return Response(ChatRoomListSerializer(output).data, status=status.HTTP_200_OK)
+
+
+class ChatAIRoomResetContextView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def post(self, request, room_id):
+        room = get_object_or_404(
+            ChatRoom.objects.prefetch_related("participants"),
+            pk=room_id,
+            is_active=True,
+            is_ai=True,
+        )
+        if not _can_access_room_for_user(room, request.user):
+            self.permission_denied(request, message="Вы не участник этого чата.")
+
+        with transaction.atomic():
+            room.messages.all().delete()
+            welcome = ChatMessage.objects.create(
+                room=room,
+                sender_id=0,
+                sender_email="",
+                sender_first_name="AI",
+                sender_last_name="Assistant",
+                sender_role="ai_assistant",
+                text=(
+                    "Контекст очищен.\n"
+                    "Готов начать заново. Опиши задачу или выбери подсказку."
+                ),
+            )
+            room.save(update_fields=["updated_at"])
+
+        return Response(
+            {
+                "ok": True,
+                "room_id": room.id,
+                "message": ChatMessageSerializer(welcome).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class ChatRoomDetailView(generics.RetrieveDestroyAPIView):
     queryset = ChatRoom.objects.filter(is_active=True).prefetch_related("participants", "messages").select_related("telegram_binding")
     serializer_class = ChatRoomListSerializer
@@ -215,8 +357,37 @@ class ChatMessageListCreateView(APIView):
             sender_role=user_role,
             text=serializer.validated_data["text"],
         )
+
+        ai_error = None
+        if room.is_ai:
+            try:
+                ai_text = _generate_ai_reply(room, serializer.validated_data["text"])
+                ChatMessage.objects.create(
+                    room=room,
+                    sender_id=0,
+                    sender_email="",
+                    sender_first_name="AI",
+                    sender_last_name="Assistant",
+                    sender_role="ai_assistant",
+                    text=ai_text,
+                )
+            except Exception as exc:
+                ai_error = str(exc)
+                ChatMessage.objects.create(
+                    room=room,
+                    sender_id=0,
+                    sender_email="",
+                    sender_first_name="AI",
+                    sender_last_name="Assistant",
+                    sender_role="ai_assistant",
+                    text="Не удалось получить ответ от AI. Попробуйте еще раз через несколько секунд.",
+                )
+
         room.save(update_fields=["updated_at"])
-        return Response(ChatMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+        payload = ChatMessageSerializer(message).data
+        if ai_error:
+            payload["ai_error"] = ai_error
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class TelegramInboundBridgeView(APIView):

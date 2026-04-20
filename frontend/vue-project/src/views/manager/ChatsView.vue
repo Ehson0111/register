@@ -1,18 +1,26 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between gap-3">
       <h2 class="text-2xl font-bold text-gray-900">Чаты команды</h2>
-      <button
-        @click="openCreateRoomModal"
-        class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        <PlusIcon class="w-5 h-5" />
-        Создать чат
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          @click="startAiChat"
+          class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors"
+        >
+          <span>AI-чат</span>
+        </button>
+        <button
+          @click="openCreateRoomModal"
+          class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <PlusIcon class="w-5 h-5" />
+          Создать чат
+        </button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <section class="lg:col-span-1 bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+      <section class="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
           <h3 class="font-semibold text-gray-900">Мои комнаты</h3>
           <button @click="loadRooms" class="text-sm text-blue-600 hover:text-blue-800">Обновить</button>
@@ -32,32 +40,44 @@
               <p class="font-medium text-gray-900 truncate">{{ room.title || ('Чат #' + room.id) }}</p>
               <span
                 v-if="room.is_telegram"
-                class="inline-flex items-center rounded-full bg-sky-100 text-sky-700 px-2 py-0.5 text-[11px] font-medium"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium chat-type-badge-telegram"
               >
                 Telegram
+              </span>
+              <span
+                v-if="room.is_ai"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium chat-type-badge-ai"
+              >
+                AI
               </span>
             </div>
             <p class="text-xs text-gray-500 mt-1 truncate">
               {{ room.last_message ? room.last_message.text : 'Без сообщений' }}
             </p>
             <div class="text-xs text-gray-400 mt-2 flex items-center justify-between">
-              <span>Участников: {{ room.participants.length }}</span>
+              <span>{{ room.is_ai ? 'Личный AI-чат' : `Участников: ${room.participants.length}` }}</span>
               <span>{{ formatDateTime(room.updated_at) }}</span>
             </div>
           </li>
         </ul>
       </section>
 
-      <section class="lg:col-span-2 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col min-h-[560px]">
+      <section class="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col min-h-[560px]">
         <div class="px-4 py-3 border-b border-gray-200">
           <template v-if="selectedRoom">
             <div class="flex items-center gap-2">
               <h3 class="font-semibold text-gray-900">{{ selectedRoom.title || ('Чат #' + selectedRoom.id) }}</h3>
               <span
                 v-if="selectedRoom.is_telegram"
-                class="inline-flex items-center rounded-full bg-sky-100 text-sky-700 px-2 py-0.5 text-[11px] font-medium"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium chat-type-badge-telegram"
               >
                 Telegram
+              </span>
+              <span
+                v-if="selectedRoom.is_ai"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium chat-type-badge-ai"
+              >
+                AI
               </span>
             </div>
             <p class="text-sm text-gray-500">
@@ -67,6 +87,14 @@
               </template>
             </p>
             <div class="mt-2">
+              <button
+                v-if="selectedRoom.is_ai"
+                @click="handleResetAiContext"
+                class="mr-3 text-xs text-violet-600 hover:text-violet-800"
+                :disabled="resettingAiContext"
+              >
+                {{ resettingAiContext ? 'Сброс...' : 'Сбросить контекст' }}
+              </button>
               <button
                 @click="handleDeleteRoom"
                 class="text-xs text-red-600 hover:text-red-800"
@@ -89,13 +117,20 @@
           <div
             v-for="msg in messages"
             :key="msg.id"
-            class="max-w-[80%] rounded-xl px-4 py-2 shadow-sm"
-            :class="msg.sender_id === currentUserId ? 'ml-auto bg-blue-600 text-white' : 'bg-white text-gray-900'"
+            class="max-w-[92%] rounded-xl px-4 py-2 shadow-sm"
+            :class="msg.sender_id === currentUserId ? 'ml-auto bg-blue-600 text-white' : msg.sender_role === 'ai_assistant' ? 'ai-message-bubble' : 'bg-white text-gray-900'"
           >
             <p class="text-xs opacity-80 mb-1">
               {{ msg.sender_name }} · {{ formatDateTime(msg.created_at) }}
             </p>
             <p class="whitespace-pre-wrap break-words">{{ msg.text }}</p>
+          </div>
+          <div
+            v-if="selectedRoom?.is_ai && aiThinking"
+            class="max-w-[92%] rounded-xl px-4 py-3 shadow-sm ai-message-bubble"
+          >
+            <p class="text-xs opacity-80 mb-1">AI Assistant · сейчас</p>
+            <p class="whitespace-pre-wrap break-words">ИИ думает...</p>
           </div>
         </div>
         <div v-else class="flex-1 flex items-center justify-center text-gray-400">Нет выбранной комнаты</div>
@@ -103,12 +138,28 @@
         <form
           v-if="selectedRoomId"
           @submit.prevent="submitMessage"
-          class="p-4 border-t border-gray-200 bg-white flex items-end gap-3"
+          class="p-4 border-t border-gray-200 bg-white"
         >
+          <div v-if="selectedRoom?.is_ai" class="mb-3">
+            <p class="text-xs text-gray-500 mb-2">Подсказки:</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="hint in aiHints"
+                :key="hint"
+                type="button"
+                @click="applyHint(hint)"
+                class="text-xs px-3 py-1.5 rounded-full bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors"
+              >
+                {{ hint }}
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-end gap-3">
           <textarea
             v-model="messageDraft"
             rows="2"
-            placeholder="Введите сообщение..."
+            :placeholder="selectedRoom?.is_ai ? 'Напишите запрос AI-помощнику...' : 'Введите сообщение...'"
             class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
           />
           <button
@@ -118,6 +169,7 @@
           >
             {{ sendingMessage ? 'Отправка...' : 'Отправить' }}
           </button>
+          </div>
         </form>
       </section>
     </div>
@@ -216,6 +268,14 @@ const selectedParticipantIds = ref<number[]>([])
 const creatingRoom = ref(false)
 const createRoomError = ref('')
 const deletingRoom = ref(false)
+const resettingAiContext = ref(false)
+const aiThinking = ref(false)
+const aiHints = [
+  'Сделай шаблон коммерческого предложения для клиента',
+  'Напиши структуру договора на оказание услуг',
+  'Подготовь вежливый ответ на претензию клиента',
+  'Составь план встречи с новым лидом на 30 минут'
+]
 const ROOMS_POLL_INTERVAL_MS = 3000
 const MESSAGES_POLL_INTERVAL_MS = 1200
 let roomsPollTimer: number | null = null
@@ -246,6 +306,7 @@ function formatDateTime(value: string): string {
 }
 
 function participantsPreview(room: ChatRoom): string {
+  if (room.is_ai) return 'Личный AI-помощник для подготовки текстов и документов'
   return room.participants.map(p => p.full_name || p.email || `ID ${p.user_id}`).join(', ')
 }
 
@@ -300,19 +361,30 @@ async function loadMessages(roomId: number, options?: { silent?: boolean }) {
 
 async function submitMessage() {
   const roomId = selectedRoomId.value
-  if (!roomId || !messageDraft.value.trim()) return
+  const rawText = messageDraft.value.trim()
+  if (!roomId || !rawText) return
+  messageDraft.value = ''
+  if (selectedRoom.value?.is_ai) {
+    aiThinking.value = true
+  }
   sendingMessage.value = true
   messagesError.value = ''
   try {
-    const created = await chatService.sendMessage(roomId, messageDraft.value.trim())
+    const created = await chatService.sendMessage(roomId, rawText)
     messages.value.push(created)
-    messageDraft.value = ''
+    await loadMessages(roomId, { silent: true })
     await loadRooms()
   } catch (e: any) {
     messagesError.value = e?.response?.data?.detail || e?.message || 'Не удалось отправить сообщение'
+    messageDraft.value = rawText
   } finally {
+    aiThinking.value = false
     sendingMessage.value = false
   }
+}
+
+function applyHint(hint: string) {
+  messageDraft.value = hint
 }
 
 async function handleDeleteRoom() {
@@ -393,6 +465,35 @@ async function openCreateRoomModal() {
   await loadStaffUsers()
 }
 
+async function startAiChat() {
+  createRoomError.value = ''
+  try {
+    const room = await chatService.ensureAiRoom()
+    await loadRooms()
+    await selectRoom(room.id)
+  } catch (e: any) {
+    roomsError.value = e?.response?.data?.detail || e?.message || 'Не удалось открыть AI-чат'
+  }
+}
+
+async function handleResetAiContext() {
+  const roomId = selectedRoomId.value
+  if (!roomId || !selectedRoom.value?.is_ai) return
+  const ok = window.confirm('Очистить контекст AI-чата и начать заново?')
+  if (!ok) return
+
+  resettingAiContext.value = true
+  try {
+    await chatService.resetAiContext(roomId)
+    await loadMessages(roomId)
+    await loadRooms()
+  } catch (e: any) {
+    messagesError.value = e?.response?.data?.detail || e?.message || 'Не удалось сбросить контекст AI'
+  } finally {
+    resettingAiContext.value = false
+  }
+}
+
 async function submitCreateRoom() {
   createRoomError.value = ''
   const unique = Array.from(new Set(selectedParticipantIds.value))
@@ -443,5 +544,31 @@ onUnmounted(() => {
 .chat-room-selected p,
 .chat-room-selected span {
   color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.chat-type-badge-ai {
+  background: rgba(109, 40, 217, 0.24) !important;
+  color: rgba(237, 233, 254, 0.98) !important;
+}
+
+.chat-type-badge-telegram {
+  background: rgba(14, 165, 233, 0.22) !important;
+  color: rgba(224, 242, 254, 0.98) !important;
+}
+
+.chat-room-selected .chat-type-badge-ai {
+  background: rgba(109, 40, 217, 0.72) !important;
+  color: #ffffff !important;
+}
+
+.chat-room-selected .chat-type-badge-telegram {
+  background: rgba(3, 105, 161, 0.72) !important;
+  color: #ffffff !important;
+}
+
+.ai-message-bubble {
+  background: rgba(76, 29, 149, 0.2) !important;
+  color: rgba(243, 232, 255, 0.98) !important;
+  border: 1px solid rgba(196, 181, 253, 0.35) !important;
 }
 </style>

@@ -1,0 +1,6 @@
+version: "1"
+tunnels:
+  django-crm:
+    proto: http
+    addr: "8012"          # Порт, на котором запущен Django плаьеэы 
+    subdomain: misty-river-547  # текущий поддомен

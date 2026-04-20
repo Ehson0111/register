@@ -4,9 +4,9 @@ from .models import ChatMessage, ChatParticipant, ChatRoom, TelegramRoomBinding
 
 @admin.register(ChatRoom)
 class ChatRoomAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "created_by_email", "is_active", "created_at", "updated_at")
+    list_display = ("id", "title", "is_ai", "created_by_email", "is_active", "created_at", "updated_at")
     search_fields = ("title", "created_by_email", "created_by_name")
-    list_filter = ("is_active", "created_at")
+    list_filter = ("is_ai", "is_active", "created_at")
 
 
 @admin.register(ChatParticipant)
