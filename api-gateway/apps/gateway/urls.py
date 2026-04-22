@@ -20,4 +20,5 @@ urlpatterns = [
     re_path(r'^documents/', views.proxy_view, name='documents'),
     re_path(r'^chat/.*', views.proxy_view, name='chat'),
     re_path(r'^work-process/.*', views.proxy_view, name='work-process'),
+    re_path(r'^payment/.*', views.proxy_view, name='payment'),
 ]

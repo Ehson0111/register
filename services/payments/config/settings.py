@@ -137,6 +137,40 @@ SECRET_KEY = 'django-insecure-j4qv2$-!q_yfd0n&*qt^n1#mya66nqah9r3b1m1@-s!$s0pe$2
 YOOKASSA_SHOP_ID = '1335151'
 YOOKASSA_SECRET_KEY = 'test_3RDrQQ3KHo_QzYn9jw0orffJb1u8ILESiNzOfuIyi4I'
 
+CONTACT_SERVICE_URL = os.getenv('CONTACT_SERVICE_URL', 'http://127.0.0.1:8005')
+PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://misty-river-547.gopublic.su')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@crm.local')
+
+ONEC_BASE_URL = os.getenv('ONEC_BASE_URL', 'http://localhost/1c/odata/standard.odata/')
+ONEC_ODATA_BASE_URL = os.getenv('ONEC_ODATA_BASE_URL', ONEC_BASE_URL)
+ONEC_CREATE_INVOICE_URL = os.getenv('ONEC_CREATE_INVOICE_URL', ONEC_ODATA_BASE_URL)
+ONEC_MARK_PAID_URL = os.getenv('ONEC_MARK_PAID_URL', ONEC_ODATA_BASE_URL)
+ONEC_USERNAME = os.getenv('ONEC_USERNAME', '')
+ONEC_PASSWORD = os.getenv('ONEC_PASSWORD', '')
+ONEC_TIMEOUT_SECONDS = int(os.getenv('ONEC_TIMEOUT_SECONDS', '20'))
+ONEC_TRANSPORT_MODE = os.getenv('ONEC_TRANSPORT_MODE', 'bridge')
+ONEC_BRIDGE_URL = os.getenv('ONEC_BRIDGE_URL', 'http://127.0.0.1:8013/invoke')
+ONEC_BRIDGE_SECRET = os.getenv('ONEC_BRIDGE_SECRET', '')
+ONEC_BRIDGE_TIMEOUT_SECONDS = int(os.getenv('ONEC_BRIDGE_TIMEOUT_SECONDS', '60'))
+ONEC_RESTART_EACH_REQUEST = os.getenv('ONEC_RESTART_EACH_REQUEST', 'true').lower() == 'true'
+ONEC_RESTART_COMMAND = os.getenv('ONEC_RESTART_COMMAND', '')
+ONEC_RESTART_TIMEOUT_SECONDS = int(os.getenv('ONEC_RESTART_TIMEOUT_SECONDS', '30'))
+ONEC_HEALTHCHECK_PATH = os.getenv('ONEC_HEALTHCHECK_PATH', '$metadata')
+ONEC_HEALTH_TIMEOUT_SECONDS = int(os.getenv('ONEC_HEALTH_TIMEOUT_SECONDS', '45'))
+ONEC_HEALTHCHECK_TIMEOUT_SECONDS = int(os.getenv('ONEC_HEALTHCHECK_TIMEOUT_SECONDS', '10'))
+ONEC_HEALTHCHECK_INTERVAL_SECONDS = float(os.getenv('ONEC_HEALTHCHECK_INTERVAL_SECONDS', '2'))
+ONEC_ORGANIZATION_KEY = os.getenv('ONEC_ORGANIZATION_KEY', '')
+ONEC_PAYMENT_INVOICE_FIELD = os.getenv('ONEC_PAYMENT_INVOICE_FIELD', 'Счет_Key')
+ONEC_STATUS_UNPAID_VALUE = os.getenv('ONEC_STATUS_UNPAID_VALUE', 'НеОплачен')
+ONEC_STATUS_PAID_VALUE = os.getenv('ONEC_STATUS_PAID_VALUE', 'Оплачен')
+ONEC_DEFAULT_CUSTOMER_TYPE = os.getenv('ONEC_DEFAULT_CUSTOMER_TYPE', 'crm')
+ONEC_DEFAULT_PAYMENT_METHOD = os.getenv('ONEC_DEFAULT_PAYMENT_METHOD', 'yookassa')
+ONEC_SERVICE_UNIT = os.getenv('ONEC_SERVICE_UNIT', 'шт')
+ONEC_SERVICE_ACTIVITY = os.getenv('ONEC_SERVICE_ACTIVITY', 'Активна')
+ONEC_AUTO_POST_DOCUMENTS = os.getenv('ONEC_AUTO_POST_DOCUMENTS', 'false').lower() == 'true'
+ONEC_POSTING_MODE_OPERATIONAL = os.getenv('ONEC_POSTING_MODE_OPERATIONAL', 'false').lower() == 'true'
+INVOICE_RETRY_WORKER_INTERVAL_SECONDS = int(os.getenv('INVOICE_RETRY_WORKER_INTERVAL_SECONDS', '30'))
+
 
 
 # Настройка платежного провайдера
@@ -153,7 +187,7 @@ PAYMENT_VARIANTS = {
 DEBUG = True
 ALLOWED_HOSTS = [
     'localhost', '127.0.0.1', '0.0.0.0',
-    'marketing', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'documents',
+    'marketing', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'documents', 'payments',
     'misty-river-547.gopublic.su',
 ]
 
@@ -253,6 +287,11 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+# email
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '25'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'false').lower() == 'true'
 # settings.py
  
  

@@ -140,6 +140,57 @@ services:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8011"
 
+  payments:
+    build:
+      context: ./services/payments
+    ports:
+      - "8012:8012"
+    environment:
+      CONTACT_SERVICE_URL: "http://contact-service:8005"
+      PUBLIC_PAYMENTS_BASE_URL: "https://misty-river-547.gopublic.su"
+      ONEC_TRANSPORT_MODE: "bridge"
+      ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
+      ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
+      ONEC_BRIDGE_SECRET: "${ONEC_BRIDGE_SECRET:-crm-onec-bridge-secret-2026}"
+      ONEC_HEALTHCHECK_PATH: "$metadata"
+      ONEC_RESTART_EACH_REQUEST: "true"
+      ONEC_PAYMENT_INVOICE_FIELD: "${ONEC_PAYMENT_INVOICE_FIELD:-Счет_Key}"
+      DEFAULT_FROM_EMAIL: "no-reply@crm.local"
+      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+      EMAIL_HOST: "mailhog"
+      EMAIL_PORT: "1025"
+      EMAIL_USE_TLS: "false"
+    depends_on:
+      - contact-service
+      - mailhog
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./databases:/app/databases
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8012"
+
+  payments-retry-worker:
+    build:
+      context: ./services/payments
+    environment:
+      CONTACT_SERVICE_URL: "http://contact-service:8005"
+      PUBLIC_PAYMENTS_BASE_URL: "https://misty-river-547.gopublic.su"
+      ONEC_TRANSPORT_MODE: "bridge"
+      ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
+      ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
+      ONEC_BRIDGE_SECRET: "${ONEC_BRIDGE_SECRET:-crm-onec-bridge-secret-2026}"
+      ONEC_HEALTHCHECK_PATH: "$metadata"
+      ONEC_RESTART_EACH_REQUEST: "true"
+      ONEC_PAYMENT_INVOICE_FIELD: "${ONEC_PAYMENT_INVOICE_FIELD:-Счет_Key}"
+      INVOICE_RETRY_WORKER_INTERVAL_SECONDS: "30"
+    depends_on:
+      - payments
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./databases:/app/databases
+    command: sh -c "python manage.py migrate && python manage.py process_invoice_retries --loop"
+
   tgbots:
     build:
       context: ./services/tgbots
@@ -167,6 +218,7 @@ services:
       DOCUMENTS_SERVICE_URL: "http://documents:8008"
       CHAT_SERVICE_URL: "http://chat-service:8010"
       WORK_PROCESS_URL: "http://work-process:8011"
+      PAYMENTS_SERVICE_URL: "http://payments:8012"
     depends_on:
       - user-service
       - contact-service
@@ -175,6 +227,7 @@ services:
       - documents
       - chat-service
       - work-process
+      - payments
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"

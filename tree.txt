@@ -1,384 +1,233 @@
-<mxGraphModel dx="992" dy="596" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-  <root>
-    <mxCell id="0" />
-    <mxCell id="1" parent="0" />
-    <mxCell id="edge-root-dashboard" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-dashboard">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-auth" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-auth">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-apps" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-apps">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-contacts" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-contacts">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-client" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-client">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-services" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-services">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-deals" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-deals">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-audit" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-audit">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-calendar" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-calendar">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-marketing" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-marketing">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-docs" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-docs">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-gateway" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-gateway">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="edge-root-integration" edge="1" parent="1" source="root-app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="mod-integration">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="root-app" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Веб-приложение Business CRM" vertex="1">
-      <mxGeometry height="60" width="220" x="1900" y="80" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-dashboard" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Главный модуль / дашборд&#xa;[реализовано частично]" vertex="1">
-      <mxGeometry height="70" width="210" x="150" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-auth" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Авторизация и пользователи&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="420" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-apps" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Модуль заявок&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="960" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-contacts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль контактов&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-      <mxGeometry height="70" width="210" x="1230" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-client" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Клиентский функционал&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="1500" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-services" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль услуг&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="1770" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-deals" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Модуль сделок&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="2040" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-audit" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Audit Trail / журнал действий&#xa; " vertex="1">
-      <mxGeometry height="70" width="230" x="2310" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-calendar" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Календарь и задачи&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="2600" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-marketing" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Маркетинговый модуль&#xa;[реализовано частично]" vertex="1">
-      <mxGeometry height="70" width="220" x="2870" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-docs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Модуль документов&#xa;[реализовано частично]" vertex="1">
-      <mxGeometry height="70" width="220" x="3150" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-gateway" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="API Gateway&#xa; " vertex="1">
-      <mxGeometry height="70" width="210" x="3500" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="mod-integration" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Интеграции&#xa;[реализовано частично]" vertex="1">
-      <mxGeometry height="70" width="220" x="3700" y="280" as="geometry" />
-    </mxCell>
-    <mxCell id="d1" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="d2" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="d3" edge="1" parent="1" source="mod-dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="d1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="d1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="сводка по CRM&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="60" y="490" as="geometry" />
-    </mxCell>
-    <mxCell id="d1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="аналитика по сделкам и контактам&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="220" y="490" as="geometry" />
-    </mxCell>
-    <mxCell id="d1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="отдельная dashboard-страница&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="90" y="580" as="geometry" />
-    </mxCell>
-    <mxCell id="a1" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="a2" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="a3" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="a4" edge="1" parent="1" source="mod-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="a1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="a1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="регистрация&#xa; " vertex="1">
-      <mxGeometry height="60" width="130" x="390" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="a1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="подтверждение email по OTP&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="530" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="a1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="вход и refresh JWT&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="390" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="a1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="сброс пароля&#xa; " vertex="1">
-      <mxGeometry height="60" width="130" x="550" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="r1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-1">
-      <mxGeometry relative="1" as="geometry">
-        <mxPoint x="795" y="350" as="sourcePoint" />
-      </mxGeometry>
-    </mxCell>
-    <mxCell id="r2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-2">
-      <mxGeometry relative="1" as="geometry">
-        <mxPoint x="795" y="350" as="sourcePoint" />
-      </mxGeometry>
-    </mxCell>
-    <mxCell id="r3" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="r1-3">
-      <mxGeometry relative="1" as="geometry">
-        <mxPoint x="795" y="350" as="sourcePoint" />
-      </mxGeometry>
-    </mxCell>
-    <mxCell id="ap1" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="ap2" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="ap3" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="ap4" edge="1" parent="1" source="ap1-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="ap1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-      <mxGeometry height="60" width="140" x="995" y="500" as="geometry" />
-    </mxCell>
-    <mxCell id="ap1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="получение заявок из почты&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-      <mxGeometry height="60" width="170" x="980" y="580" as="geometry" />
-    </mxCell>
-    <mxCell id="ap1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="автосоздание контакта/сделки&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-      <mxGeometry height="60" width="190" x="970" y="670" as="geometry" />
-    </mxCell>
-    <mxCell id="c1" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="c2" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="c3" edge="1" parent="1" source="mod-contacts" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="c1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD контактов&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="1241" y="380" as="geometry" />
-    </mxCell>
-    <mxCell id="c1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="1265" y="470" as="geometry" />
-    </mxCell>
-    <mxCell id="c1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="история изменений&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="1280" y="560" as="geometry" />
-    </mxCell>
-    <mxCell id="cl1" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cl2" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cl3" edge="1" parent="1" source="mod-client" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cl1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cl1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="профиль клиента&#xa; " vertex="1">
-      <mxGeometry height="60" width="130" x="1480" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="cl1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="просмотр своих сделок&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="1620" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="cl1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="создание запроса на услугу&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="1540" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="s1" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="s2" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="s3" edge="1" parent="1" source="mod-services" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="s1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="s1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD услуг&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="1760" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="s1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="деактивация вместо удаления&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="1890" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="s1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список для select&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="1820" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="dl1" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="dl2" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="dl3" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="dl4" edge="1" parent="1" source="mod-deals" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dl1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="dl1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD сделок&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="2020" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="dl1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="смена статуса&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="2150" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="dl1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="статистика по контактам&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="2020" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="dl1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="автодата закрытия&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="2180" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="au1" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="au2" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="au3" edge="1" parent="1" source="mod-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="au1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="au1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="лог действий по контактам&#xa; " vertex="1">
-      <mxGeometry height="60" width="160" x="2300" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="au1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="лог действий по сделкам&#xa; " vertex="1">
-      <mxGeometry height="60" width="160" x="2470" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="au1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="поиск и фильтрация журнала&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="2385" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="cal1" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cal2" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cal3" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cal4" edge="1" parent="1" source="mod-calendar" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cal1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="cal1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="CRUD задач&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="2580" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="cal1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="today / upcoming / overdue&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="2710" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="cal1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="статистика задач&#xa; " vertex="1">
-      <mxGeometry height="60" width="130" x="2580" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="cal1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="уведомления и напоминания&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="2720" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="m1" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="m2" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="m3" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="m4" edge="1" parent="1" source="mod-marketing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="m1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="шаблоны рассылок&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="2860" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="m1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="кампании и история&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="3010" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="m1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="быстрые и массовые сообщения&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="2860" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="m1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="отправка всем клиентам одной кнопкой&#xa;[частично]" vertex="1">
-      <mxGeometry height="60" width="200" x="3050" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="doc1" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="doc2" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="doc3" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="doc4" edge="1" parent="1" source="mod-docs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="doc1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="doc1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="загрузка документа&#xa; " vertex="1">
-      <mxGeometry height="60" width="140" x="3140" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="doc1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список документов клиента&#xa; " vertex="1">
-      <mxGeometry height="60" width="170" x="3290" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="doc1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="скачивание документа&#xa; " vertex="1">
-      <mxGeometry height="60" width="150" x="3140" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="doc1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="удаление / версии документов&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="3300" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="g1" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="g2" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="g3" edge="1" parent="1" source="mod-gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="g1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="g1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="маршрутизация между сервисами&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="3490" y="670" as="geometry" />
-    </mxCell>
-    <mxCell id="g1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="проксирование JWT и параметров&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="3680" y="670" as="geometry" />
-    </mxCell>
-    <mxCell id="g1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="потоковая передача файлов&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="3585" y="760" as="geometry" />
-    </mxCell>
-    <mxCell id="i1" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="i2" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="i3" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="i4" edge="1" parent="1" source="mod-integration" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="i1-4">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="i1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Yandex Mail импорт заявок&#xa; " vertex="1">
-      <mxGeometry height="60" width="180" x="3690" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="i1-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Email OTP&#xa; " vertex="1">
-      <mxGeometry height="60" width="120" x="3880" y="430" as="geometry" />
-    </mxCell>
-    <mxCell id="i1-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="MinIO хранилище документов&#xa; " vertex="1">
-      <mxGeometry height="60" width="190" x="3690" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="i1-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Telegram / SMS как отдельные интеграции&#xa;[не реализовано / частично]" vertex="1">
-      <mxGeometry height="60" width="220" x="3890" y="520" as="geometry" />
-    </mxCell>
-    <mxCell id="KmtFV-qr0vTjS91AaGdY-2" edge="1" parent="1" source="mod-apps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ap1-1" value="">
-      <mxGeometry relative="1" as="geometry">
-        <mxPoint x="1065" y="350" as="sourcePoint" />
-        <mxPoint x="1065" y="650" as="targetPoint" />
-      </mxGeometry>
-    </mxCell>
-    <mxCell id="ap1-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="список и просмотр заявок&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
-      <mxGeometry height="60" width="160" x="985" y="420" as="geometry" />
-    </mxCell>
-  </root>
-</mxGraphModel>
+import requests
+import matplotlib.pyplot as plt
+import pandas as pd
+from urllib.parse import urljoin
+from datetime import datetime
+# Настройки
+BASE_URL = "http://localhost/proekt/odata/standard.odata/"
+HEADERS = {'Accept': 'application/json'}
+
+def get_odata_data(endpoint, params=None):
+    """Запрашивает данные из OData-сервиса"""
+    url = urljoin(BASE_URL, endpoint)
+    try:
+        response = requests.get(url, params=params, headers=HEADERS)
+        response.raise_for_status()
+        return response.json().get('value', [])
+    except Exception as e:
+        print(f"🚨 Ошибка при запросе {url}: {str(e)}")
+        return []
+
+# 2. Отчеты по заказам 
+def orders_by_customer():
+    """Отчет по заказам клиентов"""
+    params = {
+        "$expand": "Клиенты",
+        "$select": "Клиенты/Description,Number,Date,СуммаЗаказов"
+    }
+    
+    orders = get_odata_data("Document_ЗаказКлиента", params)
+    if not orders:
+        print("❌ Нет данных о заказах клиентов")
+        return
+
+    # Создаем DataFrame с обработкой None и пустых значений
+    df_data = []
+    for order in orders:
+        client = order.get('Клиенты', None)
+        client_description = client.get('Description', 'Без имени') if client else 'Без имени'
+        
+        # Обработка СуммаЗаказов
+        try:
+            amount = float(order.get('СуммаЗаказов', 0)) if order.get('СуммаЗаказов', '') != '' else 0.0
+        except (ValueError, TypeError):
+            amount = 0.0
+            print(f"⚠️ Заказ {order.get('Number', 'Unknown')} имеет некорректное значение СуммаЗаказов: {order.get('СуммаЗаказов', 'None')}")
+
+        df_data.append({
+            'Клиент': client_description,
+            'Номер заказа': order.get('Number', ''),
+            'Дата': pd.to_datetime(order.get('Date', None), errors='coerce'),
+            'Сумма': amount
+        })
+    
+    df = pd.DataFrame(df_data)
+    
+    customer_orders = df.groupby('Клиент').agg({
+        'Номер заказа': 'count',
+        'Сумма': 'sum'
+    }).rename(columns={'Номер заказа': 'Количество заказов'})
+    
+    # График
+    plt.figure(figsize=(12, 6))
+    customer_orders['Количество заказов'].plot(kind='bar', color='lightblue')
+    plt.title('Количество заказов по клиентам')
+    plt.xlabel('Клиент')
+    plt.ylabel('Количество заказов')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+def order_statuses():
+    """Отчет по статусам заказов"""
+    params = {
+        "$select": "СтатусЗаказа"
+    }
+    
+    orders = get_odata_data("Document_ЗаказКлиента", params)
+    if not orders:
+        print("❌ Нет данных о статусах заказов")
+        return
+
+    df = pd.DataFrame([order.get('СтатусЗаказа', 'Не указан') for order in orders], columns=['Статус'])
+    status_counts = df['Статус'].value_counts()
+    
+    # График
+    plt.figure(figsize=(8, 8))
+    status_counts.plot(kind='pie', autopct='%1.1f%%', startangle=90)
+    plt.title('Распределение статусов заказов')
+    plt.ylabel('')
+    plt.tight_layout()
+    plt.show()
+
+def payment_methods():
+    """Отчет по методам оплаты"""
+    params = {
+        "$select": "МетодОплаты"
+    }
+    
+    orders = get_odata_data("Document_ЗаказКлиента", params)
+    if not orders:
+        print("❌ Нет данных о методах оплаты")
+        return
+
+    df = pd.DataFrame([order.get('МетодОплаты', 'Не указан') for order in orders], columns=['Метод'])
+    method_counts = df['Метод'].value_counts()
+    
+    # График
+    plt.figure(figsize=(10, 6))
+    method_counts.plot(kind='bar', color='coral')
+    plt.title('Распределение методов оплаты')
+    plt.xlabel('Метод оплаты')
+    plt.ylabel('Количество заказов')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+def average_order_value():
+    """Отчет по среднему чеку"""
+    params = {
+        "$select": "СуммаЗаказов"
+    }
+    
+    orders = get_odata_data("Document_ЗаказКлиента", params)
+    if not orders:
+        print("❌ Нет данных о заказах")
+        return
+
+    df = pd.DataFrame([float(order.get('СуммаЗаказов', 0)) for order in orders], columns=['Сумма'])
+    avg_value = df['Сумма'].mean()
+    
+    print(f"📊 Средний чек: {avg_value:.2f} руб")
+    # Простой текстовый вывод, так как график для одного значения менее информативен
+
+# 3. Отчеты по курьерам
+def courier_load():
+    """Отчет по нагрузке на курьеров"""
+    params = {
+        "$expand": "Курьер",
+        "$select": "Курьер/Description,Date"
+    }
+    
+    assignments = get_odata_data("Document_НазначениеКурьера", params)
+    if not assignments:
+        print("❌ Нет данных о назначениях курьеров")
+        return
+
+    df = pd.DataFrame([{
+        'Курьер': assignment.get('Курьер', {}).get('Description', 'Без имени'),
+        'Дата': pd.to_datetime(assignment.get('Date', None))
+    } for assignment in assignments])
+    
+    courier_counts = df.groupby('Курьер').size()
+    
+    # График
+    plt.figure(figsize=(12, 6))
+    courier_counts.plot(kind='bar', color='lightgreen')
+    plt.title('Нагрузка на курьеров (количество назначений)')
+    plt.xlabel('Курьер')
+    plt.ylabel('Количество назначений')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+def delivery_statuses():
+    """Отчет по статусам доставок"""
+    params = {
+        "$select": "СтатусДоставки"
+    }
+    
+    assignments = get_odata_data("Document_НазначениеКурьера", params)
+    if not assignments:
+        print("❌ Нет данных о статусах доставок")
+        return
+
+    df = pd.DataFrame([assignment.get('СтатусДоставки', 'Не указан') for assignment in assignments], columns=['Статус'])
+    status_counts = df['Статус'].value_counts()
+    
+    # График
+    plt.figure(figsize=(8, 8))
+    status_counts.plot(kind='pie', autopct='%1.1f%%', startangle=90)
+    plt.title('Распределение статусов доставок')
+    plt.ylabel('')
+    plt.tight_layout()
+    plt.show()
+ 
+# 6. Клиентские отчеты
+def active_customers():
+    """Отчет по активным клиентам"""
+    params = {
+        "$expand": "Клиенты",
+        "$select": "Клиенты/Description,Number"
+    }
+    
+    orders = get_odata_data("Document_ЗаказКлиента", params)
+    if not orders:
+        print("❌ Нет данных о клиентах")
+        return
+
+    df = pd.DataFrame([{
+        'Клиент': order.get('Клиенты', {}).get('Description', 'Без имени'),
+        'Заказ': order.get('Number', '')
+    } for order in orders])
+    
+    active_counts = df.groupby('Клиент').size().nlargest(10)
+    
+    # График
+    plt.figure(figsize=(12, 6))
+    active_counts.plot(kind='bar', color='teal')
+    plt.title('Топ-10 активных клиентов')
+    plt.xlabel('Клиент')
+    plt.ylabel('Количество заказов')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+ 
+if __name__ == "__main__":
+    print("🔄 Загружаем данные...")
+    
+    # Вызов всех отчетов
+    orders_by_customer()
+    order_statuses()
+    payment_methods()
+    average_order_value()
+    courier_load()
+    delivery_statuses()
+    # courier_efficiency()
+    # warehouse_load()
+    # goods_movement()
+    # revenue_by_period()
+    active_customers()
+    # telegram_customers()
+    # incomplete_orders()
+    # low_stock_products()

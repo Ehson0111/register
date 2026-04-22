@@ -21,6 +21,15 @@
       </div>
 
       <div class="flex space-x-3">
+        <button
+          v-if="canIssueInvoice"
+          @click="issueInvoice"
+          :disabled="invoiceLoading || issuingInvoice || !!invoice"
+          class="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center transition-colors disabled:opacity-60"
+        >
+          <DocumentTextIcon class="w-5 h-5 mr-2" />
+          <span>{{ issuingInvoice ? 'Выставление...' : invoice ? 'Счет выставлен' : 'Выставить счет' }}</span>
+        </button>
         <!-- показываем если сделка не закрытаа-->
         <button
           v-if="!dealdetail?.is_closed"
@@ -260,6 +269,15 @@
           </h3>
           <div class="space-y-2">
             <button
+              v-if="canIssueInvoice"
+              @click="issueInvoice"
+              :disabled="invoiceLoading || issuingInvoice || !!invoice"
+              class="w-full flex items-center space-x-3 px-4 py-3 text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors disabled:opacity-60"
+            >
+              <DocumentTextIcon class="w-5 h-5" />
+              <span>{{ issuingInvoice ? "Выставление счета..." : invoice ? "Счет уже создан" : "Выставить счет" }}</span>
+            </button>
+            <button
               v-if="!dealdetail?.is_closed"
               @click="changeDealStatus('won')"
               class="w-full flex items-center space-x-3 px-4 py-3 text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
@@ -296,6 +314,91 @@
               <EnvelopeIcon class="w-5 h-5" />
               <span>Отправить email</span>
             </button>
+          </div>
+        </div>
+
+        <div v-if="dealdetail?.status === 'won'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Счет и оплата
+          </h3>
+          <div v-if="invoiceLoading" class="text-sm text-gray-500">Загрузка счета...</div>
+          <div v-else-if="!invoice" class="space-y-3">
+            <p class="text-sm text-gray-600">По этой успешно закрытой сделке счет еще не выставлен.</p>
+            <button
+              @click="issueInvoice"
+              :disabled="issuingInvoice"
+              class="w-full px-4 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-60"
+            >
+              {{ issuingInvoice ? "Выставление..." : "Выставить счет в 1С" }}
+            </button>
+          </div>
+          <div v-else class="space-y-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="text-sm text-gray-500">Номер счета</p>
+                <p class="font-semibold text-gray-900">{{ invoice.onec_invoice_number || invoice.invoice_number }}</p>
+              </div>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="invoiceStatusClass(invoice.status)">
+                {{ invoiceStatusText(invoice.status) }}
+              </span>
+            </div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Сумма</span>
+                <span class="text-gray-900 font-medium">{{ formatCurrency(Number(invoice.amount || 0)) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Контрагент 1С</span>
+                <span class="text-gray-900 font-medium">{{ invoice.onec_document_id || "Ожидает номер из 1С" }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Синхронизация 1С</span>
+                <span class="font-medium" :class="syncStatusTextClass(invoice.onec_sync_status)">
+                  {{ syncStatusText(invoice.onec_sync_status) }}
+                </span>
+              </div>
+              <div v-if="invoice.onec_payment_document_id" class="flex justify-between">
+                <span class="text-gray-600">Документ оплаты 1С</span>
+                <span class="text-gray-900 font-medium">{{ invoice.onec_payment_document_id }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Отправка ссылки клиенту</span>
+                <span class="font-medium" :class="syncStatusTextClass(invoice.crm_sync_status)">
+                  {{ syncStatusText(invoice.crm_sync_status) }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="invoice.payment_url" class="space-y-2">
+              <p class="text-sm text-gray-500 break-all">{{ invoice.payment_url }}</p>
+              <a
+                :href="invoice.payment_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Открыть ссылку на оплату
+              </a>
+            </div>
+
+            <button
+              v-if="invoice.onec_sync_status === 'error'"
+              @click="retryInvoiceSync"
+              :disabled="retryingInvoice"
+              class="w-full px-4 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-60"
+            >
+              {{ retryingInvoice ? "Повтор..." : "Повторить синхронизацию с 1С" }}
+            </button>
+
+            <p v-if="invoice.last_onec_error" class="text-xs text-red-600">
+              Ошибка 1С: {{ invoice.last_onec_error }}
+            </p>
+            <p v-if="invoice.next_retry_at" class="text-xs text-amber-600">
+              Следующая автопопытка: {{ formatDateTime(invoice.next_retry_at) }}
+            </p>
+            <p v-if="invoice.last_crm_error" class="text-xs text-red-600">
+              Ошибка CRM: {{ invoice.last_crm_error }}
+            </p>
           </div>
         </div>
 
@@ -360,11 +463,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
 import dealService from "../../services/dealService";
 import contactService, { type AuditTrailItem } from "../../services/contactService";
+import paymentService, { type DealInvoice } from "../../services/paymentService";
 
 import DealFormModal from './components/DealFormModal.vue'
 
@@ -393,6 +497,10 @@ const deals = ref<any[]>([])
 
 const dealdetail = ref<any | null>(null);
 const loading = ref(true);
+const invoice = ref<DealInvoice | null>(null)
+const invoiceLoading = ref(false)
+const issuingInvoice = ref(false)
+const retryingInvoice = ref(false)
 const auditTrail = ref<AuditTrailItem[]>([]);
 const auditLoading = ref(false);
 const closeModal = () => {
@@ -482,6 +590,44 @@ const getStatusTextColor = (status: string) => {
   return colors[status] || "text-slate-200";
 };
 
+const invoiceStatusText = (status: string) => {
+  const texts: Record<string, string> = {
+    draft: "Черновик",
+    waiting: "Ожидает оплаты",
+    paid: "Оплачен",
+    cancelled: "Отменен",
+  }
+  return texts[status] || status
+}
+
+const invoiceStatusClass = (status: string) => {
+  const classes: Record<string, string> = {
+    draft: "bg-slate-100 text-slate-700",
+    waiting: "bg-blue-100 text-blue-800",
+    paid: "bg-green-100 text-green-800",
+    cancelled: "bg-red-100 text-red-800",
+  }
+  return classes[status] || "bg-slate-100 text-slate-700"
+}
+
+const syncStatusText = (status: string) => {
+  const texts: Record<string, string> = {
+    pending: "В процессе",
+    synced: "Готово",
+    error: "Ошибка",
+  }
+  return texts[status] || status
+}
+
+const syncStatusTextClass = (status: string) => {
+  const classes: Record<string, string> = {
+    pending: "text-amber-600",
+    synced: "text-green-600",
+    error: "text-red-600",
+  }
+  return classes[status] || "text-gray-600"
+}
+
 const getProbabilityColor = (probability: number) => {
   if (probability >= 80) return "bg-green-500";
   if (probability >= 50) return "bg-yellow-500";
@@ -539,6 +685,8 @@ const formatDate = (dateString: string) => {
 const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString("ru-RU");
 };
+
+const canIssueInvoice = computed(() => dealdetail.value?.status === "won")
 
 const auditActionText = (action: string) => {
   const map: Record<string, string> = {
@@ -614,6 +762,56 @@ const editDeal = (deal: any | null) => {
   showCreateModal.value = true
 };
 
+const loadInvoice = async (dealId: number) => {
+  try {
+    invoiceLoading.value = true
+    invoice.value = await paymentService.getDealInvoice(dealId)
+  } catch (error) {
+    console.error("Ошибка загрузки счета:", error)
+  } finally {
+    invoiceLoading.value = false
+  }
+}
+
+const issueInvoice = async () => {
+  if (!dealdetail.value) return
+  try {
+    issuingInvoice.value = true
+    invoice.value = await paymentService.createInvoiceFromDeal(dealdetail.value.id)
+    if (invoice.value.crm_sync_status === "error") {
+      showSuccess("Счет создан и зарегистрирован в 1С, но отправка ссылки клиенту требует проверки")
+    } else {
+      showSuccess("Счет успешно выставлен, ссылка на оплату отправлена клиенту")
+    }
+  } catch (error: any) {
+    console.error("Ошибка выставления счета:", error)
+    const message = error?.response?.data?.detail || "Не удалось выставить счет"
+    showError(message)
+    if (error?.response?.data?.invoice) {
+      invoice.value = error.response.data.invoice
+    }
+  } finally {
+    issuingInvoice.value = false
+  }
+}
+
+const retryInvoiceSync = async () => {
+  if (!invoice.value) return
+  try {
+    retryingInvoice.value = true
+    invoice.value = await paymentService.retryInvoiceSync(invoice.value.id)
+    showSuccess("Синхронизация счета с 1С повторена")
+  } catch (error: any) {
+    console.error("Ошибка повторной синхронизации:", error)
+    showError(error?.response?.data?.detail || "Не удалось повторить синхронизацию")
+    if (error?.response?.data?.invoice) {
+      invoice.value = error.response.data.invoice
+    }
+  } finally {
+    retryingInvoice.value = false
+  }
+}
+
 const openMarketingForDeal = () => {
   if (!dealdetail.value) return
   router.push({
@@ -631,6 +829,7 @@ const loadDeal = async () => {
     dealdetail.value = await dealService.getDeal(dealId);
     console.log("Загруженная сделка:", dealdetail.value);
     await loadAuditTrail(dealId);
+    await loadInvoice(dealId);
   } catch (error) {
     console.error("Ошибка загрузки сделки:", error);
     showError("Не удалось загрузить данные сделки");

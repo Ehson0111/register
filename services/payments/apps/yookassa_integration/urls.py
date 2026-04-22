@@ -18,6 +18,8 @@ from . import views
 app_name = 'yookassa_integration'
 
 urlpatterns = [
+    path('deals/<int:deal_id>/invoice/', views.DealInvoiceView.as_view(), name='deal-invoice'),
+    path('invoices/<int:invoice_id>/retry-sync/', views.RetryInvoiceSyncView.as_view(), name='retry-invoice-sync'),
     # Оплатить счёт (клиент переходит по этой ссылке)
     path('pay/<int:invoice_id>/', views.create_invoice_and_pay, name='pay_invoice'),
     
