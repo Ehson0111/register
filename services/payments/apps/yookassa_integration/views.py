@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from yookassa import Configuration, Payment
 
-from .invoice_sync import create_invoice_in_onec, register_payment_in_onec, retry_due_invoice_sync
+from .invoice_sync_v2 import create_invoice_in_onec, register_payment_in_onec, retry_due_invoice_sync
 from .models import Invoice
 from .permissions import IsManagerOrAdmin
 from .serializers import InvoiceSerializer

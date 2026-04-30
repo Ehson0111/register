@@ -234,7 +234,7 @@ def is_connection_limit_error(error_text):
 
 # ========== HTTP ОБРАБОТЧИК ==========
 class OneCBridgeHandler(BaseHTTPRequestHandler):
-    server_version = "OneCBridge/1.0"
+    server_version = "OneCBridge/2.0"
 
     def log_message(self, format, *args):
         """Переопределяем логирование HTTP сервера"""
@@ -246,12 +246,6 @@ class OneCBridgeHandler(BaseHTTPRequestHandler):
         log("INFO", f"=== НОВЫЙ POST ЗАПРОС ===")
         log("INFO", f"=== PATH: {self.path} ===")
         log("INFO", f"=== CLIENT: {self.client_address[0]}:{self.client_address[1]} ===")
-        
-        # Проверка пути
-        if self.path != "/invoke":
-            log("WARNING", f"do_POST(): неверный путь '{self.path}', ожидался '/invoke' -> 404")
-            self._send_json({"detail": "not found"}, status=404)
-            return
         
         # Проверка секрета
         if BRIDGE_SECRET:
@@ -273,31 +267,299 @@ class OneCBridgeHandler(BaseHTTPRequestHandler):
             log("DEBUG", f"do_POST(): тело запроса: {raw_body[:200]}...")
             
             payload = json.loads(raw_body.decode("utf-8") or "{}")
-            log("INFO", f"do_POST(): распарсенный payload: method={payload.get('method')}, path={payload.get('path')}")
+            log("INFO", f"do_POST(): распарсенный payload: operation={payload.get('operation')}")
             
-            # Вызов основной логики
-            log("INFO", "do_POST(): вызов _invoke()")
-            response = self._invoke(payload)
+            # Роутинг операций
+            if self.path == "/invoice/create":
+                response = self._create_invoice(payload)
+            elif self.path == "/payment/register":
+                response = self._register_payment(payload)
+            elif self.path == "/invoke":
+                # Обратная совместимость со старым API
+                response = self._invoke_legacy(payload)
+            else:
+                log("WARNING", f"do_POST(): неверный путь '{self.path}' -> 404")
+                self._send_json({"detail": "not found"}, status=404)
+                return
             
             log("INFO", "do_POST(): запрос успешно выполнен, отправка ответа")
-            self._send_proxy_response(response)
+            self._send_json(response)
             
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            log("ERROR", f"do_POST(): HTTPError {exc.code}: {body[:200]}")
-            self._send_json({"detail": body or str(exc)}, status=exc.code)
-        except URLError as exc:
-            log("ERROR", f"do_POST(): URLError: {exc.reason}")
-            self._send_json({"detail": str(exc.reason)}, status=502)
         except Exception as exc:
             log("ERROR", f"do_POST(): исключение: {exc}")
             self._send_json({"detail": str(exc)}, status=500)
         
         log("INFO", f"=== ЗАПРОС ОБРАБОТАН ===\n{'='*60}")
 
-    def _invoke(self, payload):
-        """Основная логика выполнения запроса к 1С"""
-        log("INFO", "\n=== ВЫПОЛНЕНИЕ ЗАПРОСА К 1С ===")
+    def _create_invoice(self, payload):
+        """Создание счета в 1С"""
+        log("INFO", "\n=== СОЗДАНИЕ СЧЕТА В 1С ===")
+        
+        # Извлечение данных из payload
+        crm_invoice_id = payload.get("crm_invoice_id")
+        crm_deal_id = payload.get("crm_deal_id")
+        customer_name = payload.get("customer_name")
+        customer_email = payload.get("customer_email")
+        service_name = payload.get("service_name")
+        amount = payload.get("amount")
+        comment = payload.get("comment", "")
+        
+        log("INFO", f"_create_invoice(): CRM Invoice ID = {crm_invoice_id}")
+        log("INFO", f"_create_invoice(): CRM Deal ID = {crm_deal_id}")
+        log("INFO", f"_create_invoice(): Customer = {customer_name}")
+        log("INFO", f"_create_invoice(): Email = {customer_email}")
+        log("INFO", f"_create_invoice(): Service = {service_name}")
+        log("INFO", f"_create_invoice(): Amount = {amount}")
+        
+        # Валидация обязательных полей
+        if not all([crm_invoice_id, crm_deal_id, customer_name, amount]):
+            raise ValueError("Отсутствуют обязательные поля: crm_invoice_id, crm_deal_id, customer_name, amount")
+        
+        attempts = max(1, ONEC_LIMIT_RETRY_ATTEMPTS)
+        last_error = None
+
+        for attempt in range(1, attempts + 1):
+            log("INFO", f"\n--- ПОПЫТКА СОЗДАНИЯ СЧЕТА {attempt}/{attempts} ---")
+            
+            # Перезапуск 1С если нужно
+            if ONEC_RESTART_EACH_REQUEST:
+                log("INFO", f"_create_invoice(): перезапуск перед запросом")
+                restart_onec_runtime()
+                prepare_after_restart()
+            else:
+                log("DEBUG", "_create_invoice(): перезапуск НЕ требуется")
+
+            try:
+                # Подготовка данных для создания счета
+                invoice_data = {
+                    "Number": f"CRM-{crm_invoice_id}",
+                    "Date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "CRM_Invoice_ID": str(crm_invoice_id),
+                    "CRM_Deal_ID": str(crm_deal_id),
+                    "Organization_Key": "00000000-0000-0000-0000-000000000000",  # TODO: получить из настроек
+                    "Customer": customer_name,
+                    "Customer_Email": customer_email,
+                    "Status": "НеОплачен",
+                    "Amount": amount,
+                    "Comment": comment,
+                    "Services": [
+                        {
+                            "Service": service_name,
+                            "Quantity": 1,
+                            "Price": amount,
+                            "Amount": amount
+                        }
+                    ]
+                }
+                
+                # Создание счета через OData
+                target_url = build_target_url(ONEC_BASE_URL, "Document_СчетПокупателю", {})
+                body = json.dumps(invoice_data, ensure_ascii=False).encode("utf-8")
+                
+                headers = {
+                    "Accept": "application/json;odata=verbose",
+                    "Content-Type": "application/json; charset=utf-8"
+                }
+                
+                auth_header = build_auth_header()
+                if auth_header:
+                    headers["Authorization"] = auth_header
+
+                log("INFO", f"_create_invoice(): отправка POST запроса для создания счета")
+                request = Request(target_url, data=body, headers=headers, method="POST")
+                
+                start_time = time.time()
+                response = urlopen(request, timeout=30)
+                elapsed = time.time() - start_time
+                
+                log("INFO", f"_create_invoice(): счет создан за {elapsed:.2f} сек, статус {response.status}")
+                
+                # Чтение ответа
+                response_body = response.read().decode("utf-8")
+                log("DEBUG", f"_create_invoice(): ответ 1С: {response_body[:300]}...")
+                
+                # Парсинг ответа для получения ID и номера
+                response_data = json.loads(response_body)
+                document_id = response_data.get("Ref_Key")
+                document_number = response_data.get("Number")
+                
+                if not document_id:
+                    raise RuntimeError("1С не вернула ID созданного документа")
+                
+                result = {
+                    "success": True,
+                    "document_id": document_id,
+                    "document_number": document_number or f"CRM-{crm_invoice_id}",
+                    "crm_invoice_id": crm_invoice_id,
+                    "crm_deal_id": crm_deal_id,
+                    "message": "Счет успешно создан в 1С"
+                }
+                
+                log("INFO", f"_create_invoice(): успешное создание счета, ID = {document_id}")
+                return result
+                
+            except Exception as exc:
+                log("ERROR", f"_create_invoice(): ошибка при создании счета: {exc}")
+                last_error = exc
+                
+                if attempt < attempts and is_connection_limit_error(str(exc)):
+                    log("WARNING", f"_create_invoice(): обнаружена ошибка лимита подключений! Повтор через {ONEC_LIMIT_RETRY_DELAY_SECONDS} сек")
+                    time.sleep(ONEC_LIMIT_RETRY_DELAY_SECONDS)
+                    continue
+                log("ERROR", "_create_invoice(): это не ошибка лимита или последняя попытка -> выбрасываем исключение")
+                raise
+
+        if last_error:
+            log("ERROR", f"_create_invoice(): все попытки ({attempts}) провалились, последняя ошибка: {last_error}")
+            raise last_error
+
+    def _register_payment(self, payload):
+        """Регистрация оплаты в 1С"""
+        log("INFO", "\n=== РЕГИСТРАЦИЯ ОПЛАТЫ В 1С ===")
+        
+        # Извлечение данных из payload
+        crm_invoice_id = payload.get("crm_invoice_id")
+        onec_document_id = payload.get("onec_document_id")
+        yookassa_payment_id = payload.get("yookassa_payment_id")
+        amount = payload.get("amount")
+        payment_date = payload.get("payment_date", datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
+        payment_method = payload.get("payment_method", "yookassa")
+        comment = payload.get("comment", "Оплата через YooKassa")
+        
+        log("INFO", f"_register_payment(): CRM Invoice ID = {crm_invoice_id}")
+        log("INFO", f"_register_payment(): 1C Document ID = {onec_document_id}")
+        log("INFO", f"_register_payment(): YooKassa Payment ID = {yookassa_payment_id}")
+        log("INFO", f"_register_payment(): Amount = {amount}")
+        log("INFO", f"_register_payment(): Payment Date = {payment_date}")
+        
+        # Валидация обязательных полей
+        if not all([crm_invoice_id, onec_document_id, yookassa_payment_id, amount]):
+            raise ValueError("Отсутствуют обязательные поля: crm_invoice_id, onec_document_id, yookassa_payment_id, amount")
+        
+        attempts = max(1, ONEC_LIMIT_RETRY_ATTEMPTS)
+        last_error = None
+
+        for attempt in range(1, attempts + 1):
+            log("INFO", f"\n--- ПОПЫТКА РЕГИСТРАЦИИ ОПЛАТЫ {attempt}/{attempts} ---")
+            
+            # Перезапуск 1С если нужно
+            if ONEC_RESTART_EACH_REQUEST:
+                log("INFO", f"_register_payment(): перезапуск перед запросом")
+                restart_onec_runtime()
+                prepare_after_restart()
+            else:
+                log("DEBUG", "_register_payment(): перезапуск НЕ требуется")
+
+            try:
+                # Подготовка данных для создания оплаты
+                payment_data = {
+                    "Счет_Key": onec_document_id,
+                    "CRM_Payment_ID": yookassa_payment_id,
+                    "YooKassaPaymentID": yookassa_payment_id,
+                    "Amount": amount,
+                    "PaymentDate": payment_date,
+                    "PaymentMethod": payment_method,
+                    "Comment": comment,
+                    "Posted": True  # Проводим документ сразу
+                }
+                
+                # Создание оплаты через OData
+                target_url = build_target_url(ONEC_BASE_URL, "Document_ОплатаПоСчету", {})
+                body = json.dumps(payment_data, ensure_ascii=False).encode("utf-8")
+                
+                headers = {
+                    "Accept": "application/json;odata=verbose",
+                    "Content-Type": "application/json; charset=utf-8"
+                }
+                
+                auth_header = build_auth_header()
+                if auth_header:
+                    headers["Authorization"] = auth_header
+
+                log("INFO", f"_register_payment(): отправка POST запроса для создания оплаты")
+                request = Request(target_url, data=body, headers=headers, method="POST")
+                
+                start_time = time.time()
+                response = urlopen(request, timeout=30)
+                elapsed = time.time() - start_time
+                
+                log("INFO", f"_register_payment(): оплата зарегистрирована за {elapsed:.2f} сек, статус {response.status}")
+                
+                # Чтение ответа
+                response_body = response.read().decode("utf-8")
+                log("DEBUG", f"_register_payment(): ответ 1С: {response_body[:300]}...")
+                
+                # Парсинг ответа
+                response_data = json.loads(response_body)
+                payment_document_id = response_data.get("Ref_Key")
+                
+                if not payment_document_id:
+                    raise RuntimeError("1С не вернула ID созданного документа оплаты")
+                
+                # Обновление статуса счета на "Оплачен"
+                self._update_invoice_status(onec_document_id, "Оплачен")
+                
+                result = {
+                    "success": True,
+                    "payment_document_id": payment_document_id,
+                    "crm_invoice_id": crm_invoice_id,
+                    "onec_document_id": onec_document_id,
+                    "yookassa_payment_id": yookassa_payment_id,
+                    "message": "Оплата успешно зарегистрирована в 1С"
+                }
+                
+                log("INFO", f"_register_payment(): успешная регистрация оплаты, ID = {payment_document_id}")
+                return result
+                
+            except Exception as exc:
+                log("ERROR", f"_register_payment(): ошибка при регистрации оплаты: {exc}")
+                last_error = exc
+                
+                if attempt < attempts and is_connection_limit_error(str(exc)):
+                    log("WARNING", f"_register_payment(): обнаружена ошибка лимита подключений! Повтор через {ONEC_LIMIT_RETRY_DELAY_SECONDS} сек")
+                    time.sleep(ONEC_LIMIT_RETRY_DELAY_SECONDS)
+                    continue
+                log("ERROR", "_register_payment(): это не ошибка лимита или последняя попытка -> выбрасываем исключение")
+                raise
+
+        if last_error:
+            log("ERROR", f"_register_payment(): все попытки ({attempts}) провалились, последняя ошибка: {last_error}")
+            raise last_error
+
+    def _update_invoice_status(self, document_id, new_status):
+        """Обновление статуса счета"""
+        log("INFO", f"_update_invoice_status(): обновление статуса счета {document_id} на '{new_status}'")
+        
+        try:
+            # Подготовка данных для обновления
+            update_data = {
+                "Status": new_status
+            }
+            
+            target_url = build_target_url(ONEC_BASE_URL, f"Document_СчетПокупателю(guid'{document_id}')", {})
+            body = json.dumps(update_data, ensure_ascii=False).encode("utf-8")
+            
+            headers = {
+                "Accept": "application/json;odata=verbose",
+                "Content-Type": "application/json; charset=utf-8"
+            }
+            
+            auth_header = build_auth_header()
+            if auth_header:
+                headers["Authorization"] = auth_header
+
+            request = Request(target_url, data=body, headers=headers, method="PATCH")
+            
+            with urlopen(request, timeout=30) as response:
+                log("INFO", f"_update_invoice_status(): статус обновлен, код ответа {response.status}")
+                
+        except Exception as exc:
+            log("ERROR", f"_update_invoice_status(): ошибка при обновлении статуса: {exc}")
+            raise
+
+    def _invoke_legacy(self, payload):
+        """Обработка legacy запросов для обратной совместимости"""
+        log("INFO", "\n=== LEGACY INVOKE ЗАПРОС ===")
         
         # Извлечение параметров
         method = payload.get("method", "GET").upper()
@@ -307,33 +569,31 @@ class OneCBridgeHandler(BaseHTTPRequestHandler):
         timeout = payload.get("timeout", 20)
         restart_before_request = payload.get("restart_before_request", True)
         
-        log("INFO", f"_invoke(): method = {method}")
-        log("INFO", f"_invoke(): path = {path}")
-        log("INFO", f"_invoke(): params = {params}")
-        log("INFO", f"_invoke(): json_body = {'(есть)' if json_body else '(нет)'}")
-        log("INFO", f"_invoke(): timeout = {timeout}")
-        log("INFO", f"_invoke(): restart_before_request = {restart_before_request}")
+        log("INFO", f"_invoke_legacy(): method = {method}")
+        log("INFO", f"_invoke_legacy(): path = {path}")
+        log("INFO", f"_invoke_legacy(): params = {params}")
+        log("INFO", f"_invoke_legacy(): json_body = {'(есть)' if json_body else '(нет)'}")
+        log("INFO", f"_invoke_legacy(): timeout = {timeout}")
+        log("INFO", f"_invoke_legacy(): restart_before_request = {restart_before_request}")
         
         attempts = max(1, ONEC_LIMIT_RETRY_ATTEMPTS)
-        log("INFO", f"_invoke(): максимальное количество попыток = {attempts}")
-        
         last_error = None
 
         for attempt in range(1, attempts + 1):
-            log("INFO", f"\n--- ПОПЫТКА {attempt}/{attempts} ---")
+            log("INFO", f"\n--- LEGACY ПОПЫТКА {attempt}/{attempts} ---")
             
             # Перезапуск 1С если нужно
             if restart_before_request and ONEC_RESTART_EACH_REQUEST:
-                log("INFO", f"_invoke(): перезапуск перед запросом (restart_before_request={restart_before_request}, ONEC_RESTART_EACH_REQUEST={ONEC_RESTART_EACH_REQUEST})")
+                log("INFO", f"_invoke_legacy(): перезапуск перед запросом")
                 restart_onec_runtime()
                 prepare_after_restart()
             else:
-                log("DEBUG", "_invoke(): перезапуск НЕ требуется")
+                log("DEBUG", "_invoke_legacy(): перезапуск НЕ требуется")
 
             try:
                 # Построение URL
                 target_url = build_target_url(ONEC_BASE_URL, path, params)
-                log("INFO", f"_invoke(): целевой URL: {target_url}")
+                log("INFO", f"_invoke_legacy(): целевой URL: {target_url}")
 
                 # Подготовка тела и заголовков
                 body = None
@@ -342,70 +602,46 @@ class OneCBridgeHandler(BaseHTTPRequestHandler):
                 if json_body is not None:
                     body = json.dumps(json_body, ensure_ascii=False).encode("utf-8")
                     headers["Content-Type"] = "application/json; charset=utf-8"
-                    log("DEBUG", f"_invoke(): тело запроса: {body[:200]}...")
+                    log("DEBUG", f"_invoke_legacy(): тело запроса: {body[:200]}...")
                 
                 auth_header = build_auth_header()
                 if auth_header:
                     headers["Authorization"] = auth_header
-                    log("DEBUG", "_invoke(): добавлен заголовок авторизации")
+                    log("DEBUG", "_invoke_legacy(): добавлен заголовок авторизации")
 
-                log("INFO", f"_invoke(): отправка {method} запроса к 1С...")
+                log("INFO", f"_invoke_legacy(): отправка {method} запроса к 1С...")
                 request = Request(target_url, data=body, headers=headers, method=method)
                 
                 start_time = time.time()
                 response = urlopen(request, timeout=timeout)
                 elapsed = time.time() - start_time
                 
-                log("INFO", f"_invoke(): запрос успешно выполнен за {elapsed:.2f} сек, статус {response.status}")
-                return response
+                log("INFO", f"_invoke_legacy(): запрос успешно выполнен за {elapsed:.2f} сек, статус {response.status}")
                 
-            except HTTPError as exc:
-                body_text = exc.read().decode("utf-8", errors="replace")
-                log("ERROR", f"_invoke(): HTTPError {exc.code}: {body_text[:300]}")
-                last_error = exc
+                # Чтение ответа
+                response_body = response.read()
+                log("INFO", f"_invoke_legacy(): размер ответа {len(response_body)} байт")
                 
-                if attempt < attempts and is_connection_limit_error(body_text):
-                    log("WARNING", f"_invoke(): обнаружена ошибка лимита подключений! Повтор через {ONEC_LIMIT_RETRY_DELAY_SECONDS} сек")
-                    time.sleep(ONEC_LIMIT_RETRY_DELAY_SECONDS)
-                    continue
-                log("ERROR", "_invoke(): это не ошибка лимита или последняя попытка -> выбрасываем исключение")
-                raise
+                return {
+                    "status": response.status,
+                    "headers": dict(response.headers),
+                    "body": response_body.decode("utf-8", errors="replace")
+                }
                 
-            except URLError as exc:
-                log("ERROR", f"_invoke(): URLError: {exc.reason}")
-                last_error = exc
-                if attempt < attempts:
-                    log("WARNING", f"_invoke(): ошибка соединения, повтор через {ONEC_LIMIT_RETRY_DELAY_SECONDS} сек")
-                    time.sleep(ONEC_LIMIT_RETRY_DELAY_SECONDS)
-                    continue
-                log("ERROR", "_invoke(): последняя попытка -> выбрасываем исключение")
-                raise
-            
             except Exception as exc:
-                log("ERROR", f"_invoke(): непредвиденная ошибка: {exc}")
+                log("ERROR", f"_invoke_legacy(): ошибка: {exc}")
+                last_error = exc
+                
+                if attempt < attempts and is_connection_limit_error(str(exc)):
+                    log("WARNING", f"_invoke_legacy(): обнаружена ошибка лимита подключений! Повтор через {ONEC_LIMIT_RETRY_DELAY_SECONDS} сек")
+                    time.sleep(ONEC_LIMIT_RETRY_DELAY_SECONDS)
+                    continue
+                log("ERROR", "_invoke_legacy(): последняя попытка -> выбрасываем исключение")
                 raise
 
         if last_error:
-            log("ERROR", f"_invoke(): все попытки ({attempts}) провалились, последняя ошибка: {last_error}")
+            log("ERROR", f"_invoke_legacy(): все попытки ({attempts}) провалились, последняя ошибка: {last_error}")
             raise last_error
-        
-        log("ERROR", "_invoke(): неизвестная ошибка")
-        raise RuntimeError("Не удалось выполнить запрос в 1С.")
-
-    def _send_proxy_response(self, response):
-        """Отправляет ответ от 1С обратно клиенту"""
-        log("INFO", "=== ОТПРАВКА ОТВЕТА КЛИЕНТУ ===")
-        body = response.read()
-        log("INFO", f"_send_proxy_response(): статус {response.status}, размер тела {len(body)} байт")
-        
-        self.send_response(response.status)
-        content_type = response.headers.get("Content-Type", "application/json")
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-        
-        log("INFO", f"_send_proxy_response(): ответ отправлен (Content-Type: {content_type})")
 
     def _send_json(self, payload, status=200):
         """Отправляет JSON ответ"""
@@ -425,7 +661,11 @@ class OneCBridgeHandler(BaseHTTPRequestHandler):
 # ========== ЗАПУСК СЕРВЕРА ==========
 if __name__ == "__main__":
     log("INFO", "\n" + "="*60)
-    log("INFO", "=== ЗАПУСК 1C BRIDGE СЕРВЕРА ===")
+    log("INFO", "=== ЗАПУСК 1C BRIDGE СЕРВЕРА v2.0 ===")
+    log("INFO", "=== НОВЫЕ ENDPOINTS: ===")
+    log("INFO", "=== POST /invoice/create - создание счета ===")
+    log("INFO", "=== POST /payment/register - регистрация оплаты ===")
+    log("INFO", "=== POST /invoke - legacy совместимость ===")
     log("INFO", "="*60)
     
     try:

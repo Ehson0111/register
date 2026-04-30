@@ -30,7 +30,7 @@
               :class="{ 'menu-link-active': $route.path.includes('dashboard') }"
             >
               <HomeIcon class="menu-icon" />
-              <span class="menu-label">Дашборд</span>
+              <span class="menu-label">Главная</span>
             </router-link>
 
             <router-link
@@ -239,7 +239,7 @@ const portalRoleLabel = computed(() => {
 const currentPageTitle = computed(() => {
   const routeName = route.name as string;
   const titles: Record<string, string> = {
-    ManagerDashboard: "Дашборд",
+    ManagerDashboard: "Главная",
     ManagerContacts: "Контакты",
     ContactDetail: "Детали контакта",
     ManagerDeals: "Сделки",
