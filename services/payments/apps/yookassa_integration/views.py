@@ -46,6 +46,58 @@ def _generate_invoice_number(deal_id):
     return f"СЧЕТ-{deal_id:06d}"
 
 
+def _extract_service_context(deal):
+    """
+    Нормализует service_id/service_name из разных форматов payload сделки:
+    - {"service": 4}
+    - {"service_id": 4}
+    - {"service": {"id": 4, "name": "..."}}
+    """
+    service_raw = deal.get("service")
+    service_id = deal.get("service_id")
+    service_name = deal.get("service_name", "")
+
+    if service_id in (None, "", 0):
+        if isinstance(service_raw, dict):
+            service_id = service_raw.get("id") or service_raw.get("pk")
+            service_name = service_name or service_raw.get("name") or service_raw.get("title", "")
+        else:
+            service_id = service_raw
+
+    if service_id in (None, "", 0):
+        raise RuntimeError("У сделки отсутствует service/service_id.")
+
+    try:
+        service_id = int(service_id)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"Некорректный service_id в сделке: {service_id}") from exc
+
+    return service_id, service_name or ""
+
+
+def _extract_amount(deal):
+    raw_amount = deal.get("amount")
+    if raw_amount in (None, ""):
+        return 0
+    try:
+        return float(raw_amount)
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"Некорректная сумма сделки: {raw_amount}") from exc
+
+
+def _apply_crm_context(invoice, deal, contact):
+    service_id, service_name = _extract_service_context(deal)
+    invoice.deal_title = deal.get("title", "")
+    invoice.contact_id = contact.get("id")
+    invoice.contact_name = contact.get("full_name") or f'{contact.get("first_name", "")} {contact.get("last_name", "")}'.strip()
+    invoice.contact_email = contact.get("email", "")
+    invoice.contact_phone = contact.get("phone", "")
+    invoice.service_id = service_id
+    invoice.service_name = service_name
+    invoice.comment = deal.get("description", "") or deal.get("title", "")
+    invoice.amount = _extract_amount(deal)
+
+
 def _fetch_deal_context(request, deal_id):
     headers = _auth_headers_from_request(request)
     deal_response = requests.get(_contact_service_url(f"/deals/{deal_id}/"), headers=headers, timeout=20)
@@ -101,10 +153,6 @@ class DealInvoiceView(APIView):
 
     def post(self, request, deal_id):
         try:
-            existing = Invoice.objects.filter(deal_id=deal_id).first()
-            if existing:
-                return Response(InvoiceSerializer(existing).data, status=status.HTTP_200_OK)
-
             deal, contact = _fetch_deal_context(request, deal_id)
             if deal.get("status") != "won":
                 return Response(
@@ -112,19 +160,40 @@ class DealInvoiceView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            invoice = Invoice.objects.create(
-                deal_id=deal["id"],
-                deal_title=deal.get("title", ""),
-                contact_id=contact.get("id"),
-                contact_name=contact.get("full_name") or f'{contact.get("first_name", "")} {contact.get("last_name", "")}'.strip(),
-                contact_email=contact.get("email", ""),
-                contact_phone=contact.get("phone", ""),
-                service_id=deal.get("service"),
-                service_name=deal.get("service_name", ""),
-                comment=deal.get("description", "") or deal.get("title", ""),
-                invoice_number=_generate_invoice_number(deal["id"]),
-                amount=deal.get("amount") or 0,
-            )
+            invoice = Invoice.objects.filter(deal_id=deal_id).first()
+            created_new = invoice is None
+            if invoice:
+                previous_sync_key = (
+                    invoice.contact_id,
+                    invoice.service_id,
+                    str(invoice.amount),
+                    invoice.contact_email,
+                    invoice.contact_phone,
+                )
+                _apply_crm_context(invoice, deal, contact)
+                current_sync_key = (
+                    invoice.contact_id,
+                    invoice.service_id,
+                    str(invoice.amount),
+                    invoice.contact_email,
+                    invoice.contact_phone,
+                )
+                # Если данные сделки/контакта поменялись, повторно отправляем счёт в 1С с актуальными полями.
+                if previous_sync_key != current_sync_key:
+                    invoice.sent_to_1c = False
+                    invoice.onec_sync_status = Invoice.SyncStatus.PENDING
+                    invoice.onec_document_id = ""
+                    invoice.onec_invoice_number = ""
+                    invoice.last_onec_error = ""
+                invoice.save()
+            else:
+                invoice = Invoice.objects.create(
+                    deal_id=deal["id"],
+                    invoice_number=_generate_invoice_number(deal["id"]),
+                    amount=0,
+                )
+                _apply_crm_context(invoice, deal, contact)
+                invoice.save()
         except Exception as exc:
             return Response(
                 {"detail": f"Не удалось получить данные сделки или контакта: {exc}"},
@@ -134,14 +203,16 @@ class DealInvoiceView(APIView):
         try:
             invoice.payment_url = _public_payment_url(invoice.id)
             invoice.save(update_fields=["payment_url"])
-            create_invoice_in_onec(invoice)
+            if not invoice.sent_to_1c or invoice.onec_sync_status != Invoice.SyncStatus.SYNCED:
+                create_invoice_in_onec(invoice)
             try:
                 _send_payment_link(invoice)
             except Exception as mail_exc:
                 invoice.crm_sync_status = Invoice.SyncStatus.ERROR
                 invoice.last_crm_error = str(mail_exc)
             invoice.save()
-            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+            response_status = status.HTTP_201_CREATED if created_new else status.HTTP_200_OK
+            return Response(InvoiceSerializer(invoice).data, status=response_status)
         except Exception as exc:
             invoice.mark_retry(error_text=str(exc), onec=True)
             invoice.save()

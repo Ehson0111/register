@@ -3,6 +3,7 @@ import uuid
 import subprocess
 import time
 import ctypes
+import json
 from datetime import datetime
 from urllib.parse import urlsplit, urlunsplit
 
@@ -12,6 +13,32 @@ from django.conf import settings
 
 class OneCErrorV2(RuntimeError):
     pass
+
+
+def _debug_log(hypothesis_id, location, message, data):
+    payload = {
+        "sessionId": "b9fea2",
+        "runId": "run1",
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": int(time.time() * 1000),
+    }
+    try:
+        with open("debug-b9fea2.log", "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+    try:
+        requests.post(
+            "http://127.0.0.1:7524/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c",
+            headers={"Content-Type": "application/json", "X-Debug-Session-Id": "b9fea2"},
+            json=payload,
+            timeout=1.5,
+        )
+    except Exception:
+        pass
 
 
 def is_admin():
@@ -223,6 +250,14 @@ class OneCClientV2:
             except (TypeError, ValueError):
                 if str(value).strip() == str(crm_id).strip():
                     return item
+        # region agent log
+        _debug_log(
+            "H1",
+            "onec_client_v2.py:_get_by_crm_id",
+            "CRM entity not found in catalog by crm_id",
+            {"catalog": catalog_name, "crm_id": str(crm_id), "items_count": len(items)},
+        )
+        # endregion
         return None
 
     def _create_service(self, invoice):
@@ -238,7 +273,28 @@ class OneCClientV2:
             "crm_id": str(invoice.service_id),
             "CRM_ID": str(invoice.service_id),
         }
+        # region agent log
+        _debug_log(
+            "H2",
+            "onec_client_v2.py:_create_service",
+            "Attempting to create service in 1C",
+            {
+                "service_id": str(invoice.service_id),
+                "service_name": service_name,
+                "price": payload["Цена"],
+                "payload_keys": sorted(payload.keys()),
+            },
+        )
+        # endregion
         response = self._request_with_retry("POST", "Catalog_Услуги", json=payload)
+        # region agent log
+        _debug_log(
+            "H2",
+            "onec_client_v2.py:_create_service",
+            "Service create request finished",
+            {"status_code": response.status_code, "ok": response.ok},
+        )
+        # endregion
         if response.status_code not in (200, 201):
             raise OneCErrorV2(f"Не удалось создать услугу в 1С для CRM_ID={invoice.service_id}")
         return self._get_by_crm_id("Catalog_Услуги", invoice.service_id) or {"Ref_Key": service_guid, "Цена": payload["Цена"]}
@@ -315,6 +371,26 @@ class OneCClientV2:
                 "invoice_number_1c": "Номер счета в 1С"
             }
         """
+        if not invoice.service_id:
+            raise OneCErrorV2("У счета отсутствует service_id из CRM.")
+        if not invoice.contact_id:
+            raise OneCErrorV2("У счета отсутствует contact_id из CRM.")
+        # region agent log
+        _debug_log(
+            "H3",
+            "onec_client_v2.py:create_invoice",
+            "Invoice sync started with CRM snapshot",
+            {
+                "deal_id": invoice.deal_id,
+                "contact_id": invoice.contact_id,
+                "service_id": invoice.service_id,
+                "invoice_number": invoice.invoice_number,
+                "amount": str(invoice.amount),
+                "sent_to_1c": invoice.sent_to_1c,
+            },
+        )
+        # endregion
+
         # Получаем GUID услуги по service_id из CRM
         service = self._get_by_crm_id("Catalog_Услуги", invoice.service_id)
         if not service:
@@ -348,6 +424,22 @@ class OneCClientV2:
             include_extended=True,
         )
         invoice_guid = invoice_data["Ref_Key"]
+        # region agent log
+        _debug_log(
+            "H4",
+            "onec_client_v2.py:create_invoice",
+            "Prepared invoice payload for 1C",
+            {
+                "invoice_guid": invoice_guid,
+                "service_guid": service_guid,
+                "service_price": str(service_price),
+                "client_guid": client_guid,
+                "payload_keys": sorted(invoice_data.keys()),
+                "line_service_guid": invoice_data["Состав"][0].get("Услуга_Key"),
+                "line_price": str(invoice_data["Состав"][0].get("Цена")),
+            },
+        )
+        # endregion
         try:
             resp = self._request_with_retry("POST", "Document_СчетПокупателю", json=invoice_data)
         except OneCErrorV2:
@@ -362,6 +454,14 @@ class OneCClientV2:
                 include_extended=False,
             )
             invoice_guid = invoice_data["Ref_Key"]
+            # region agent log
+            _debug_log(
+                "H5",
+                "onec_client_v2.py:create_invoice",
+                "Falling back to minimal invoice payload",
+                {"invoice_guid": invoice_guid, "payload_keys": sorted(invoice_data.keys())},
+            )
+            # endregion
             resp = self._request_with_retry("POST", "Document_СчетПокупателю", json=invoice_data)
         
         if resp.status_code not in (200, 201):
