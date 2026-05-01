@@ -18,12 +18,12 @@ Including another URLconf
 # from django.urls import path
 
 # urlpatterns = [
-#     path('admin/', admin.site.urls),
+#     path('admin/', admin.site.urls), еуые
 # ]
 
 from django.urls import path, include
 
-urlpatterns = [
+urlpatterns = [ 
     path('api/payment/', include('apps.yookassa_integration.urls')),
     path('payment/', include('apps.yookassa_integration.urls')),
 ]
