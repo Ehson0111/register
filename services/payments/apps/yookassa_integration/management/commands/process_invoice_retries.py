@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from ...invoice_sync import retry_due_invoice_sync
+from ...invoice_sync_v2 import retry_due_invoice_sync
 from ...models import Invoice
 
 

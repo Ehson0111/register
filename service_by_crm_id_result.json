@@ -1,0 +1,10 @@
+{
+  "found": true,
+  "crm_id": "4",
+  "method": "client_side_filter",
+  "service": {
+    "ref_key": "15339547-3e60-11f1-81bb-f875a4400b50",
+    "description": "wef",
+    "price": "123"
+  }
+}

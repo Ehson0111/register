@@ -32,8 +32,8 @@ Start-Service -ServiceName "Marketing" -Path "D:\django\crm\services\marketing" 
 
 Start-Service -ServiceName "docements" -Path "D:\django\crm\services\documents" -Command "python manage.py runserver 0.0.0.0:8008"
 Start-Service -ServiceName "work-process" -Path "D:\django\crm\services\work_process" -Command "python manage.py runserver 0.0.0.0:8011"
-Start-Service -ServiceName "payments" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://127.0.0.1/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://127.0.0.1:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py runserver 0.0.0.0:8012"
-Start-Service -ServiceName "payments-retry-worker" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://127.0.0.1/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://127.0.0.1:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py process_invoice_retries --loop"
+Start-Service -ServiceName "payments" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://host.docker.internal/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://host.docker.internal:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py runserver 0.0.0.0:8012"
+Start-Service -ServiceName "payments-retry-worker" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://host.docker.internal/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://host.docker.internal:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py process_invoice_retries --loop"
 # Ждем немного перед запуском фронтенда 
 Start-Sleep 5
 
