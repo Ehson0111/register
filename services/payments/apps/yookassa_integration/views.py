@@ -135,7 +135,7 @@ def payment_result(request, invoice_id):
 @require_http_methods(['POST'])
 def yookassa_webhook(request):
     """
-    ВАЖНО: СЮДА ЮKASSA ПРИШЛЁТ УВЕДОМЛЕНИЕ ПОСЛЕ ОПЛАТЫ
+     СЮДА ЮKASSA ПРИШЛЁТ УВЕДОМЛЕНИЕ ПОСЛЕ ОПЛАТЫ
     Здесь мы меняем статус и отправляем в 1С
     """
     try:
@@ -160,7 +160,7 @@ def yookassa_webhook(request):
                 
                 print(f"✅ Счёт №{invoice.invoice_number} оплачен!")
                 
-                # 🔥 ОТПРАВЛЯЕМ В 1С 🔥
+                # ОТПРАВЛЯЕМ В 1С 
                 send_to_1c(invoice)
                 
                 return JsonResponse({'status': 'ok'})

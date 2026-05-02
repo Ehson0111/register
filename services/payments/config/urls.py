@@ -24,6 +24,5 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    # ... твои другие URL
     path('payment/', include('apps.yookassa_integration.urls')),
 ]

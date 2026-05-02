@@ -154,7 +154,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost', '127.0.0.1', '0.0.0.0',
     'marketing', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'documents',
-    'misty-river-547.gopublic.su',
+    'misty-river-547.gopublic.su','kungi-89-105-209-50.run.pinggy-free.link '
 ]
 
 DJANGO_APPS = [
@@ -174,7 +174,7 @@ THIRD_PARTY_APPS = [
 ]
  
 
-CSRF_TRUSTED_ORIGINS = ['https://misty-river-547.gopublic.su']
+CSRF_TRUSTED_ORIGINS = ['http://kungi-89-105-209-50.run.pinggy-free.link','https://*.pinggy.io']
 
 
 LOCAL_APPS = ['apps.yookassa_integration']
