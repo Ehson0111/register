@@ -147,7 +147,7 @@ services:
       - "8012:8012"
     environment:
       CONTACT_SERVICE_URL: "http://contact-service:8005"
-      PUBLIC_PAYMENTS_BASE_URL: "https://misty-river-547.gopublic.su"
+      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://incessantly-golden-gannet.cloudpub.ru}"
       ONEC_TRANSPORT_MODE: "bridge"
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
@@ -174,7 +174,7 @@ services:
       context: ./services/payments
     environment:
       CONTACT_SERVICE_URL: "http://contact-service:8005"
-      PUBLIC_PAYMENTS_BASE_URL: "https://misty-river-547.gopublic.su"
+      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://incessantly-golden-gannet.cloudpub.ru}"
       ONEC_TRANSPORT_MODE: "bridge"
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"

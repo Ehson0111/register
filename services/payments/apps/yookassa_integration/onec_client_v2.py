@@ -402,9 +402,25 @@ class OneCClientV2:
         """
         if not invoice.onec_document_id:
             raise OneCErrorV2("Нельзя зарегистрировать оплату без документа счета в 1С")
-        
+
+        # Защита от разных состояний документа: перед оплатой повторно проводим счёт.
+        # Это повторяет рабочий сценарий из ручных тестов 1С и безопасно для уже проведённого документа.
+        post_invoice_resp = self._request_with_retry(
+            "POST",
+            f"Document_СчетПокупателю('{invoice.onec_document_id}')/Post",
+            json={"PostingModeOperational": True},
+        )
+        if post_invoice_resp.status_code not in (200, 204):
+            raise OneCErrorV2(
+                f"Не удалось провести счёт перед регистрацией оплаты: "
+                f"{post_invoice_resp.status_code} - {post_invoice_resp.text}"
+            )
+
         # Извлекаем данные из YooKassa payload
         amount = payment_payload.get("amount", {}).get("value") or float(invoice.amount)
+        confirmed_at = payment_payload.get("captured_at") or datetime.now().isoformat()
+        invoice_link_field = getattr(settings, "ONEC_PAYMENT_INVOICE_FIELD", "Счет_Key")
+        paid_status_value = getattr(settings, "ONEC_STATUS_PAID_VALUE", "Оплачен")
         
         # Создаём оплату
         payment_guid = str(uuid.uuid4())
@@ -413,9 +429,9 @@ class OneCClientV2:
             "Date": datetime.now().isoformat(),
             "СуммаОплаты": float(amount),
             "СпособОплаты": "Банковская карта",
-            "ДатаПодтвержденияОплаты": datetime.now().isoformat(),
-            "Счет_Key": invoice.onec_document_id
+            "ДатаПодтвержденияОплаты": confirmed_at,
         }
+        payment_data[invoice_link_field] = invoice.onec_document_id
         
         resp = self._request_with_retry("POST", "Document_ОплатаПоСчету", json=payment_data)
         
@@ -431,6 +447,29 @@ class OneCClientV2:
         
         if post_resp.status_code not in (200, 204):
             raise OneCErrorV2(f"Оплата создана но не проведена: {post_resp.status_code} - {post_resp.text}")
+
+        # Во многих конфигурациях 1С создание документа оплаты не меняет статус счёта автоматически.
+        # После успешного проведения оплаты явно помечаем счёт как оплаченный.
+        update_variants = [
+            {"СтатусСчета": paid_status_value},
+            {"СтатусСчета": paid_status_value, "ДатаОплаты": confirmed_at},
+        ]
+        update_error = None
+        for payload in update_variants:
+            try:
+                self._request_with_retry(
+                    "PATCH",
+                    f"Document_СчетПокупателю('{invoice.onec_document_id}')",
+                    json=payload,
+                )
+                update_error = None
+                break
+            except OneCErrorV2 as exc:
+                update_error = exc
+                continue
+
+        if update_error is not None:
+            raise OneCErrorV2(f"Оплата создана, но статус счёта не обновился: {update_error}")
         
         return {
             "payment_document_id_1c": payment_guid,

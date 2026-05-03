@@ -1,4 +1,5 @@
 import json
+import time
 import uuid
 
 import requests
@@ -14,6 +15,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from yookassa import Configuration, Payment
+from yookassa.domain.exceptions.api_error import ApiError
 
 from .invoice_sync_v2 import create_invoice_in_onec, register_payment_in_onec, retry_due_invoice_sync
 from .models import Invoice
@@ -37,8 +39,17 @@ def _contact_service_url(path):
     return f"{base}/api{path}"
 
 
-def _public_payment_url(invoice_id):
-    base = settings.PUBLIC_PAYMENTS_BASE_URL.rstrip("/")
+def _resolve_public_base_url(request=None):
+    configured = (getattr(settings, "PUBLIC_PAYMENTS_BASE_URL", "") or "").rstrip("/")
+    if configured:
+        return configured
+    if request:
+        return f"{request.scheme}://{request.get_host()}"
+    return "http://localhost:8012"
+
+
+def _public_payment_url(invoice_id, request=None):
+    base = _resolve_public_base_url(request=request)
     return f"{base}/payment/pay/{invoice_id}/"
 
 
@@ -138,6 +149,26 @@ def _send_payment_link(invoice):
     return True
 
 
+def _mark_invoice_paid_from_payment(invoice, payment_payload):
+    invoice.payment_id = payment_payload.get('id') or invoice.payment_id
+    captured_at = payment_payload.get('captured_at')
+    parsed_paid_at = parse_datetime(captured_at) if captured_at else None
+    invoice.paid_at = parsed_paid_at or invoice.paid_at or timezone.now()
+
+    try:
+        register_payment_in_onec(invoice, payment_payload)
+    except Exception as exc:
+        invoice.mark_retry(error_text=str(exc), onec=True)
+        invoice.save()
+
+    invoice.refresh_from_db()
+    if invoice.status != Invoice.Status.PAID:
+        invoice.status = Invoice.Status.PAID
+        if not invoice.paid_at:
+            invoice.paid_at = timezone.now()
+        invoice.save(update_fields=["status", "paid_at"])
+
+
 class DealInvoiceView(APIView):
     permission_classes = [IsManagerOrAdmin]
 
@@ -201,7 +232,7 @@ class DealInvoiceView(APIView):
             )
 
         try:
-            invoice.payment_url = _public_payment_url(invoice.id)
+            invoice.payment_url = _public_payment_url(invoice.id, request=request)
             invoice.save(update_fields=["payment_url"])
             if not invoice.sent_to_1c or invoice.onec_sync_status != Invoice.SyncStatus.SYNCED:
                 create_invoice_in_onec(invoice)
@@ -233,7 +264,7 @@ class RetryInvoiceSyncView(APIView):
         try:
             if not invoice.sent_to_1c:
                 create_invoice_in_onec(invoice)
-                invoice.payment_url = invoice.payment_url or _public_payment_url(invoice.id)
+                invoice.payment_url = invoice.payment_url or _public_payment_url(invoice.id, request=request)
             else:
                 register_payment_in_onec(
                     invoice,
@@ -262,8 +293,9 @@ class RetryInvoiceSyncView(APIView):
 
 def create_invoice_and_pay(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
+    public_base_url = _resolve_public_base_url(request=request)
     if invoice.status == Invoice.Status.PAID:
-        return redirect(f"{settings.PUBLIC_PAYMENTS_BASE_URL.rstrip('/')}/payment/result/{invoice.id}/")
+        return redirect(f"{public_base_url}/payment/result/{invoice.id}/")
     if not invoice.sent_to_1c or invoice.onec_sync_status != Invoice.SyncStatus.SYNCED:
         return HttpResponse(
             """
@@ -274,27 +306,53 @@ def create_invoice_and_pay(request, invoice_id):
         )
 
     idempotence_key = str(uuid.uuid4())
-    payment = Payment.create(
-        {
-            "amount": {
-                "value": str(invoice.amount),
-                "currency": "RUB"
-            },
-            "confirmation": {
-                "type": "redirect",
-                "return_url": f"{settings.PUBLIC_PAYMENTS_BASE_URL.rstrip('/')}/payment/result/{invoice.id}/"
-            },
-            "capture": True,
-            "description": f"Оплата счёта №{invoice.onec_invoice_number or invoice.invoice_number}",
-            "metadata": {
-                "invoice_id": str(invoice.id),
-                "invoice_number": invoice.invoice_number,
-                "deal_id": str(invoice.deal_id),
-                "cms_name": "crm_payments_service"
-            }
+    payment_payload = {
+        "amount": {
+            "value": str(invoice.amount),
+            "currency": "RUB"
         },
-        idempotence_key
-    )
+        "confirmation": {
+            "type": "redirect",
+            "return_url": f"{public_base_url}/payment/result/{invoice.id}/"
+        },
+        "capture": True,
+        "description": f"Оплата счёта №{invoice.onec_invoice_number or invoice.invoice_number}",
+        "metadata": {
+            "invoice_id": str(invoice.id),
+            "invoice_number": invoice.invoice_number,
+            "deal_id": str(invoice.deal_id),
+            "cms_name": "crm_payments_service"
+        }
+    }
+
+    payment = None
+    last_error = None
+    for attempt in range(3):
+        try:
+            payment = Payment.create(payment_payload, idempotence_key)
+            break
+        except ApiError as exc:
+            last_error = exc
+            if "502" in str(exc) and attempt < 2:
+                time.sleep(1.2 * (attempt + 1))
+                continue
+            break
+        except Exception as exc:
+            last_error = exc
+            break
+
+    if payment is None:
+        invoice.last_crm_error = f"Не удалось создать платёж в YooKassa: {last_error}"
+        invoice.crm_sync_status = Invoice.SyncStatus.ERROR
+        invoice.save(update_fields=["last_crm_error", "crm_sync_status"])
+        return HttpResponse(
+            """
+            <h1>Платёжный шлюз временно недоступен</h1>
+            <p>Не удалось открыть страницу оплаты из-за временной ошибки YooKassa (502).</p>
+            <p>Пожалуйста, обновите страницу через 20-30 секунд.</p>
+            """,
+            status=503,
+        )
 
     invoice.payment_id = payment.id
     invoice.status = Invoice.Status.WAITING
@@ -304,6 +362,17 @@ def create_invoice_and_pay(request, invoice_id):
 
 def payment_result(request, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id)
+    if invoice.status != Invoice.Status.PAID and invoice.payment_id:
+        try:
+            payment = Payment.find_one(invoice.payment_id)
+            if getattr(payment, "status", None) == "succeeded":
+                payment_payload = payment.json if hasattr(payment, "json") else {}
+                _mark_invoice_paid_from_payment(invoice, payment_payload)
+                invoice.refresh_from_db()
+        except Exception:
+            # Не блокируем UX: если запрос к YooKassa не удался, показываем штатный экран ожидания.
+            pass
+
     if invoice.status == Invoice.Status.PAID:
         return HttpResponse(
             f"""
@@ -338,18 +407,8 @@ def yookassa_webhook(request):
             return JsonResponse({'status': 'ignored'})
 
         invoice = Invoice.objects.get(id=invoice_id)
-        invoice.payment_id = payment_payload.get('id') or invoice.payment_id
-        captured_at = payment_payload.get('captured_at')
-        parsed_paid_at = parse_datetime(captured_at) if captured_at else None
-        invoice.paid_at = parsed_paid_at or timezone.now()
-
-        try:
-            register_payment_in_onec(invoice, payment_payload)
-            print(f"✅ Счёт №{invoice.invoice_number} оплачен и синхронизирован с 1С")
-        except Exception as exc:
-            invoice.mark_retry(error_text=str(exc), onec=True)
-            invoice.save()
-            print(f"⚠️ Ошибка отправки в 1С: {exc}")
+        _mark_invoice_paid_from_payment(invoice, payment_payload)
+        print(f"✅ Счёт №{invoice.invoice_number} оплачен и синхронизирован с 1С")
 
         return JsonResponse({'status': 'ok'})
     except Exception as exc:

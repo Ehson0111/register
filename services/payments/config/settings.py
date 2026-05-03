@@ -138,7 +138,7 @@ YOOKASSA_SHOP_ID = '1335151'
 YOOKASSA_SECRET_KEY = 'test_3RDrQQ3KHo_QzYn9jw0orffJb1u8ILESiNzOfuIyi4I'
 
 CONTACT_SERVICE_URL = os.getenv('CONTACT_SERVICE_URL', 'http://127.0.0.1:8005')
-PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://misty-river-547.gopublic.su')
+PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://incessantly-golden-gannet.cloudpub.ru')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@crm.local')
 
 ONEC_BASE_URL = os.getenv('ONEC_BASE_URL', 'http://host.docker.internal/1c/odata/standard.odata/')
@@ -186,10 +186,22 @@ PAYMENT_VARIANTS = {
 }   
 
 DEBUG = True
+_public_payments_host = (
+    PUBLIC_PAYMENTS_BASE_URL
+    .replace('https://', '')
+    .replace('http://', '')
+    .rstrip('/')
+)
+_extra_allowed_hosts = [
+    host.strip()
+    for host in os.getenv('PAYMENTS_ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
 ALLOWED_HOSTS = [
     'localhost', '127.0.0.1', '0.0.0.0',
     'marketing', 'api-gateway', 'user-service', 'contact-service', 'calendar', 'documents', 'payments',
-    'misty-river-547.gopublic.su',
+    _public_payments_host,
+    *_extra_allowed_hosts,
 ]
 
 DJANGO_APPS = [
@@ -209,7 +221,12 @@ THIRD_PARTY_APPS = [
 ]
  
 
-CSRF_TRUSTED_ORIGINS = ['https://misty-river-547.gopublic.su']
+_extra_csrf_trusted_origins = [
+    origin.strip()
+    for origin in os.getenv('PAYMENTS_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+CSRF_TRUSTED_ORIGINS = [PUBLIC_PAYMENTS_BASE_URL, *_extra_csrf_trusted_origins]
 
 
 LOCAL_APPS = ['apps.yookassa_integration']
