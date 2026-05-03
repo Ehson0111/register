@@ -8,6 +8,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from django.conf import settings
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 
 class OneCErrorV2(RuntimeError):
@@ -418,20 +420,30 @@ class OneCClientV2:
 
         # Извлекаем данные из YooKassa payload
         amount = payment_payload.get("amount", {}).get("value") or float(invoice.amount)
-        confirmed_at = payment_payload.get("captured_at") or datetime.now().isoformat()
+        captured_raw = payment_payload.get("captured_at") or ""
+        parsed_captured = parse_datetime(captured_raw) if captured_raw else None
+        now_iso = timezone.now().isoformat()
+        confirmed_at = (parsed_captured.isoformat() if parsed_captured else None) or now_iso
+        yk_payment_id = (payment_payload.get("id") or invoice.payment_id or "").strip()
+
         invoice_link_field = getattr(settings, "ONEC_PAYMENT_INVOICE_FIELD", "Счет_Key")
         paid_status_value = getattr(settings, "ONEC_STATUS_PAID_VALUE", "Оплачен")
-        
+
         # Создаём оплату
         payment_guid = str(uuid.uuid4())
         payment_data = {
             "Ref_Key": payment_guid,
-            "Date": datetime.now().isoformat(),
+            "Date": now_iso,
             "СуммаОплаты": float(amount),
             "СпособОплаты": "Банковская карта",
             "ДатаПодтвержденияОплаты": confirmed_at,
+            "CRM_Payment_ID": str(invoice.id),
+            "YooKassaPaymentID": yk_payment_id,
+            "Счет_Key": invoice.onec_document_id,
         }
-        payment_data[invoice_link_field] = invoice.onec_document_id
+
+        if invoice_link_field and invoice_link_field != "Счет_Key":
+            payment_data[invoice_link_field] = invoice.onec_document_id
         
         resp = self._request_with_retry("POST", "Document_ОплатаПоСчету", json=payment_data)
         
@@ -450,9 +462,11 @@ class OneCClientV2:
 
         # Во многих конфигурациях 1С создание документа оплаты не меняет статус счёта автоматически.
         # После успешного проведения оплаты явно помечаем счёт как оплаченный.
+        payment_date_invoice = getattr(settings, "ONEC_PAYMENT_DATE_USE_CAPTURED", "false").lower() == "true"
+        invoice_payment_date = confirmed_at if payment_date_invoice else now_iso
         update_variants = [
+            {"СтатусСчета": paid_status_value, "ДатаОплаты": invoice_payment_date},
             {"СтатусСчета": paid_status_value},
-            {"СтатусСчета": paid_status_value, "ДатаОплаты": confirmed_at},
         ]
         update_error = None
         for payload in update_variants:

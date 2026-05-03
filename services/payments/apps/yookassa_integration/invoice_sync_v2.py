@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from .models import Invoice
 from .onec_client_v2 import OneCClientV2, OneCErrorV2
@@ -32,8 +33,21 @@ def register_payment_in_onec(invoice, payment_payload, *, client=None):
     Регистрация оплаты в 1С через новый bridge сервис
     """
     client = client or OneCClientV2()
-    
+
+    incoming_yk_id = (payment_payload.get("id") or "").strip()
+    stored_yk_id = (invoice.payment_id or "").strip()
+    if invoice.status == Invoice.Status.PAID and invoice.onec_payment_document_id:
+        if not incoming_yk_id:
+            return invoice
+        if stored_yk_id and incoming_yk_id == stored_yk_id:
+            return invoice
+
     try:
+        captured_raw = payment_payload.get("captured_at") or ""
+        parsed_captured = parse_datetime(captured_raw) if captured_raw else None
+        if parsed_captured:
+            invoice.paid_at = parsed_captured
+
         payload = client.register_payment(invoice, payment_payload)
         invoice.onec_payment_document_id = payload.get("payment_document_id_1c", "")
         invoice.status = Invoice.Status.PAID

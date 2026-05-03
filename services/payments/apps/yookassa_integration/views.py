@@ -8,7 +8,6 @@ from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from rest_framework import status
@@ -150,23 +149,25 @@ def _send_payment_link(invoice):
 
 
 def _mark_invoice_paid_from_payment(invoice, payment_payload):
-    invoice.payment_id = payment_payload.get('id') or invoice.payment_id
-    captured_at = payment_payload.get('captured_at')
-    parsed_paid_at = parse_datetime(captured_at) if captured_at else None
-    invoice.paid_at = parsed_paid_at or invoice.paid_at or timezone.now()
+    """
+    Сначала фиксируем оплату в 1С, затем статус счёта в сервисе payments (CRM).
+    Если 1С недоступна или вернула ошибку — счёт в CRM не переводим в «Оплачен».
+    Возвращает True, если счёт в CRM успешно помечен оплаченным.
+    """
+    yk_id = (payment_payload.get("id") or "").strip()
+    if yk_id:
+        invoice.payment_id = yk_id
+        invoice.save(update_fields=["payment_id"])
 
     try:
         register_payment_in_onec(invoice, payment_payload)
     except Exception as exc:
         invoice.mark_retry(error_text=str(exc), onec=True)
         invoice.save()
+        return False
 
     invoice.refresh_from_db()
-    if invoice.status != Invoice.Status.PAID:
-        invoice.status = Invoice.Status.PAID
-        if not invoice.paid_at:
-            invoice.paid_at = timezone.now()
-        invoice.save(update_fields=["status", "paid_at"])
+    return invoice.status == Invoice.Status.PAID
 
 
 class DealInvoiceView(APIView):
@@ -407,10 +408,17 @@ def yookassa_webhook(request):
             return JsonResponse({'status': 'ignored'})
 
         invoice = Invoice.objects.get(id=invoice_id)
-        _mark_invoice_paid_from_payment(invoice, payment_payload)
-        print(f"✅ Счёт №{invoice.invoice_number} оплачен и синхронизирован с 1С")
+        synced = _mark_invoice_paid_from_payment(invoice, payment_payload)
+        invoice.refresh_from_db()
+        if synced:
+            print(f"✅ Счёт №{invoice.invoice_number} оплачен и синхронизирован с 1С")
+        else:
+            print(
+                f"⚠️ ЮKassa подтвердила оплату, но синхронизация с 1С не завершена "
+                f"(счёт №{invoice.invoice_number}, CRM-статус не «Оплачен»): см. last_onec_error"
+            )
 
-        return JsonResponse({'status': 'ok'})
+        return JsonResponse({'status': 'ok' if synced else 'pending_sync'})
     except Exception as exc:
         print(f"❌ Ошибка: {exc}")
         return JsonResponse({'error': str(exc)}, status=400)
