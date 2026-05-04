@@ -3,8 +3,7 @@ CRM-проект на микросервисной архитектуре
 🐳 Docker-команды
 Просмотр логов
 
-
-
+ docker-compose logs -f payments
 
 
 

@@ -97,8 +97,10 @@ class ApplicationsViewSet(viewsets.ModelViewSet):
         instance.refresh_from_db()
 
         if not was_processed and instance.is_processed:
-            actor = request.headers.get("X-Audit-Actor", "")
-            action = request.headers.get("X-Audit-Action", "").lower()
+            # actor/action могут приходить либо через headers (старый вариант),
+            # либо через body (новый вариант — безопасно для кириллицы в браузере).
+            actor = request.headers.get("X-Audit-Actor", "") or (request.data.get("audit_actor", "") if isinstance(request.data, dict) else "")
+            action = (request.headers.get("X-Audit-Action", "") or (request.data.get("audit_action", "") if isinstance(request.data, dict) else "") or "").lower()
             if action not in {
                 ApplicationAudit.ACTION_APPROVED,
                 ApplicationAudit.ACTION_REJECTED,

@@ -11,3 +11,7 @@ export async function createTeamUser(payload) {
 export async function patchTeamUserActive(id, is_active) {
   return api.patch(`/users/team/${id}/`, { is_active })
 }
+
+export async function patchTeamUserRole(id, role) {
+  return api.patch(`/users/team/${id}/role/`, { role })
+}

@@ -1,4 +1,5 @@
 import api from './api'
+import axios from 'axios'
 
 const authService = {
   async login(credentials) {
@@ -14,7 +15,13 @@ const authService = {
   },
 
   async refreshToken(refresh) {
-    return await api.post('/auth/refresh/', { refresh })
+    // Важно: refresh делаем через отдельный axios, чтобы не попасть в interceptor recursion.
+    const plain = axios.create({
+      baseURL: '/api',
+      timeout: 30000,
+      headers: { 'Content-Type': 'application/json' }
+    })
+    return await plain.post('/auth/refresh/', { refresh })
   },
 
   async passwordResetRequest(email) {

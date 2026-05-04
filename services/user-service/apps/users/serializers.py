@@ -142,3 +142,34 @@ class StaffUserActiveSerializer(serializers.ModelSerializer):
                 {'is_active': 'Нельзя отключить свою учётную запись.'}
             )
         return attrs
+
+
+class StaffUserRoleSerializer(serializers.ModelSerializer):
+    """Смена роли пользователя — только администратор CRM."""
+
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES)
+
+    class Meta:
+        model = User
+        fields = ['role']
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        instance = self.instance
+        new_role = attrs.get('role')
+
+        if not request or not getattr(request, "user", None) or not request.user.is_authenticated:
+            raise serializers.ValidationError({'detail': 'Требуется авторизация.'})
+
+        # Защита от потери доступа: нельзя менять роль самому себе.
+        if instance and instance.pk == request.user.pk:
+            raise serializers.ValidationError({'role': 'Нельзя менять роль самому себе.'})
+
+        # Чтобы не "выключить" доступ всей системе: не меняем роль других админов.
+        if instance and getattr(instance, "role", None) == User.ROLE_ADMIN:
+            raise serializers.ValidationError({'role': 'Нельзя менять роль другого администратора.'})
+
+        if new_role not in (User.ROLE_ADMIN, User.ROLE_MANAGER, User.ROLE_CLIENT):
+            raise serializers.ValidationError({'role': 'Недопустимая роль.'})
+
+        return attrs

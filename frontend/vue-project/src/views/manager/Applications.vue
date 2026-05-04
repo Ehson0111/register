@@ -448,6 +448,21 @@ const confirmApprove = async () => {
       actor: authStore.userName || "manager",
       action: "approved",
     });
+    // Оптимистично обновляем UI, чтобы статус менялся сразу,
+    // даже если перезагрузка списка/аудита не сработает.
+    const i = allApplications.value.findIndex((a) => a.id === draft.id);
+    if (i !== -1) allApplications.value[i] = { ...allApplications.value[i], is_processed: true };
+    auditTrail.value = [
+      {
+        id: -Date.now(),
+        application: draft.id,
+        actor: authStore.userName || "manager",
+        action: "approved",
+        metadata: { source: "ui_optimistic" },
+        created_at: new Date().toISOString(),
+      },
+      ...auditTrail.value,
+    ];
     debugLog("H11", "Applications.vue:confirmApprove", "markProcessed success", {
       appId: draft.id,
     });
@@ -474,6 +489,19 @@ const reject = async (item: ApplicationItem) => {
       actor: authStore.userName || "manager",
       action: "rejected",
     });
+    const i = allApplications.value.findIndex((a) => a.id === item.id);
+    if (i !== -1) allApplications.value[i] = { ...allApplications.value[i], is_processed: true };
+    auditTrail.value = [
+      {
+        id: -Date.now(),
+        application: item.id,
+        actor: authStore.userName || "manager",
+        action: "rejected",
+        metadata: { source: "ui_optimistic" },
+        created_at: new Date().toISOString(),
+      },
+      ...auditTrail.value,
+    ];
     await Promise.all([loadApplications(), loadAuditTrail()]);
     showSuccess("Заявка отклонена");
   } catch (error) {

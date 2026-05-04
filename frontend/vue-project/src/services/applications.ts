@@ -74,6 +74,20 @@ const mailApi = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+function attachAuth(instance: ReturnType<typeof axios.create>) {
+  instance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+}
+
+attachAuth(applicationsApi);
+attachAuth(mailApi);
+
 function debugLog(hypothesisId: string, location: string, message: string, data: Record<string, unknown>) {
   // #region agent log
   fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
@@ -122,14 +136,21 @@ class ApplicationService {
     isProcessed = true,
     options?: { actor?: string; action?: "approved" | "rejected" | "processed" }
   ): Promise<ApplicationItem> {
-    const response = await applicationsApi.patch<ApplicationItem>(`${id}/`, {
-      is_processed: isProcessed,
-    }, {
-      headers: {
-        ...(options?.actor ? { "X-Audit-Actor": options.actor } : {}),
-        ...(options?.action ? { "X-Audit-Action": options.action } : {}),
+    // Важно: не кладём actor в HTTP headers — кириллица ломает setRequestHeader в браузере.
+    // Передаём audit_* в body, а бэкенд подхватывает их оттуда.
+    const response = await applicationsApi.patch<ApplicationItem>(
+      `${id}/`,
+      {
+        is_processed: isProcessed,
+        ...(options?.actor ? { audit_actor: options.actor } : {}),
+        ...(options?.action ? { audit_action: options.action } : {}),
       },
-    });
+      {
+        headers: {
+          // action безопасно оставлять в headers (ASCII), но пусть будет только в body для единообразия
+        },
+      }
+    );
     return response.data;
   }
 

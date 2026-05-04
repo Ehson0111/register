@@ -50,8 +50,12 @@ api.interceptors.response.use(
       message: error.message
     })
 
+    // Никогда не пытаемся "рефрешить рефреш" — иначе можно уйти в рекурсию.
+    const url = (originalRequest?.url || '').toString()
+    const isRefreshRequest = url.includes('/auth/refresh/')
+
     // Handle 401/403 errors (unauthorized)
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+    if (!isRefreshRequest && (error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true
 
       // If we have a refresh token, try to refresh

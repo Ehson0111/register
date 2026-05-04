@@ -16,6 +16,7 @@ from .serializers import (
     UserListSerializer,
     StaffCreateUserSerializer,
     StaffUserActiveSerializer,
+    StaffUserRoleSerializer,
 )
 from .work_process_events import emit_workflow_event
 
@@ -196,6 +197,20 @@ class StaffUserActiveUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     queryset = User.objects.all()
     serializer_class = StaffUserActiveSerializer
+    http_method_names = ['patch', 'head', 'options']
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+
+class StaffUserRoleUpdateView(generics.UpdateAPIView):
+    """Смена роли пользователя — только администратор."""
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = User.objects.all()
+    serializer_class = StaffUserRoleSerializer
     http_method_names = ['patch', 'head', 'options']
 
     def get_serializer_context(self):

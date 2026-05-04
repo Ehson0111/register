@@ -130,7 +130,29 @@
               <td class="px-6 py-3 text-sm text-gray-700">
                 {{ u.first_name }} {{ u.last_name }}
               </td>
-              <td class="px-6 py-3 text-sm text-gray-700">{{ u.role_display || roleLabel(u.role) }}</td>
+              <td class="px-6 py-3 text-sm text-gray-700">
+                <div v-if="isAdmin && currentUserId && u.id !== currentUserId && u.role !== 'admin'" class="flex items-center gap-2">
+                  <select
+                    v-model="roleDrafts[u.id]"
+                    :disabled="roleSavingId === u.id"
+                    class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="manager">Менеджер</option>
+                    <option value="client">Клиент</option>
+                  </select>
+                  <button
+                    type="button"
+                    :disabled="roleSavingId === u.id || roleDrafts[u.id] === u.role"
+                    class="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                    @click="saveUserRole(u)"
+                  >
+                    {{ roleSavingId === u.id ? '…' : 'Сохранить' }}
+                  </button>
+                </div>
+                <span v-else>
+                  {{ u.role_display || roleLabel(u.role) }}
+                </span>
+              </td>
               <td class="px-6 py-3 text-sm">
                 <span
                   class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
@@ -165,7 +187,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth'
-import { fetchTeamUsers, createTeamUser, patchTeamUserActive } from '@/services/usersTeamService.js'
+import { fetchTeamUsers, createTeamUser, patchTeamUserActive, patchTeamUserRole } from '@/services/usersTeamService.js'
 
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.user?.role === 'admin')
@@ -179,6 +201,8 @@ const createMessage = ref('')
 const createError = ref('')
 const togglingId = ref(null)
 const actionError = ref('')
+const roleDrafts = ref({})
+const roleSavingId = ref(null)
 
 const form = ref({
   email: '',
@@ -216,6 +240,11 @@ async function loadUsers() {
   try {
     const { data } = await fetchTeamUsers()
     users.value = Array.isArray(data) ? data : data?.results || []
+    const nextDrafts = {}
+    for (const u of users.value) {
+      nextDrafts[u.id] = u.role
+    }
+    roleDrafts.value = nextDrafts
   } catch (e) {
     loadError.value = e.response?.data?.detail || e.message || 'Не удалось загрузить список'
     users.value = []
@@ -280,6 +309,26 @@ async function toggleUserActive(u) {
     actionError.value = typeof d === 'string' ? d : flattenErrors(d)
   } finally {
     togglingId.value = null
+  }
+}
+
+async function saveUserRole(u) {
+  if (!isAdmin.value || u.id === currentUserId.value || u.role === 'admin') return
+  const nextRole = roleDrafts.value[u.id]
+  if (!nextRole || nextRole === u.role) return
+
+  roleSavingId.value = u.id
+  actionError.value = ''
+  try {
+    await patchTeamUserRole(u.id, nextRole)
+    await loadUsers()
+  } catch (e) {
+    const d = e.response?.data
+    actionError.value = typeof d === 'string' ? d : flattenErrors(d)
+    // откат селекта на актуальную роль из списка
+    roleDrafts.value[u.id] = u.role
+  } finally {
+    roleSavingId.value = null
   }
 }
 
