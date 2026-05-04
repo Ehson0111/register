@@ -102,7 +102,6 @@ MICROSERVICES = {
     'marketing': os.getenv('MARKETING_SERVICE_URL', 'http://127.0.0.1:8007'),
     'documents': os.getenv('DOCUMENTS_SERVICE_URL', 'http://127.0.0.1:8008'),
     'chat-service': os.getenv('CHAT_SERVICE_URL', 'http://127.0.0.1:8010'),
-    'work-process': os.getenv('WORK_PROCESS_URL', 'http://127.0.0.1:8011'),
     'payments': os.getenv('PAYMENTS_SERVICE_URL', 'http://127.0.0.1:8012'),
 }
 

@@ -189,14 +189,14 @@ const quickDemoLogin = () => {
         <!-- Текст баннера -->
         <div class="banner-text">
           <h3>Управляйте бизнесом эффективно</h3>
-          <p>Более 500+ малых компаний уже автоматизировали свои процессы с нашей CRM</p>
+          <p>Более 500+ малых компаний уже управляют продажами и клиентами с нашей CRM</p>
         </div>
 
         <!-- Преимущества -->
         <div class="features-list">
           <div class="feature">
             <span class="feature-icon">✅</span>
-            <span>Автоматизация продаж</span>
+            <span>Рост продаж</span>
           </div>
           <div class="feature">
             <span class="feature-icon">✅</span>

@@ -150,14 +150,6 @@
               <span class="menu-label">Пользователи</span>
             </router-link>
 
-            <router-link
-              to="/manager/work-process"
-              class="menu-link"
-              :class="{ 'menu-link-active': $route.path.includes('/manager/work-process') }"
-            >
-              <PuzzlePieceIcon class="menu-icon" />
-              <span class="menu-label">Автоматизация</span>
-            </router-link>
           </nav>
 
           <div class="p-3 border-t border-white/20">
@@ -220,7 +212,6 @@ import {
   EnvelopeIcon,
   CalendarDaysIcon,
   Squares2X2Icon,
-  PuzzlePieceIcon,
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
@@ -258,7 +249,6 @@ const currentPageTitle = computed(() => {
     Applications: "Заявки",
     ManagerApplications: "Заявки",
     ManagerUsers: "Пользователи",
-    ManagerWorkProcesses: "Автоматизация процессов",
   };
   return titles[routeName] || "Панель управления";
 });
@@ -280,7 +270,6 @@ const currentPageSubtitle = computed(() => {
     ManagerMeetings: "Управление встречами и договоренностями.",
     ManagerApplications: "Заявки с Яндекс Форм и быстрая обработка.",
     ManagerUsers: "Управление сотрудниками и ролями доступа.",
-    ManagerWorkProcesses: "Автоматизация процессов через блок-схемы.",
   };
   return subtitles[routeName] || "Рабочая зона менеджера CRM.";
 });

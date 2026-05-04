@@ -31,7 +31,6 @@ Start-Service -ServiceName "Contact Service" -Path "D:\django\crm\services\conta
 Start-Service -ServiceName "Marketing" -Path "D:\django\crm\services\marketing" -Command "python manage.py runserver 0.0.0.0:8007"
 
 Start-Service -ServiceName "docements" -Path "D:\django\crm\services\documents" -Command "python manage.py runserver 0.0.0.0:8008"
-Start-Service -ServiceName "work-process" -Path "D:\django\crm\services\work_process" -Command "python manage.py runserver 0.0.0.0:8011"
 Start-Service -ServiceName "payments" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://host.docker.internal/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://host.docker.internal:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py runserver 0.0.0.0:8012"
 Start-Service -ServiceName "payments-retry-worker" -Path "D:\django\crm\services\payments" -Command "$env:ONEC_TRANSPORT_MODE='bridge'; $env:ONEC_ODATA_BASE_URL='http://host.docker.internal/1c/odata/standard.odata/'; $env:ONEC_BRIDGE_URL='http://host.docker.internal:8013/invoke'; $env:ONEC_BRIDGE_SECRET='crm-onec-bridge-secret-2026'; python manage.py process_invoice_retries --loop"
 # Ждем немного перед запуском фронтенда 
@@ -47,7 +46,6 @@ Write-Host "Contact Service: http://localhost:8005" -ForegroundColor Cyan
 Write-Host "Calendar: http://localhost:8006" -ForegroundColor Cyan
 Write-Host "marketing: http://localhost:8007" -ForegroundColor Cyan
 Write-Host "docements: http://localhost:8008" -ForegroundColor Cyan
-Write-Host "work-process: http://localhost:8011" -ForegroundColor Cyan
 Write-Host "payments: http://localhost:8012" -ForegroundColor Cyan
 Write-Host "1C Bridge: http://127.0.0.1:8013" -ForegroundColor Cyan
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Cyan
