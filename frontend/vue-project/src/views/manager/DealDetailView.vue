@@ -730,21 +730,6 @@ const changeDealStatus = async (status: "won" | "lost") => {
 const loadAuditTrail = async (dealId: number) => {
   try {
     auditLoading.value = true;
-    // #region agent log
-    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-      body: JSON.stringify({
-        sessionId: "ad25e9",
-        runId: "run3",
-        hypothesisId: "H14",
-        location: "DealDetailView.vue:loadAuditTrail",
-        message: "loading deal audit trail",
-        data: { dealId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     auditTrail.value = await contactService.getAuditTrail({
       entity_type: "deal",
       entity_id: dealId,
@@ -825,9 +810,7 @@ const loadDeal = async () => {
   try {
     loading.value = true;
     const dealId = parseInt(route.params.id as string);
-    console.log("Загрузка сделки ID:", dealId);
     dealdetail.value = await dealService.getDeal(dealId);
-    console.log("Загруженная сделка:", dealdetail.value);
     await loadAuditTrail(dealId);
     await loadInvoice(dealId);
   } catch (error) {

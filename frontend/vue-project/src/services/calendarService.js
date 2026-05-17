@@ -3,9 +3,7 @@ import api from "./api";
 const calendarService = {
   // Получить все задачи (уже фильтруются по manager_id на сервере)
   async getTasks(params = {}) {
-    console.log("Fetching tasks from API...");
     const response = await api.get("/tasks/", { params });
-    console.log("Tasks received:", response.data);
     return response.data;
   },
 
@@ -29,17 +27,13 @@ const calendarService = {
 
   // Создать новую задачу
   async createTask(taskData) {
-    console.log("Creating task:", taskData);
     const response = await api.post("/tasks/", taskData);
-    console.log("Task created:", response.data);
     return response.data;
   },
 
   // Обновить задачу
   // В calendarService.js
   async updateTask(id, taskData) {
-    console.log("Updating task", id, "with data:", taskData);
-
     // Убираем поля, которые не нужно отправлять
     const dataToSend = {
       title: taskData.title,
@@ -56,7 +50,6 @@ const calendarService = {
     };
 
     const response = await api.put(`/tasks/${id}/`, dataToSend);
-    console.log("Update response:", response.data);
     return response;
   },
 

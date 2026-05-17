@@ -233,10 +233,8 @@ class SendCampaignView(APIView):
         # Если выбрано "отправить всем", нужно получить список всех клиентов
         if data.get('send_to_all'):
             # Здесь нужно интегрироваться с сервисом контактов
-            # Пока используем пустой список
-            print(recipient_ids)
-            # recipient_ids = []  # Заглушка
-        
+            recipient_ids = recipient_ids or []
+
         # Проверяем, есть ли получатели
         if not recipient_ids:
             return Response(

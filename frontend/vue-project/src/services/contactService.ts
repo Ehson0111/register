@@ -140,23 +140,6 @@ export interface AnalyticsOverview {
   }>
 }
 
-export interface AnalyticsTimeline {
-  deals_timeline: Array<{
-    date: string
-    count: number
-    total_amount: number
-  }>
-  contacts_timeline: Array<{
-    date: string
-    count: number
-  }>
-  won_deals_timeline: Array<{
-    date: string
-    count: number
-    total_amount: number
-  }>
-}
-
 export interface TopContact {
   id: number
   full_name: string
@@ -336,11 +319,6 @@ class ContactService {
     return response.data
   }
 
-  async getAnalyticsTimeline(days: string = '30'): Promise<AnalyticsTimeline> {
-    const response = await api.get(`/contacts/analytics/timeline/?days=${days}`)
-    return response.data
-  }
-
   async getTopContacts(): Promise<{ by_deal_count: TopContact[], by_deal_amount: TopContact[] }> {
     const response = await api.get('/contacts/analytics/top-contacts/')
     return response.data
@@ -362,65 +340,8 @@ class ContactService {
   }
 
   async getAuditTrail(params?: { entity_type?: string; entity_id?: number; action?: string }): Promise<AuditTrailItem[]> {
-    // #region agent log
-    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-      body: JSON.stringify({
-        sessionId: "ad25e9",
-        runId: "run4",
-        hypothesisId: "H15",
-        location: "contactService.ts:getAuditTrail:before",
-        message: "requesting audit trail",
-        data: {
-          entity_type: params?.entity_type || null,
-          entity_id: params?.entity_id || null,
-          action: params?.action || null
-        },
-        timestamp: Date.now()
-      })
-    }).catch(() => {})
-    // #endregion
-    try {
-      const response = await api.get('/audit-trail/', { params })
-      // #region agent log
-      fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-        body: JSON.stringify({
-          sessionId: "ad25e9",
-          runId: "run5",
-          hypothesisId: "H15",
-          location: "contactService.ts:getAuditTrail:after",
-          message: "audit trail loaded",
-          data: { count: Array.isArray(response.data) ? response.data.length : -1, status: response.status },
-          timestamp: Date.now()
-        })
-      }).catch(() => {})
-      // #endregion
-      return response.data
-    } catch (error: any) {
-      // #region agent log
-      fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-        body: JSON.stringify({
-          sessionId: "ad25e9",
-          runId: "run5",
-          hypothesisId: "H16",
-          location: "contactService.ts:getAuditTrail:error",
-          message: "audit trail request failed",
-          data: {
-            status: error?.response?.status ?? null,
-            url: error?.config?.url ?? null,
-            message: error?.message ?? "unknown",
-          },
-          timestamp: Date.now()
-        })
-      }).catch(() => {})
-      // #endregion
-      throw error
-    }
+    const response = await api.get('/audit-trail/', { params })
+    return response.data
   }
 
   // ==================== UTILITIES ====================
@@ -459,21 +380,16 @@ class ContactService {
 
   getStatusText(status: string): string {
     const texts: Record<string, string> = {
-      'new': 'Новая',
-      'in_progress': 'В работе',
-      'won': 'Выиграна',
-      'lost': 'Проиграна',
-      'on_hold': 'На паузе',
-      'lead': 'Лид',
-      'client': 'Клиент',
-      'partner': 'Партнер'
+      new: 'Новая',
+      in_progress: 'В работе',
+      won: 'Выиграна',
+      lost: 'Проиграна',
+      on_hold: 'На паузе',
+      lead: 'Лид',
+      client: 'Клиент',
+      partner: 'Партнёр',
     }
     return texts[status] || status
-  }
-
-  calculateWinRate(wonDeals: number, totalDeals: number): number {
-    if (totalDeals === 0) return 0
-    return Math.round((wonDeals / totalDeals) * 100)
   }
 }
 

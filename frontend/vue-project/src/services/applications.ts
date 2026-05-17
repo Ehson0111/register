@@ -88,24 +88,6 @@ function attachAuth(instance: ReturnType<typeof axios.create>) {
 attachAuth(applicationsApi);
 attachAuth(mailApi);
 
-function debugLog(hypothesisId: string, location: string, message: string, data: Record<string, unknown>) {
-  // #region agent log
-  fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-    body: JSON.stringify({
-      sessionId: "ad25e9",
-      runId: "run2",
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 class ApplicationService {
   async fetchFromMail(): Promise<{ total: number; new: number; duplicates: number }> {
     const response = await applicationsApi.post("fetch_from_mail/");
@@ -113,16 +95,7 @@ class ApplicationService {
   }
 
   async getApplications(params?: Record<string, any>): Promise<ApplicationItem[]> {
-    debugLog("H5", "applications.ts:getApplications", "request start", {
-      baseURL: applicationsApi.defaults.baseURL,
-      hasSearch: Boolean(params?.search),
-    });
     const response = await applicationsApi.get<PaginatedResponse<ApplicationItem>>("", { params });
-    debugLog("H5", "applications.ts:getApplications", "request success", {
-      status: response.status,
-      count: response.data?.count ?? null,
-      resultsLen: Array.isArray(response.data?.results) ? response.data.results.length : -1,
-    });
     return Array.isArray(response.data?.results) ? response.data.results : [];
   }
 

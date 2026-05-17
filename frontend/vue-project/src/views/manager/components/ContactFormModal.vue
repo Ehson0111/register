@@ -255,8 +255,6 @@ watch(() => props.show, (newVal) => {
   if (newVal && props.contact) {
     // Заполняем форму данными контакта для редактирования
     formData.value = { ...props.contact }
-
-    console.log("xcv",formData.value.address)
   } else if (!newVal) {
     // Сбрасываем форму при закрытии
     resetForm()

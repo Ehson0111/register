@@ -81,9 +81,9 @@ class CalendarTaskViewSet(viewsets.ModelViewSet):
         today = timezone.now().date()
         next_week = today + timedelta(days=7)
         tasks = self.get_queryset().filter(
-            date__gte=today,
-            date__lte=next_week
-        ).exclude(completed=True)
+            date__gte=today,  # от сегодня
+            date__lte=next_week# до через 7 дней
+        ).exclude(completed=True) # исключая выполненные
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
     
@@ -92,8 +92,8 @@ class CalendarTaskViewSet(viewsets.ModelViewSet):
         """Просроченные задачи"""
         today = timezone.now().date()
         tasks = self.get_queryset().filter(
-            Q(date__lt=today) | 
-            Q(date=today, time__lt=timezone.now().time())
+            Q(date__lt=today) |  # дата раньше сегодня
+            Q(date=today, time__lt=timezone.now().time()) # сегодня, но время уже прошло
         ).exclude(completed=True)
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
@@ -102,6 +102,7 @@ class CalendarTaskViewSet(viewsets.ModelViewSet):
     def toggle_complete(self, request, pk=None):
         """Переключить статус выполнения"""
         task = self.get_object()
+        
         if task.manager_id != request.user.id:
             return Response(
                 {'error': 'Нет доступа к этой задаче'},
@@ -129,11 +130,11 @@ class CalendarTaskViewSet(viewsets.ModelViewSet):
                 priority='high', completed=False
             ).count(),
             'today_tasks': user_tasks.filter(date=today).count(),
-            'upcoming_tasks': user_tasks.filter(
-                date__gt=today,
+            'upcoming_tasks': user_tasks.filter(    # Будущие
+                date__gt=today, 
                 completed=False
             ).count(),
-            'overdue_tasks': user_tasks.filter(
+            'overdue_tasks': user_tasks.filter( #Просроченные
                 Q(date__lt=today) | 
                 Q(date=today, time__lt=timezone.now().time()),
                 completed=False

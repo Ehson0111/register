@@ -1,5 +1,6 @@
-from django.urls import re_path
+from django.urls import re_path,reverse
 from . import views
+
 
 urlpatterns = [
     re_path(r'^auth/', views.proxy_view, name='auth-proxy'),
@@ -21,3 +22,10 @@ urlpatterns = [
     re_path(r'^chat/.*', views.proxy_view, name='chat'),
     re_path(r'^payment/.*', views.proxy_view, name='payment'),
 ]
+
+
+
+
+# localhost/api/users/1/ 
+
+

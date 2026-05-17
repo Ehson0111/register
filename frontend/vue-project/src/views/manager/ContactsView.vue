@@ -326,11 +326,6 @@ const loadAllContacts = async () => {
 // Применение фильтров
 const applyFilters = () => {
   // Фильтрация происходит автоматически через computed свойство
-  console.log("Фильтры применены:", {
-    search: searchQuery.value,
-    status: statusFilter.value,
-    company: companyFilter.value
-  });
 };
 
 // Поиск с задержкой
@@ -370,7 +365,6 @@ const formatDate = (dateString: string) => {
 // Действия с контактами
 const editContact = (contact: Contact) => {
   editingContact.value = contact;
-  console.log(contact.address,"notes",contact.notes)
   showCreateModal.value = true;
 };
 

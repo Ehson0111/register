@@ -1,51 +1,19 @@
-import email
 import hashlib
 import imaplib
-import re
 import smtplib
-from email.header import decode_header
+from email import message_from_bytes
 from email.message import EmailMessage
-from email.utils import getaddresses, parseaddr, parsedate_to_datetime
-from html import unescape
+from email.utils import getaddresses, parseaddr
 
-from django.utils import timezone
-
+from .mail_utils import (
+    addresses_to_string,
+    decode_mime_header,
+    flags_from_fetch_meta,
+    message_bodies,
+    parse_message_date,
+    preview_text,
+)
 from .models import MailboxEmail
-
-
-def decode_mime_header(value: str) -> str:
-    if not value:
-        return ""
-    parts = []
-    for chunk, charset in decode_header(value):
-        if isinstance(chunk, bytes):
-            parts.append(chunk.decode(charset or "utf-8", errors="replace"))
-        else:
-            parts.append(chunk)
-    return "".join(parts).strip()
-
-
-def html_to_text(html: str) -> str:
-    if not html:
-        return ""
-    html = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r"<br\s*/?>", "\n", html, flags=re.IGNORECASE)
-    html = re.sub(r"</p\s*>", "\n", html, flags=re.IGNORECASE)
-    html = re.sub(r"</div\s*>", "\n", html, flags=re.IGNORECASE)
-    text = re.sub(r"<[^>]+>", "", html)
-    text = unescape(text)
-    lines = [line.strip() for line in text.splitlines()]
-    return "\n".join(line for line in lines if line).strip()
-
-
-def addresses_to_string(raw: str) -> str:
-    addresses = [addr for _, addr in getaddresses([raw or ""]) if addr]
-    return ", ".join(addresses)
-
-
-def preview_text(text: str, limit: int = 180) -> str:
-    compact = " ".join((text or "").split())
-    return compact[:limit].strip()
 
 
 class YandexMailboxClient:
@@ -106,42 +74,6 @@ class YandexMailboxClient:
                 return candidate
         return None
 
-    def _extract_bodies(self, msg):
-        plain_parts = []
-        html_parts = []
-
-        def collect(part):
-            content_type = part.get_content_type()
-            disposition = (part.get("Content-Disposition") or "").lower()
-            if "attachment" in disposition:
-                return
-            if content_type not in ("text/plain", "text/html"):
-                return
-            payload = part.get_payload(decode=True)
-            if not payload:
-                return
-            charset = part.get_content_charset() or "utf-8"
-            try:
-                text = payload.decode(charset, errors="replace")
-            except Exception:
-                text = payload.decode("utf-8", errors="replace")
-            if content_type == "text/plain":
-                plain_parts.append(text)
-            else:
-                html_parts.append(text)
-
-        if msg.is_multipart():
-            for part in msg.walk():
-                collect(part)
-        else:
-            collect(msg)
-
-        body_text = "\n\n".join(part.strip() for part in plain_parts if part.strip()).strip()
-        body_html = "\n".join(part for part in html_parts if part).strip()
-        if not body_text and body_html:
-            body_text = html_to_text(body_html)
-        return body_text, body_html
-
     def _external_id(self, msg, msg_id, folder_kind):
         message_id = (msg.get("Message-ID") or "").strip().strip("<>").strip()
         if message_id:
@@ -159,16 +91,10 @@ class YandexMailboxClient:
         return hashlib.sha1(fingerprint.encode("utf-8", errors="ignore")).hexdigest()
 
     def _message_record(self, msg, flags, folder_kind, msg_id):
-        body_text, body_html = self._extract_bodies(msg)
+        body_text, body_html = message_bodies(msg)
         subject = decode_mime_header(msg.get("Subject", "")) or "Без темы"
         from_name, from_email = parseaddr(decode_mime_header(msg.get("From", "")))
-
-        try:
-            message_date = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else timezone.now()
-            if timezone.is_naive(message_date):
-                message_date = timezone.make_aware(message_date, timezone.get_current_timezone())
-        except Exception:
-            message_date = timezone.now()
+        message_date = parse_message_date(msg.get("Date"))
 
         normalized_flags = [flag.strip() for flag in flags if flag.strip()]
         important = "\\Flagged" in normalized_flags or (msg.get("Importance", "").lower() == "high")
@@ -229,9 +155,8 @@ class YandexMailboxClient:
                     if not raw_bytes:
                         continue
 
-                    flags_match = re.search(r"FLAGS \((.*?)\)", meta)
-                    flags = flags_match.group(1).split() if flags_match else []
-                    msg = email.message_from_bytes(raw_bytes)
+                    flags = flags_from_fetch_meta(meta)
+                    msg = message_from_bytes(raw_bytes)
                     record = self._message_record(msg, flags, folder_kind, msg_id)
                     existing = collected.get(record["external_id"])
                     if existing:

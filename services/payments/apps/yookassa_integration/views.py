@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 import uuid
 
@@ -20,6 +21,8 @@ from .invoice_sync_v2 import create_invoice_in_onec, register_payment_in_onec, r
 from .models import Invoice
 from .permissions import IsManagerOrAdmin
 from .serializers import InvoiceSerializer
+
+logger = logging.getLogger(__name__)
 
 Configuration.account_id = settings.YOOKASSA_SHOP_ID
 Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -396,7 +399,6 @@ def payment_result(request, invoice_id):
 def yookassa_webhook(request):
     try:
         event_json = json.loads(request.body)
-        print(f"📩 Получено уведомление: {event_json}")
 
         if event_json.get('event') != 'payment.succeeded':
             return JsonResponse({'status': 'ignored'})
@@ -410,15 +412,13 @@ def yookassa_webhook(request):
         invoice = Invoice.objects.get(id=invoice_id)
         synced = _mark_invoice_paid_from_payment(invoice, payment_payload)
         invoice.refresh_from_db()
-        if synced:
-            print(f"✅ Счёт №{invoice.invoice_number} оплачен и синхронизирован с 1С")
-        else:
-            print(
-                f"⚠️ ЮKassa подтвердила оплату, но синхронизация с 1С не завершена "
-                f"(счёт №{invoice.invoice_number}, CRM-статус не «Оплачен»): см. last_onec_error"
+        if not synced:
+            logger.warning(
+                "YooKassa payment succeeded but invoice sync incomplete: invoice=%s",
+                invoice.invoice_number,
             )
 
         return JsonResponse({'status': 'ok' if synced else 'pending_sync'})
     except Exception as exc:
-        print(f"❌ Ошибка: {exc}")
+        logger.exception("YooKassa webhook error")
         return JsonResponse({'error': str(exc)}, status=400)

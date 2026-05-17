@@ -205,8 +205,6 @@ const loadDashboardData = async () => {
     
     stats.value.totalContacts = 2
     recentContacts.value = contacts.slice(0, 5)
-    console.log("контакты"+JSON.stringify( contacts,null,2))
-    console.log("контакты"+contacts.length)
 
     // Загружаем сделки
     const deals = await dealService.getDeals()

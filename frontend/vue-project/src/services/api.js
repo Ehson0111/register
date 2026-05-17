@@ -21,13 +21,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${authStore.token}`
     }
 
-    console.log('API Request:', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      hasToken: !!authStore.token
-    })
-
     return config
   },
   (error) => {

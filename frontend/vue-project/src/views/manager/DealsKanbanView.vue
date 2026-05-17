@@ -73,7 +73,7 @@
                   {{ deal.title }}
                 </button>
                 <span class="text-xs px-2 py-0.5 rounded-full" :class="statusClass(deal.status)">
-                  {{ deal.status_display }}
+                  {{ dealStatusLabel(deal) }}
                 </span>
               </div>
               <div class="text-sm text-gray-600">
@@ -107,6 +107,7 @@ import { computed, onMounted, ref } from "vue"
 import { useToast } from "../../composables/useToast"
 import dealService from "../../services/dealService"
 import type { Deal } from "../../services/contactService"
+import { getDealStatusLabel } from "../../constants/dealStatuses"
 
 const { showSuccess, showError } = useToast()
 const deals = ref<Deal[]>([])
@@ -124,6 +125,8 @@ const statusColumns = computed(() => [
 ])
 
 const dealsByStatus = (status: string) => deals.value.filter((deal) => deal.status === status)
+
+const dealStatusLabel = (deal: Deal) => deal.status_display || getDealStatusLabel(deal.status)
 
 const loadDeals = async () => {
   const params: Record<string, string> = {}

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -199,24 +199,6 @@ const searchQuery = ref("");
 const statusFilter = ref("all");
 const approvalDraft = ref<Draft | null>(null);
 
-const debugLog = (hypothesisId: string, location: string, message: string, data: Record<string, unknown>) => {
-  // #region agent log
-  fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-    body: JSON.stringify({
-      sessionId: "ad25e9",
-      runId: "run2",
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-};
-
 const parseApplication = (item: ApplicationItem) => {
   const text = item.text || "";
   const read = (label: string) => {
@@ -290,27 +272,14 @@ const loadApplications = async () => {
   try {
     loading.value = true;
     const params = searchQuery.value ? { search: searchQuery.value } : undefined;
-    debugLog("H6", "Applications.vue:loadApplications", "load start", {
-      search: searchQuery.value,
-      statusFilter: statusFilter.value,
-    });
     const [applications, audits] = await Promise.all([
       applicationsService.getApplications(params),
       applicationsService.getApplicationAuditTrail(),
     ]);
     allApplications.value = applications;
     auditTrail.value = audits;
-    debugLog("H6", "Applications.vue:loadApplications", "load success", {
-      loaded: allApplications.value.length,
-      filtered: filteredApplications.value.length,
-    });
   } catch (error) {
     console.error("Ошибка загрузки заявок", error);
-    debugLog("H7", "Applications.vue:loadApplications", "load error", {
-      errorName: (error as any)?.name || "unknown",
-      errorMessage: (error as any)?.message || "unknown",
-      responseStatus: (error as any)?.response?.status ?? null,
-    });
     showError("Не удалось загрузить заявки");
   } finally {
     loading.value = false;
@@ -327,9 +296,10 @@ const syncFromMail = async () => {
     const result = await applicationsService.fetchFromMail();
     showSuccess(`Синхронизация завершена: новых ${result.new}, дубликатов ${result.duplicates}`);
     await loadApplications();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Ошибка синхронизации", error);
-    showError("Не удалось получить письма из почты");
+    const detail = error?.response?.data?.error;
+    showError(detail || "Не удалось получить письма из почты");
   } finally {
     syncing.value = false;
   }
@@ -354,10 +324,6 @@ const openApprove = (item: ApplicationItem) => {
 
 const ensureContactId = async (draft: Draft): Promise<number> => {
   try {
-    debugLog("H8", "Applications.vue:ensureContactId", "createContact start", {
-      hasEmail: !!draft.email,
-      hasPhone: !!draft.phone,
-    });
     const created = await contactService.createContact({
       first_name: draft.firstName || "Новый",
       last_name: draft.lastName || "Клиент",
@@ -369,41 +335,21 @@ const ensureContactId = async (draft: Draft): Promise<number> => {
       address: "",
       notes: "Создано из заявки",
     });
-    debugLog("H8", "Applications.vue:ensureContactId", "createContact success", {
-      contactId: created?.contact?.id ?? null,
-    });
     return created.contact.id;
   } catch (error) {
-    debugLog("H8", "Applications.vue:ensureContactId", "createContact failed, searching existing", {
-      status: (error as any)?.response?.status ?? null,
-      message: (error as any)?.message || "unknown",
-    });
     const contacts = await contactService.getContacts({ search: draft.email });
     const existing = contacts.find((c) => c.email?.toLowerCase() === draft.email.toLowerCase());
-    debugLog("H8", "Applications.vue:ensureContactId", "search existing contact result", {
-      found: !!existing,
-      contactId: existing?.id ?? null,
-    });
     if (!existing) throw error;
     return existing.id;
   }
 };
 
 const resolveServiceId = async (serviceName: string): Promise<number> => {
-  debugLog("H9", "Applications.vue:resolveServiceId", "load services for resolve", {
-    requestedService: serviceName || "",
-  });
   const services = await serviceService.getServicesForSelect();
   if (!services.length) {
-    debugLog("H9", "Applications.vue:resolveServiceId", "no services available", {});
     throw new Error("Нет доступных услуг для создания сделки");
   }
   const byName = services.find((s: any) => (s.name || "").toLowerCase() === serviceName.toLowerCase());
-  debugLog("H9", "Applications.vue:resolveServiceId", "service resolved", {
-    total: services.length,
-    matchedByName: !!byName,
-    selectedId: byName?.id || services[0].id,
-  });
   return byName?.id || services[0].id;
 };
 
@@ -416,19 +362,9 @@ const confirmApprove = async () => {
   }
   try {
     approving.value = true;
-    debugLog("H10", "Applications.vue:confirmApprove", "approve flow start", {
-      appId: draft.id,
-      hasEmail: !!draft.email,
-      amount: draft.amount,
-    });
     const contactId = await ensureContactId(draft);
     const serviceId = await resolveServiceId(draft.serviceName);
 
-    debugLog("H10", "Applications.vue:confirmApprove", "createDeal start", {
-      contactId,
-      serviceId,
-      expectedCloseDate: draft.expectedCloseDate || null,
-    });
     await contactService.createDeal({
       title: draft.title || "Новая заявка",
       description: draft.description || "",
@@ -438,11 +374,6 @@ const confirmApprove = async () => {
       probability: 10,
       status: "new",
       expected_close_date: draft.expectedCloseDate || undefined,
-    });
-    debugLog("H10", "Applications.vue:confirmApprove", "createDeal success", {});
-
-    debugLog("H11", "Applications.vue:confirmApprove", "markProcessed start", {
-      appId: draft.id,
     });
     await applicationsService.markProcessed(draft.id, true, {
       actor: authStore.userName || "manager",
@@ -463,19 +394,11 @@ const confirmApprove = async () => {
       },
       ...auditTrail.value,
     ];
-    debugLog("H11", "Applications.vue:confirmApprove", "markProcessed success", {
-      appId: draft.id,
-    });
     approvalDraft.value = null;
     await Promise.all([loadApplications(), loadAuditTrail()]);
     showSuccess("Заявка одобрена: контакт и сделка созданы");
   } catch (error) {
     console.error("Ошибка одобрения заявки", error);
-    debugLog("H12", "Applications.vue:confirmApprove", "approve flow failed", {
-      status: (error as any)?.response?.status ?? null,
-      message: (error as any)?.message || "unknown",
-      data: (error as any)?.response?.data || null,
-    });
     showError("Не удалось одобрить заявку");
   } finally {
     approving.value = false;

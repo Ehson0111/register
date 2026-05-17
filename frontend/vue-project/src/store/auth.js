@@ -8,32 +8,25 @@ export const useAuthStore = defineStore('auth', () => {
   const refreshToken = ref(localStorage.getItem('refresh_token') || null)
   const loading = ref(false)
 
-  // Getters
   const isAuthenticated = computed(() => !!token.value)
   const userName = computed(() => {
     if (!user.value) return ''
     return `${user.value.first_name} ${user.value.last_name}`.trim() || user.value.email
   })
 
-  // Actions
   async function login(credentials) {
     try {
       loading.value = true
-      console.log('Attempting login with:', { email: credentials.email })
-
       const response = await authService.login(credentials)
-      console.log('Login response:', response.data)
 
       if (response.data) {
         token.value = response.data.access
         refreshToken.value = response.data.refresh
         user.value = response.data.user
 
-        // Store in localStorage
         localStorage.setItem('access_token', response.data.access)
         localStorage.setItem('refresh_token', response.data.refresh)
 
-        console.log('Login successful, token stored:', !!token.value)
         return { success: true }
       }
 
@@ -60,8 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return { success: false, error: 'Registration failed' }
     } catch (error) {
-      console.log('Registration error:', error)
-      
+      console.error('Registration error:', error)
       return {
         success: false,
         error: error.response?.data?.error || 'Registration failed'
@@ -71,93 +63,68 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-    async function logout() {
-      console.log('Logging out user')
-      token.value = null
-      refreshToken.value = null
-      user.value = null
-  
-      // Clear localStorage
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-    }
-  
-    async function fetchProfile() {
-      try {
-        if (!token.value) {
-          console.log('No token available for profile fetch')
-          return
-        }
-  
-        console.log('Fetching user profile...')
-        const response = await authService.getProfile()
-        if (response.data) {
-          user.value = response.data
-          console.log('Profile fetched successfully:', user.value)
-        }
-      } catch (error) {
-        console.error('Fetch profile error:', error)
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          console.log('Profile fetch failed with auth error, logging out')
-          await logout()
-        }
-      }
-    }
-  async function refreshAccessToken() {
+  async function logout() {
+    token.value = null
+    refreshToken.value = null
+    user.value = null
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+  }
+
+  async function fetchProfile() {
     try {
-      if (!refreshToken.value) {
-        console.log('No refresh token available');
-        return false;
+      if (!token.value) return
+
+      const response = await authService.getProfile()
+      if (response.data) {
+        user.value = response.data
       }
-  
-      console.log('Refreshing access token...');
-      console.log('Refresh token being sent:', refreshToken.value.substring(0, 30) + '...');
-  
-      const response = await authService.refreshToken(refreshToken.value);
-      
-      if (response.data?.access) {
-        token.value = response.data.access;
-        localStorage.setItem('access_token', response.data.access);
-        console.log('Token refreshed successfully');
-        return true;
-      }
-      
-      return false;
     } catch (error) {
-      console.error('Token refresh error:', error);
-      
-      // ПРАВИЛЬНАЯ ПРОВЕРКА!
-      if (error.response?.status === 401) {
-        console.log('Refresh token invalid or expired');
-        await logout();
-        
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-      } else {
-        console.log('Other error during token refresh:', error.message);
+      console.error('Fetch profile error:', error)
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        await logout()
       }
-      
-      return false;
     }
   }
-  // все значения в конце
+
+  async function refreshAccessToken() {
+    try {
+      if (!refreshToken.value) return false
+
+      const response = await authService.refreshToken(refreshToken.value)
+
+      if (response.data?.access) {
+        token.value = response.data.access
+        localStorage.setItem('access_token', response.data.access)
+        return true
+      }
+
+      return false
+    } catch (error) {
+      console.error('Token refresh error:', error)
+
+      if (error.response?.status === 401) {
+        await logout()
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+      }
+
+      return false
+    }
+  }
+
   return {
-    // State
     user,
     token,
     refreshToken,
     loading,
-
-    // Getters
     isAuthenticated,
     userName,
-
-    // Actions
     login,
     register,
     logout,
     fetchProfile,
     refreshAccessToken
   }
-})  
+})

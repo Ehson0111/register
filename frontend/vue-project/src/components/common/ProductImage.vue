@@ -226,12 +226,10 @@ export default {
 
     const handleImageError = () => {
       imageError.value = true
-      console.log('Image failed to load:', imageUrl.value)
     }
 
     const handleImageLoad = () => {
       imageLoaded.value = true
-      console.log('Image loaded successfully:', imageUrl.value)
     }
 
     return {

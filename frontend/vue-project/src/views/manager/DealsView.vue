@@ -48,11 +48,9 @@
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">Все статусы</option>
-          <option value="new">New</option>
-          <option value="in_progress">In Progress</option>
-          <option value="won">Won</option>
-          <option value="lost">Lost</option>
-          <option value="on_hold">On Hold</option>
+          <option v-for="status in dealStatusOptions" :key="status.value" :value="status.value">
+            {{ status.label }}
+          </option>
         </select>
 
         <!-- Фильтр по услуге -->
@@ -209,7 +207,7 @@
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                   :class="getStatusClass(deal.status)"
                 >
-                  {{ deal.status_display }}
+                  {{ dealStatusLabel(deal) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -270,6 +268,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '../../composables/useToast'
 import dealService, { type Deal } from '../../services/dealService'
+import { DEAL_STATUS_OPTIONS, getDealStatusLabel } from '../../constants/dealStatuses'
 import serviceService, { type Service } from '../../services/serviceService'
 // import DealFormModal from 'components/DealFormModal.vue'
 import DealFormModal from './components/DealFormModal.vue'
@@ -298,7 +297,9 @@ const serviceFilter = ref('')
 const showCreateModal = ref(false)
 const editingDeal = ref<Deal | null>(null)
 
-// Статусы сделок
+// Подписи статусов для фильтра и карточек
+const dealStatusOptions = DEAL_STATUS_OPTIONS
+
 const dealStatuses = [
   { value: 'new', label: 'Новые', color: 'text-blue-600' },
   { value: 'in_progress', label: 'В работе', color: 'text-orange-600' },
@@ -352,6 +353,9 @@ const handleSearch = () => {
 }
 
 // Вспомогательные функции
+/** Русская подпись статуса (API или локальный словарь) */
+const dealStatusLabel = (deal: Deal) => deal.status_display || getDealStatusLabel(deal.status)
+
 const getStatusCount = (status: string) => {
   return deals.value.filter(deal => deal.status === status).length
 }

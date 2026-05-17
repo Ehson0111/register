@@ -30,6 +30,13 @@ class DocumentUploadView(APIView):
         )
 
         bucket = settings.MINIO_BUCKET
+#         Bucket (корзина/ведро) — это как папка верхнего уровня, контейнер для файлов.
+
+# python
+# bucket = settings.MINIO_BUCKET  # Например: "client-documents"
+# if not minio_client.bucket_exists(bucket):  
+#     minio_client.make_bucket(bucket)
+
         if not minio_client.bucket_exists(bucket):  
             minio_client.make_bucket(bucket)
 

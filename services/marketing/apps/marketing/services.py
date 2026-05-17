@@ -41,7 +41,6 @@ class EmailService:
             with smtplib.SMTP_SSL(self.smtp_server, self.smtp_port) as server:
                 server.login(self.smtp_username, self.smtp_password)
                 server.send_message(msg)
-            print("Успешно")
 
             return True
 
@@ -65,9 +64,7 @@ class EmailService:
             # Проверяем наличие необходимых переменных
             if not variables:
                 variables = {}
-            
-            print(variables)
-            
+
             # Добавляем дефолтные значения для отсутствующих переменных
             required_vars = self._extract_placeholders(content) | self._extract_placeholders(subject)
             
@@ -101,10 +98,6 @@ class EmailService:
                 for placeholder in remaining:
                     content = content.replace(f"{{{placeholder}}}", "")
                     subject = subject.replace(f"{{{placeholder}}}", "")
-            
-            print("DEBUG - Переменные:", variables)
-            print("DEBUG - Контент после замены:", content[:100] + "..." if len(content) > 100 else content)
-            print("DEBUG - Тема после замены:", subject)
 
             # Определяем тип контента
             is_html = template.template_type == 'email' and ('<html>' in content.lower() or '<p>' in content or '<br>' in content)

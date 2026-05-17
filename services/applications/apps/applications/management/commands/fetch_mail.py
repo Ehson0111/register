@@ -20,3 +20,4 @@ class Command(BaseCommand):
             return
         self.stdout.write(self.style.SUCCESS(str(result)))
 
+# self.stderr	Стандартный поток ошибок (stderr)

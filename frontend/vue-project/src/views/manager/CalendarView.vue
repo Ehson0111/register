@@ -593,7 +593,6 @@ const loadAllTasks = async () => {
     const response = await calendarService.getTasks();
     tasks.value = Array.isArray(response) ? response : [];
     applyFilters();
-    console.log(`Загружены все задачи: ${tasks.value.length} шт.`);
   } catch (error) {
     console.error("Ошибка загрузки задач:", error);
     showError("Не удалось загрузить задачи");
@@ -741,7 +740,6 @@ const handleCreateTask = async (taskData) => {
 };
 
 const editTask = (task) => {
-  console.log("Редактирование задачи:", task);
   selectedTask.value = { ...task };
   showEditModal.value = true;
 };
@@ -891,7 +889,6 @@ watch([priorityFilter, typeFilter, searchQuery], applyFilters);
 
 // Инициализация
 onMounted(async () => {
-  console.log("CalendarView mounted, user:", authStore.user);
 
   if (!authStore.isAuthenticated) {
     showError("Вы не авторизованы. Пожалуйста, войдите в систему.");

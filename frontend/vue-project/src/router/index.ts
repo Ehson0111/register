@@ -100,11 +100,6 @@ const routes = [
         component: () => import('@/views/manager/EmailsView.vue')
       },
       {
-        path: 'meetings',
-        name: 'ManagerMeetings',
-        component: () => import('@/views/manager/MeetingsView.vue')
-      },
-      {
         path: 'applications',
         name: 'ManagerApplications',
         component: () => import('@/views/manager/Applications.vue')

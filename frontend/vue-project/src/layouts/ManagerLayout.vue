@@ -124,15 +124,6 @@
             </router-link>
 
             <router-link
-              to="/manager/meetings"
-              class="menu-link"
-              :class="{ 'menu-link-active': $route.path.includes('/manager/meetings') }"
-            >
-              <CalendarDaysIcon class="menu-icon" />
-              <span class="menu-label">Встречи</span>
-            </router-link>
-
-            <router-link
               to="/manager/applications"
               class="menu-link"
               :class="{ 'menu-link-active': $route.path.includes('applications') }"
@@ -210,7 +201,6 @@ import {
   UserPlusIcon,
   ChatBubbleLeftRightIcon,
   EnvelopeIcon,
-  CalendarDaysIcon,
   Squares2X2Icon,
 } from "@heroicons/vue/24/outline";
 
@@ -244,7 +234,6 @@ const currentPageTitle = computed(() => {
     ManagerDocuments: "Документы",
     ManagerChats: "Чаты",
     ManagerEmails: "Почта",
-    ManagerMeetings: "Встречи",
     ManagerProfile: "Профиль",
     Applications: "Заявки",
     ManagerApplications: "Заявки",
@@ -267,7 +256,6 @@ const currentPageSubtitle = computed(() => {
     ManagerDocuments: "Хранилище и управление документами.",
     ManagerChats: "Коммуникации с клиентами и командой.",
     ManagerEmails: "Работа с входящей и исходящей почтой.",
-    ManagerMeetings: "Управление встречами и договоренностями.",
     ManagerApplications: "Заявки с Яндекс Форм и быстрая обработка.",
     ManagerUsers: "Управление сотрудниками и ролями доступа.",
   };

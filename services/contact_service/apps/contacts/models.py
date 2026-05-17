@@ -13,9 +13,9 @@ class Contact(models.Model):
     STATUS_CLIENT = 'client'
     STATUS_PARTNER = 'partner'
     STATUS_CHOICES = [
-        (STATUS_LEAD, 'Lead'),
-        (STATUS_CLIENT, 'Client'),
-        (STATUS_PARTNER, 'Partner'),
+        (STATUS_LEAD, 'Лид'),
+        (STATUS_CLIENT, 'Клиент'),
+        (STATUS_PARTNER, 'Партнёр'),
     ]
     status = models.CharField(
         "Status", 
@@ -99,11 +99,11 @@ class Deal(models.Model):
     DEAL_ON_HOLD = 'on_hold'
     
     DEAL_STATUS_CHOICES = [
-        (DEAL_NEW, 'New'),
-        (DEAL_IN_PROGRESS, 'In Progress'),
-        (DEAL_WON, 'Won'),
-        (DEAL_LOST, 'Lost'),
-        (DEAL_ON_HOLD, 'On Hold'),
+        (DEAL_NEW, 'Новая'),
+        (DEAL_IN_PROGRESS, 'В работе'),
+        (DEAL_WON, 'Выиграна'),
+        (DEAL_LOST, 'Проиграна'),
+        (DEAL_ON_HOLD, 'На паузе'),
     ]
 
     contact = models.ForeignKey(

@@ -301,21 +301,6 @@ const loadContactDeals = async (contactId: number) => {
 const loadAuditTrail = async (contactId: number) => {
   try {
     auditLoading.value = true
-    // #region agent log
-    fetch("http://127.0.0.1:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "ad25e9" },
-      body: JSON.stringify({
-        sessionId: "ad25e9",
-        runId: "run3",
-        hypothesisId: "H13",
-        location: "ContactDetailView.vue:loadAuditTrail",
-        message: "loading contact audit trail",
-        data: { contactId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
     auditTrail.value = await contactService.getAuditTrail({
       entity_type: 'contact',
       entity_id: contactId,

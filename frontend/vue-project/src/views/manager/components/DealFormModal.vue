@@ -150,11 +150,13 @@
                         required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="new">New</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="on_hold">On Hold</option>
-                        <option value="won">Won</option>
-                        <option value="lost">Lost</option>
+                        <option
+                          v-for="status in dealStatusOptions"
+                          :key="status.value"
+                          :value="status.value"
+                        >
+                          {{ status.label }}
+                        </option>
                       </select>
                     </div>
 
@@ -245,6 +247,9 @@ import { useToast } from '../../../composables/useToast'
 import dealService from '../../../services/dealService'
 import contactService, { type Contact, type DealStage } from '../../../services/contactService'
 import serviceService, { type Service } from '../../../services/serviceService'
+import { DEAL_STATUS_OPTIONS } from '../../../constants/dealStatuses'
+
+const dealStatusOptions = DEAL_STATUS_OPTIONS
 
 interface Props {
   show: boolean

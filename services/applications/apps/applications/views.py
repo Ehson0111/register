@@ -1,3 +1,5 @@
+
+from uuid import uuid4  
 from django.db.models import Q
 from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action
@@ -16,54 +18,9 @@ from .serializers import (
 )
 from .email_parser import YandexMailParser
 from .mail_client import YandexMailboxClient
-import json
-from pathlib import Path
-from uuid import uuid4
-from urllib import request as urlrequest
 
 
-def _resolve_log_path() -> Path:
-    cur = Path(__file__).resolve()
-    for parent in cur.parents:
-        if (parent / "manage.py").exists():
-            return parent / "debug-ad25e9.log"
-    return Path.cwd() / "debug-ad25e9.log"
-
-
-LOG_PATH = _resolve_log_path()
-
-
-def _dbg(hypothesis_id: str, location: str, message: str, data: dict):
-    payload = {
-        "sessionId": "ad25e9",
-        "runId": "run1",
-        "hypothesisId": hypothesis_id,
-        "location": location,
-        "message": message,
-        "data": data,
-        "timestamp": __import__("time").time_ns() // 1_000_000,
-        "id": f"log_{uuid4().hex}",
-    }
-    with LOG_PATH.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    try:
-        # #region agent log
-        req = urlrequest.Request(
-            "http://host.docker.internal:7647/ingest/66103dc7-eaf0-4803-be05-aba9d5dec07c",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "X-Debug-Session-Id": "ad25e9",
-            },
-            method="POST",
-        )
-        urlrequest.urlopen(req, timeout=1).read()
-        # #endregion
-    except Exception:
-        pass
-
-
-class ApplicationsViewSet(viewsets.ModelViewSet):
+class ApplicationsViewSet(viewsets.ModelViewSet): 
     """
     Минимальный CRUD по заявкам.
 
@@ -75,12 +32,12 @@ class ApplicationsViewSet(viewsets.ModelViewSet):
     queryset = Applications.objects.all()
     serializer_class = ApplicationsListSerializer
 
-    # Фильтры и поиск (из ТЗ)
+   
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['is_processed']
     search_fields = ['subject', 'text']
 
-    def get_queryset(self):
+    def get_queryset(self): 
         queryset = super().get_queryset()
 
         is_processed = self.request.query_params.get('is_processed')
@@ -135,33 +92,7 @@ class ApplicationsViewSet(viewsets.ModelViewSet):
             imap_host=getattr(settings, 'YANDEX_IMAP_HOST', 'imap.yandex.ru'),
             target_sender=getattr(settings, 'YANDEX_TARGET_SENDER', None),
         )
-        # #region agent log
-        _dbg(
-            "H3",
-            "views.py:fetch_from_mail",
-            "fetch_from_mail invoked",
-            {
-                "has_yandex_email": bool(getattr(settings, "YANDEX_EMAIL", "")),
-                "has_yandex_password": bool(getattr(settings, "YANDEX_PASSWORD", "")),
-                "imap_host": getattr(settings, "YANDEX_IMAP_HOST", ""),
-                "target_sender_set": bool(getattr(settings, "YANDEX_TARGET_SENDER", "")),
-            },
-        )
-        # #endregion
         result = parser.parse_and_save()
-        # #region agent log
-        _dbg(
-            "H4",
-            "views.py:fetch_from_mail",
-            "fetch_from_mail completed",
-            {
-                "has_error": "error" in result,
-                "result_keys": list(result.keys()),
-                "new": result.get("new"),
-                "duplicates": result.get("duplicates"),
-            },
-        )
-        # #endregion
         if 'error' in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         return Response(result, status=status.HTTP_200_OK)
@@ -182,10 +113,10 @@ class MailboxEmailListView(generics.ListAPIView):
             queryset = queryset.filter(in_sent=True)
         elif folder == MailboxEmail.FOLDER_IMPORTANT:
             queryset = queryset.filter(is_important=True, in_trash=False)
-        elif folder == MailboxEmail.FOLDER_TRASH:
+        elif folder == MailboxEmail.FOLDER_TRASH:        
             queryset = queryset.filter(in_trash=True)
 
-        search = (self.request.query_params.get("search") or "").strip()
+        search = (self.request.query_params.get("search") or "").strip() #/mail/?search=
         if search:
             queryset = queryset.filter(
                 Q(subject__icontains=search)
@@ -235,7 +166,7 @@ class MailboxSyncView(APIView):
 
 class MailboxSendView(APIView):
     def post(self, request):
-        from django.conf import settings
+        from django.conf import settings 
 
         serializer = SendMailboxEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -250,6 +181,7 @@ class MailboxSendView(APIView):
         )
 
         payload = serializer.validated_data
+        #  
         try:
             result = client.send_email(
                 to=payload["to"],
@@ -260,8 +192,15 @@ class MailboxSendView(APIView):
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
+        # {
+        #     "to": "user@example.com",
+        #     "subject": "Встреча",
+        #     "body": "Привет, давай встретимся завтра",
+        #     "cc": "boss@example.com"
+        # }
+        # И сохраняем отправленное письмо в БД для отображения в списке
         item = MailboxEmail.objects.create(
-            external_id=f"sent-{uuid4().hex}",
+            external_id=f"sent-{uuid4().hex}", #уникальный id
             subject=result["subject"],
             sender_email=settings.YANDEX_EMAIL,
             recipients=result["recipients"],

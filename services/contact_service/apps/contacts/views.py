@@ -1,13 +1,6 @@
 from django.db.models import Count, Sum, Avg, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-import json
-import socket
-import ssl
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from .models import Contact, Deal, DealStage, Service, AuditTrail, ContactCompanyDetails
@@ -28,9 +21,9 @@ from .serializers import (
     ,SimpleContactSerializer,SimpleServiceSerializer, AuditTrailSerializer
 )
 from .permissions import IsManager,IsClient
+from .inn_lookup import fetch_company_by_inn, map_company_data, normalize_inn
 
 logger = logging.getLogger(__name__)
-EGRUL_API_TEMPLATE = "https://egrul.org/{inn}.json"
 
 
 def _actor_name(request):
@@ -50,120 +43,6 @@ def _audit(request, action, entity_type, entity_id=None, metadata=None):
         metadata=metadata or {},
     )
 
-
-def _normalize_inn(raw_inn):
-    inn = "".join(ch for ch in str(raw_inn or "") if ch.isdigit())
-    if len(inn) not in (10, 12):
-        raise ValueError("ИНН должен содержать 10 или 12 цифр")
-    return inn
-
-
-def _attrs(node):
-    if isinstance(node, dict):
-        return node.get("@attributes", {})
-    return {}
-
-
-def _first_non_empty(*values):
-    for value in values:
-        if value not in (None, "", [], {}):
-            return value
-    return None
-
-
-def _build_company_address(sv_ul):
-    address_rf = None
-    if isinstance(sv_ul.get("СвАдресЮЛ"), dict):
-        address_rf = sv_ul["СвАдресЮЛ"].get("АдресРФ", {})
-    if not isinstance(address_rf, dict):
-        return "Не найдено"
-
-    region = _attrs(address_rf.get("Регион", {})).get("НаимРегион")
-    district = _attrs(address_rf.get("Район", {})).get("НаимРайон")
-    city_info = _attrs(address_rf.get("Город", {}))
-    city = " ".join(part for part in [city_info.get("ТипГород"), city_info.get("НаимГород")] if part).strip()
-    locality_info = _attrs(address_rf.get("НаселПункт", {}))
-    locality = " ".join(
-        part for part in [locality_info.get("ТипНаселПункт"), locality_info.get("НаимНаселПункт")] if part
-    ).strip()
-    street_info = _attrs(address_rf.get("Улица", {}))
-    street = " ".join(part for part in [street_info.get("ТипУлица"), street_info.get("НаимУлица")] if part).strip()
-    house = _first_non_empty(_attrs(address_rf).get("Дом"), _attrs(address_rf).get("Здание"), _attrs(address_rf).get("Корпус"))
-    index = _attrs(address_rf).get("Индекс")
-
-    result = ", ".join(part for part in [index, region, district, city, locality, street, house] if part)
-    return result or "Не найдено"
-
-
-def _build_company_director(sv_ul):
-    director_node = sv_ul.get("СведДолжнФЛ", {})
-    person_attrs = _attrs(director_node.get("СвФЛ", {}))
-    position_attrs = _attrs(director_node.get("СвДолжн", {}))
-    fio = " ".join(
-        part for part in [person_attrs.get("Фамилия"), person_attrs.get("Имя"), person_attrs.get("Отчество")] if part
-    ).strip()
-    position = position_attrs.get("НаимДолжн")
-    if fio and position:
-        return f"{fio}, {position}"
-    return fio or position or "Не найдено"
-
-
-def _fetch_company_by_inn(inn):
-    url = EGRUL_API_TEMPLATE.format(inn=urllib.parse.quote(inn))
-    request = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "CRM Contact INN Lookup/1.0",
-            "Accept": "application/json",
-        },
-    )
-
-    last_error = None
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                charset = response.headers.get_content_charset() or "utf-8"
-                raw = response.read().decode(charset, errors="replace")
-                return json.loads(raw)
-        except (urllib.error.URLError, TimeoutError, socket.timeout, ssl.SSLError) as exc:
-            last_error = exc
-            if attempt == 2:
-                raise
-            time.sleep(1.5 * (attempt + 1))
-
-    if last_error:
-        raise last_error
-    return {}
-
-
-def _map_company_data(raw_data):
-    sv_ul = raw_data.get("СвЮЛ", {}) if isinstance(raw_data, dict) else {}
-    top_attrs = _attrs(sv_ul)
-    name = _first_non_empty(
-        _attrs(sv_ul.get("СвНаимЮЛ", {}).get("СвНаимЮЛСокр", {})).get("НаимСокр"),
-        _attrs(sv_ul.get("СвНаимЮЛ", {})).get("НаимЮЛПолн"),
-        "Не найдено",
-    )
-    okved_main = _first_non_empty(
-        sv_ul.get("СвОКВЭДОтч", {}).get("СвОКВЭДОтчОсн"),
-        sv_ul.get("СвОКВЭД", {}).get("СвОКВЭДОсн"),
-        sv_ul.get("СвОКВЭД", {}).get("СвОКВЭДДоп"),
-    )
-    okved_code = _attrs(okved_main).get("КодОКВЭД") if okved_main else None
-    okved_name = _attrs(okved_main).get("НаимОКВЭД") if okved_main else None
-    okved_text = " ".join(part for part in [okved_code, okved_name] if part).strip() or "Не найдено"
-
-    return {
-        "company_name": name,
-        "inn": top_attrs.get("ИНН") or "Не найдено",
-        "kpp": top_attrs.get("КПП") or "Не найдено",
-        "ogrn": top_attrs.get("ОГРН") or "Не найдено",
-        "status_text": _attrs(sv_ul.get("СвСтатус", {})).get("НаимСтатусЮЛ") or "Действующее",
-        "address": _build_company_address(sv_ul),
-        "okved": okved_text,
-        "director": _build_company_director(sv_ul),
-        "raw_data": raw_data if isinstance(raw_data, dict) else {},
-    }
 
 # Контакты (оставляем как есть, но добавляем фильтры)
 class ContactListView(generics.ListCreateAPIView):
@@ -223,19 +102,19 @@ def ContactDeleteViews(request, item_id):
     }, status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['POST'])
+@api_view(['POST']) 
 @permission_classes([IsManager])
 def load_company_data_by_inn(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
 
     try:
-        inn = _normalize_inn(request.data.get('inn') or contact.inn)
+        inn = normalize_inn(request.data.get('inn') or contact.inn)
     except ValueError as exc:
         return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        raw_data = _fetch_company_by_inn(inn)
-        mapped = _map_company_data(raw_data)
+        raw_data = fetch_company_by_inn(inn)
+        mapped = map_company_data(raw_data)
 
         details, _ = ContactCompanyDetails.objects.update_or_create(
             contact=contact,
@@ -338,8 +217,7 @@ def load_company_data_by_inn(request, contact_id):
 #     serializer = ContactDetailSerializer(contact)
 #     return Response(serializer.data)
          
-    
-# с
+ 
  
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsClient])
@@ -370,7 +248,7 @@ def client_profile(request):
 def client_deals(request):
     """
     Список сделок клиента.
-    Фильтруется по контакту (email из JWT) и опционально по статусу.
+    Фильтруется по контакту  и опционально по статусу.
     """
     try:
         # Находим контакт клиента
@@ -462,7 +340,7 @@ def create_client_request(request):
 @permission_classes([IsManager])
 def add_to_contact(request):
     """Добавление нового контакта"""
-    logger.info(f"Add contact request from user {request.user}: {request.data}")
+    # logger.info(f"Add contact request from user {request.user}: {request.data}")
 
     serializer = AddContactSerializer(data=request.data)
 
