@@ -1,4 +1,6 @@
-<!-- frontend/src/views/manager/components/TaskEditModal.vue -->
+<!--
+  [MODAL] TaskEditModal — редактирование существующей задачи
+-->
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">

@@ -1,6 +1,8 @@
 from rest_framework import permissions
 
 CRM_STAFF_ROLES = frozenset({"manager", "admin"})
+# Неизменяемое (immutable) множество. Как set, но нельзя изменить после создания.
+
 
 
 class IsManagerOrAdmin(permissions.BasePermission):

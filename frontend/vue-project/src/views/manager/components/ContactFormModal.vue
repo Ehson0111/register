@@ -1,4 +1,8 @@
-<!-- frontend/src/views/manager/components/ContactFormModal.vue -->
+<!--
+  [MODAL] ContactFormModal — создание/редактирование контакта (не отдельный маршрут)
+  Вызывается из ContactsView через props (show) + emit('close', 'saved')
+  Паттерн модалки: v-if на родителе, форма + POST/PUT через contactService
+-->
 <template>
   <TransitionRoot appear :show="show" as="template">
     <Dialog as="div" @close="closeModal" class="relative z-10">
@@ -11,7 +15,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black bg-opacity-25" />
+        <div class="fixed inset-0 bg-black/65" />
       </TransitionChild>
 
       <div class="fixed inset-0 overflow-y-auto">

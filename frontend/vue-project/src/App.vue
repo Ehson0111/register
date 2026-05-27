@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-// Пока уберем сложную логику, добавим позже
+ 
 </script>
 
 <style>

@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/ServicesView.vue -->
+<!--
+  [VIEW] ServicesView — каталог услуг компании (CRUD)
+  Маршрут: /manager/services | Модалка: ServiceFormModal.vue
+-->
 <template>
   <div class="space-y-6">
     <!-- Заголовок и кнопки -->

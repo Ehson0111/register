@@ -1,3 +1,10 @@
+<!--
+  ClientDashboardView — главная клиентского кабинета
+  Маршрут: /client/dashboard | Layout: ClientLayout.vue (боковое меню + <RouterView />)
+
+  Паттерн CRM-страницы: loading → error → контент; onMounted → clientService.getDeals()
+  computed — производные данные (recentDeals, activeCount) без лишних запросов
+-->
 <template>
   <div class="space-y-6">
     <div v-if="loading" class="text-center py-12 text-gray-500">Загрузка...</div>
@@ -91,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+// onMounted — аналог «страница открылась, загрузи данные»
 import { ref, computed, onMounted } from 'vue'
 import { BriefcaseIcon, ClockIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
 import clientService, { type ClientDealsResponse, type ClientDeal } from '../../services/clientService'

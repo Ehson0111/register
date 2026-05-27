@@ -1,4 +1,8 @@
-﻿<template>
+<!--
+  [VIEW] Applications — заявки с Яндекс.Форм (синхронизация из почты, approve/reject)
+  Маршрут: /manager/applications | Сервис: services/applications.ts
+-->
+<template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -129,45 +133,92 @@
       </div>
     </div>
 
-    <div v-if="approvalDraft" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 space-y-4">
-        <h3 class="text-lg font-semibold text-gray-900">Одобрение заявки #{{ approvalDraft.id }}</h3>
-        <p class="text-sm text-gray-500">
-          Перед подтверждением можно подправить данные, которые пойдут в контакт и сделку.
-        </p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input v-model="approvalDraft.firstName" type="text" placeholder="Имя" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.lastName" type="text" placeholder="Фамилия" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.phone" type="text" placeholder="Телефон" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.serviceName" type="text" placeholder="Услуга" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model.number="approvalDraft.amount" type="number" placeholder="Сумма" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.expectedCloseDate" type="date" class="px-3 py-2 border border-gray-300 rounded-lg" />
-          <input v-model="approvalDraft.title" type="text" placeholder="Название сделки" class="px-3 py-2 border border-gray-300 rounded-lg" />
+    <TransitionRoot appear :show="!!approvalDraft" as="template">
+      <Dialog as="div" @close="closeApprovalModal" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/65" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                v-if="approvalDraft"
+                class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+              >
+                <DialogTitle as="h3" class="text-lg font-semibold text-gray-900">
+                  Одобрение заявки #{{ approvalDraft.id }}
+                </DialogTitle>
+                <p class="text-sm text-gray-500 mt-2 mb-4">
+                  Перед подтверждением можно подправить данные, которые пойдут в контакт и сделку.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input v-model="approvalDraft.firstName" type="text" placeholder="Имя" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.lastName" type="text" placeholder="Фамилия" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.phone" type="text" placeholder="Телефон" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.serviceName" type="text" placeholder="Услуга" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model.number="approvalDraft.amount" type="number" placeholder="Сумма" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.expectedCloseDate" type="date" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.title" type="text" placeholder="Название сделки" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                </div>
+                <textarea
+                  v-model="approvalDraft.description"
+                  rows="4"
+                  placeholder="Описание"
+                  class="w-full mt-3 px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                />
+                <div class="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    @click="closeApprovalModal"
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    @click="confirmApprove"
+                    :disabled="approving"
+                    class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                  >
+                    {{ approving ? "Создаю..." : "Подтвердить одобрение" }}
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
         </div>
-        <textarea
-          v-model="approvalDraft.description"
-          rows="4"
-          placeholder="Описание"
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg"
-        />
-        <div class="flex justify-end gap-2">
-          <button @click="approvalDraft = null" class="px-4 py-2 rounded-lg border border-gray-300">Отмена</button>
-          <button
-            @click="confirmApprove"
-            :disabled="approving"
-            class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-          >
-            {{ approving ? "Создаю..." : "Подтвердить одобрение" }}
-          </button>
-        </div>
-      </div>
-    </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import {
+  TransitionRoot,
+  TransitionChild,
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+} from "@headlessui/vue";
 import { useToast } from "../../composables/useToast";
 import applicationsService, { type ApplicationAuditItem, type ApplicationItem } from "../../services/applications";
 import contactService from "../../services/contactService";
@@ -303,6 +354,11 @@ const syncFromMail = async () => {
   } finally {
     syncing.value = false;
   }
+};
+
+const closeApprovalModal = () => {
+  if (approving.value) return;
+  approvalDraft.value = null;
 };
 
 const openApprove = (item: ApplicationItem) => {

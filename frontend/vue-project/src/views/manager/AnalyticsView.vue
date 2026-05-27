@@ -1,3 +1,7 @@
+<!--
+  [VIEW] AnalyticsView — графики и аналитика (Chart.js / vue-chartjs)
+  Маршрут: /manager/analytics
+-->
 <template>
   <div class="analytics-view">
     <div class="mb-8">

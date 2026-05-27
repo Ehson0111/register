@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/DealFormView.vue -->
+<!--
+  [VIEW] DealFormView — отдельная страница создания сделки (не модалка)
+  Маршрут: /manager/deals/new
+-->
 <template>
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-gray-900">Новая сделка</h1>

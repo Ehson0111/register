@@ -1,4 +1,8 @@
-<!-- frontend/src/views/manager/DashboardView.vue -->
+<!--
+ DashboardView — главная панель менеджера (KPI + недавние сделки/контакты)
+  Маршрут: /manager/dashboard | Layout: ManagerLayout.vue
+  Сервисы: contactService, dealService | Иконки: @heroicons/vue
+-->
 <template>
   <div class="space-y-6">
     <!-- Статистика -->

@@ -137,25 +137,26 @@ const router = createRouter({
 
 // Навигационный guard
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  
+  const authStore = useAuthStore() //Получает доступ к хранилищу Pinia/Vuex, где хранятся данные о пользователе (авторизован ли он, его роль и т.д.)
+
+// Если маршрут требует авторизацию и пользователь не авторизован, перенаправляем на страницу входа 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+  } else if (to.meta.requiresGuest && authStore.isAuthenticated) { //Если маршрут открыт для гостей и пользователь авторизован, перенаправляем на главную страницу
     const role = authStore.user?.role
     next(role === 'client' ? '/client/dashboard' : '/manager/dashboard')
-  } else if (to.meta.role === 'client' && authStore.user?.role !== 'client') {
+  } else if (to.meta.role === 'client' && authStore.user?.role !== 'client') { //Если маршрут открыт для клиентов и пользователь не клиент, перенаправляем на страницу входа
     const r = authStore.user?.role
     if (r === 'manager' || r === 'admin') next('/manager/dashboard')
     else next('/login')
-  } else if (to.meta.managerPortal) {
+  } else if (to.meta.managerPortal) { //Если маршрут открыт для менеджеров и пользователь не менеджер, перенаправляем на страницу входа
     const r = authStore.user?.role
     if (r === 'manager' || r === 'admin') next()
     else if (r === 'client') next('/client/dashboard')
     else next('/login')
-  } else if (to.path === '/client') {
+  } else if (to.path === '/client') { //Если маршрут открыт для клиентов, перенаправляем на страницу клиентского кабинета  
     next('/client/dashboard')
-  } else {
+  } else { //Если все условия не выполнены, пропускаем на маршрут по умолчанию
     next()
   }
 })

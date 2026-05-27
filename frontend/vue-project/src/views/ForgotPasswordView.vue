@@ -1,3 +1,13 @@
+<!--
+ ForgotPasswordView — восстановление пароля (два шага)
+  Маршрут: /forgot-password
+
+  Composition API (<script setup>):
+  - ref() — email, code, step ('request' | 'confirm')
+  - v-if="step === 'request'" — переключение форм в template
+  - @submit.prevent — отправка без перезагрузки страницы
+  - authService — запросы к бэкенду (services/auth.js)
+-->
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full bg-white rounded-xl shadow-sm p-8 border border-gray-100">
@@ -66,6 +76,7 @@
 </template>
 
 <script setup>
+// ref — реактивное состояние; при изменении .value Vue обновляет DOM
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseInput from '@/components/common/BaseInput.vue'
@@ -73,6 +84,7 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import authService from '@/services/auth.js'
 
 const router = useRouter()
+// Шаг мастера: сначала email, потом код + новый пароль
 const step = ref('request') // request | confirm
 const email = ref('')
 const code = ref('')

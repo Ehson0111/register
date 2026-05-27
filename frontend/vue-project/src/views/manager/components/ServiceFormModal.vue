@@ -1,4 +1,6 @@
-<!-- frontend/src/views/manager/components/ServiceFormModal.vue -->
+<!--
+  [MODAL] ServiceFormModal — форма услуги для ServicesView
+-->
 <template>
   <TransitionRoot appear :show="show" as="template">
     <Dialog as="div" @close="closeModal" class="relative z-10">

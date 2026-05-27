@@ -1,4 +1,12 @@
-<!-- frontend/src/views/RegisterView.vue -->
+<!--
+   Login1View — страница входа в CRM
+  Маршрут: /login (имя: Login) — см. src/router/index.ts
+
+  разметка здесь, форма логина в components/auth/login1Form.vue.
+  Options API: export default { components: { Login1Form } } — регистрация дочернего компонента.
+
+   login1Form.vue → store/auth.js → services/auth.js
+-->
 <template>
   <!-- <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full bg-white rounded-lg shadow-sm border border-gray-100 p-6"> -->

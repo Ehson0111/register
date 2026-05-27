@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/DealDetailView.vue -->
+<!--
+  [VIEW] DealDetailView — детали сделки, этапы, связанные задачи
+  Маршрут: /manager/deals/:id
+-->
 <template>
 
 

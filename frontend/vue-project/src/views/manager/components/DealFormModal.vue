@@ -1,4 +1,6 @@
-<!-- frontend/src/views/manager/components/DealFormModal.vue -->
+<!--
+  [MODAL] DealFormModal — быстрое создание/редактирование сделки из списка DealsView
+-->
 <template>
   <TransitionRoot appear :show="show" as="template">
     <Dialog as="div" @close="closeModal" class="relative z-10">

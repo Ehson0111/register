@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/ProfileView.vue -->
+<!--
+  [VIEW] ProfileView — профиль менеджера (редактирование своих данных)
+  Маршрут: /manager/profile
+-->
 <template>
   <div class="space-y-6">
     <div class="flex justify-between items-center">

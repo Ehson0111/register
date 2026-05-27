@@ -1,3 +1,7 @@
+<!--
+  [VIEW] ClientProfileView — просмотр профиля (только чтение)
+  Маршрут: /client/profile | API: clientService.getProfile()
+-->
 <template>
   <div class="space-y-6">
     <div v-if="loading" class="text-center py-12 text-gray-500">Загрузка...</div>

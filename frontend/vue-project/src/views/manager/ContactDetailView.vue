@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/ContactDetailView.vue -->
+<!--
+  [VIEW] ContactDetailView — карточка одного контакта
+  Маршрут: /manager/contacts/:id | Параметр id из useRoute().params
+-->
 <template>
   <div class="space-y-6" v-if="contact">
     <!-- Заголовок -->

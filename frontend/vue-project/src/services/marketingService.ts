@@ -16,20 +16,6 @@ export interface MarketingTemplate {
   updated_at: string
 }
 
-export interface CampaignRecipientDetail {
-  id: number
-  recipient_id: number
-  recipient_email: string
-  recipient_phone: string
-  status: string
-  status_display: string
-  sent_at: string | null
-  delivered_at: string | null
-  opened_at: string | null
-  error_message: string
-  created_at: string
-}
-
 export interface Campaign {
   id: number
   name: string
@@ -47,7 +33,6 @@ export interface Campaign {
   failed_count: number
   sent_at: string | null
   delivery_rate: number
-  recipients_detail?: CampaignRecipientDetail[]
   manager_id: number
   created_at: string
   updated_at: string
@@ -71,12 +56,6 @@ export interface SendCampaignPayload {
   variables?: Record<string, string>
   recipient_ids: number[]
   campaign_name?: string
-}
-
-export interface SendIndividualPayload {
-  template_id: number
-  recipient_id: number
-  variables?: Record<string, string>
 }
 
 export interface SendQuickMessagePayload {
@@ -104,11 +83,6 @@ class MarketingService {
 
   async sendCampaign(payload: SendCampaignPayload): Promise<{ success: boolean; message: string; campaign_id?: number; status?: string }> {
     const response = await api.post('/marketing/send-campaign/', payload)
-    return response.data
-  }
-
-  async sendIndividual(payload: SendIndividualPayload): Promise<{ success: boolean; message?: string; error?: string; campaign_id?: number }> {
-    const response = await api.post('/marketing/send-individual/', payload)
     return response.data
   }
 

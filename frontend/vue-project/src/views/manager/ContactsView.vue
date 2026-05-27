@@ -1,4 +1,8 @@
-<!-- frontend/src/views/manager/ContactsView.vue -->
+<!--
+  [VIEW] ContactsView — список контактов (поиск, фильтры, таблица, модалка создания)
+  Маршрут: /manager/contacts | Дочерний компонент: ContactFormModal.vue
+  Паттерн: v-model на фильтрах + @input/@change → перезагрузка списка с API
+-->
 <template>
   <div class="space-y-6">
     <!-- Заголовок и кнопки -->

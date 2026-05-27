@@ -1,3 +1,7 @@
+<!--
+  [VIEW] UsersTeamView — команда / пользователи CRM
+  Маршрут: /manager/users | Сервис: services/usersTeamService.js
+-->
 <template>
   <div class="space-y-6">
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

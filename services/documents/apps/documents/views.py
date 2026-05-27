@@ -141,3 +141,30 @@ class DocumentDownloadView(APIView):
             return Response({"error": f"Ошибка MinIO: {str(e)}"}, status=500)
         except Exception as e:
             return Response({"error": f"Неизвестная ошибка: {str(e)}"}, status=500)
+
+
+class DocumentDeleteView(APIView):
+    """Удаление документа из MinIO и записи в БД."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            document = ClientDocument.objects.get(pk=pk)
+        except ClientDocument.DoesNotExist:
+            raise Http404("Документ не найден")
+
+        minio_client = Minio(
+            settings.MINIO_ENDPOINT,
+            access_key=settings.MINIO_ACCESS_KEY,
+            secret_key=settings.MINIO_SECRET_KEY,
+            secure=settings.MINIO_SECURE,
+        )
+
+        try:
+            minio_client.remove_object(settings.MINIO_BUCKET, document.object_name)
+        except S3Error as e:
+            if e.code != 'NoSuchKey':
+                return Response({"error": f"Ошибка MinIO: {str(e)}"}, status=500)
+
+        document.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/DealsView.vue -->
+<!--
+  [VIEW] DealsView — таблица сделок, фильтры, статистика по статусам
+  Маршрут: /manager/deals | Модалка: DealFormModal.vue | Константы: constants/dealStatuses.ts
+-->
 <template>
   <div class="space-y-6">
     <!-- Заголовок и кнопки -->

@@ -1,4 +1,9 @@
-<!-- views/LoginView.vue -->
+<!--
+   HomeView — демо-страница логина (НЕ используется в router; рабочий вход — Login1View)
+  Маршрут в router нет; можно смотреть как учебный пример формы на Composition API + TypeScript
+
+  Ключевые директивы: v-model (двусторонняя связь input ↔ data), v-if, @submit.prevent
+-->
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'

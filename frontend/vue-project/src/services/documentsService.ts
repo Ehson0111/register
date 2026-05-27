@@ -29,6 +29,10 @@ class DocumentsService {
     return response.data
   }
 
+  async delete(documentId: number): Promise<void> {
+    await api.delete(`/documents/delete/${documentId}/`)
+  }
+
   async download(documentId: number, originalFilename: string): Promise<void> {
     const response = await api.get(`/documents/download/${documentId}/`, {
       responseType: 'blob'

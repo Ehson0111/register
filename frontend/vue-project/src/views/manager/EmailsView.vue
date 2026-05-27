@@ -1,3 +1,7 @@
+<!--
+  [VIEW] EmailsView — работа с email-рассылками / письмами
+  Маршрут: /manager/emails
+-->
 <template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">

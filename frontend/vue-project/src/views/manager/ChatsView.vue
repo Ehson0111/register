@@ -1,3 +1,7 @@
+<!--
+  [VIEW] ChatsView — чаты с клиентами (комнаты, сообщения)
+  Маршрут: /manager/chats | Сервис: services/chatService.ts
+-->
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between gap-3">

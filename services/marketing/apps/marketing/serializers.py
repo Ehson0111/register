@@ -1,7 +1,7 @@
  
 from rest_framework import serializers
 from django.utils import timezone
-from .models import Template, Campaign, CampaignRecipient
+from .models import Template, Campaign
 
 class TemplateSerializer(serializers.ModelSerializer):
     """Сериализатор для шаблонов"""
@@ -40,29 +40,14 @@ class TemplateSerializer(serializers.ModelSerializer):
         
         return data
 
-class CampaignRecipientSerializer(serializers.ModelSerializer):
-    """Сериализатор для получателей кампании"""
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
-    class Meta:
-        model = CampaignRecipient
-        fields = [
-            'id', 'recipient_id', 'recipient_email', 'recipient_phone',
-            'status', 'status_display', 'sent_at', 'delivered_at', 
-            'opened_at', 'error_message', 'created_at'
-        ]
-        read_only_fields = ['id', 'created_at']
-
 class CampaignSerializer(serializers.ModelSerializer):
-    """Сериализатор для кампаний"""
+    """Список рассылок на экране маркетинга (без тяжёлого recipients_detail)."""
+
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     campaign_type_display = serializers.CharField(source='get_campaign_type_display', read_only=True)
     template_name = serializers.CharField(source='template.name', read_only=True)
     delivery_rate = serializers.SerializerMethodField()
-    recipients_detail = CampaignRecipientSerializer(
-        source='campaign_recipients', many=True, read_only=True
-    )
-    
+
     class Meta:
         model = Campaign
         fields = [
@@ -70,7 +55,7 @@ class CampaignSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'template', 'template_name',
             'subject', 'content', 'recipients', 'recipient_count',
             'success_count', 'failed_count', 'sent_at',
-            'delivery_rate', 'recipients_detail',
+            'delivery_rate',
             'manager_id', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'manager_id']
@@ -130,19 +115,6 @@ class SendCampaignSerializer(serializers.Serializer):
             })
         
         return data
-
-
-class IndividualSendSerializer(serializers.Serializer):
-    """Сериализатор для индивидуальной отправки"""
-    template_id = serializers.IntegerField(required=True)
-    recipient_id = serializers.IntegerField(required=True)
-    
-    # Переменные для подстановки
-    variables = serializers.JSONField(
-        required=False, 
-        default=dict,
-        help_text="Переменные для подстановки в шаблон"
-    )
 
 
 class QuickMessageSerializer(serializers.Serializer):

@@ -1,4 +1,6 @@
-<!-- frontend/src/views/manager/components/TaskModal.vue -->
+<!--
+  [MODAL] TaskModal — обёртка/список задач (используется в календаре и карточках)
+-->
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">

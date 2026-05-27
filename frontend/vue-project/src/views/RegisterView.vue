@@ -1,4 +1,9 @@
-<!-- frontend/src/views/RegisterView.vue -->
+<!--
+ RegisterView — регистрация нового пользователя
+  Маршрут: /register (meta.requiresGuest — уже залогиненных перенаправит на dashboard)
+
+  Обёртка вокруг RegisterForm; логика регистрации в components/auth/RegisterForm.vue
+-->
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full bg-white rounded-lg shadow-sm border border-gray-100 p-6">

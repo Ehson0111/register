@@ -1,3 +1,7 @@
+<!--
+   ClientServicesView — каталог услуг + форма «оставить заявку»
+  Маршрут: /client/services | После submit → router.push('/client/deals')
+-->
 <template>
   <div class="space-y-8">
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">

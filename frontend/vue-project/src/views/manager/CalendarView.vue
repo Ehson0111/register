@@ -1,3 +1,7 @@
+<!--
+  [VIEW] CalendarView — календарь задач/событий
+  Маршрут: /manager/calendar | Сервис: services/calendarService.js
+-->
 <template>
   <div class="min-h-screen bg-gray-50 p-6">
     <!-- Заголовок и навигация -->

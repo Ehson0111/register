@@ -1,4 +1,17 @@
+# Быстрая сборка: .\scripts\docker-build.ps1
+# FROM django-base в Dockerfile — локальный образ через additional_contexts (не тянуть с Docker Hub)
+x-django-build: &django-build
+  additional_contexts:
+    django-base: service:django-base
+
 services:
+  django-base:
+    build:
+      context: ./docker/django-base
+    image: crm-django-base:latest
+    command: ["true"]
+    restart: "no"
+
   mailhog:
     image: mailhog/mailhog:latest
     ports:
@@ -20,6 +33,11 @@ services:
   user-service:
     build:
       context: ./services/user-service
+      <<: *django-build
+    image: crm-user-service:latest
+    depends_on:
+      django-base:
+        condition: service_completed_successfully
     ports:
       - "8004:8004"
     environment:
@@ -35,10 +53,15 @@ services:
   contact-service:
     build:
       context: ./services/contact_service
+      <<: *django-build
+    image: crm-contact-service:latest
     ports:
       - "8005:8005"
     depends_on:
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8005"
@@ -46,10 +69,15 @@ services:
   calendar:
     build:
       context: ./services/calendar
+      <<: *django-build
+    image: crm-calendar:latest
     ports:
       - "8006:8006"
     depends_on:
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8006"
@@ -57,12 +85,17 @@ services:
   marketing:
     build:
       context: ./services/marketing
+      <<: *django-build
+    image: crm-marketing:latest
     ports:
       - "8007:8007"
     environment:
       GATEWAY_URL: "http://api-gateway:8000" # os.environ.get('GATEWAY_URL').
     depends_on:
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8007"
@@ -70,6 +103,8 @@ services:
   documents:
     build:
       context: ./services/documents
+      <<: *django-build
+    image: crm-documents:latest
     ports:
       - "8008:8008"
     environment:
@@ -79,8 +114,12 @@ services:
       MINIO_BUCKET: "client-documents"
       MINIO_SECURE: "false"
     depends_on:
-      - minio
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      minio:
+        condition: service_started
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8008"
@@ -88,6 +127,8 @@ services:
   applications:
     build:
       context: ./services/applications
+      <<: *django-build
+    image: crm-applications:latest
     ports:
       - "8009:8009"
     environment:
@@ -96,7 +137,10 @@ services:
       YANDEX_PASSWORD: "hbewwdgiloviutid"
       YANDEX_TARGET_SENDER: "69aeaa09eb6146cd4fd99c6b@forms.yandex.com"
     depends_on:
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8009"
@@ -104,6 +148,8 @@ services:
   chat-service:
     build:
       context: ./services/chatService
+      <<: *django-build
+    image: crm-chat-service:latest
     ports:
       - "8010:8010"
     environment:
@@ -111,7 +157,10 @@ services:
       TELEGRAM_MANAGER_IDS: "${TELEGRAM_MANAGER_IDS:-1}"
       TELEGRAM_MANAGER_ROLE: "${TELEGRAM_MANAGER_ROLE:-manager}"
     depends_on:
-      - user-service
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
@@ -119,11 +168,13 @@ services:
   payments:
     build:
       context: ./services/payments
+      <<: *django-build
+    image: crm-payments:latest
     ports:
       - "8012:8012"
     environment:
       CONTACT_SERVICE_URL: "http://contact-service:8005"
-      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://incessantly-golden-gannet.cloudpub.ru}"
+      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://militantly-diligent-seahorse.cloudpub.ru}"
       ONEC_TRANSPORT_MODE: "bridge"
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
@@ -137,8 +188,12 @@ services:
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
     depends_on:
-      - contact-service
-      - mailhog
+      django-base:
+        condition: service_completed_successfully
+      contact-service:
+        condition: service_started
+      mailhog:
+        condition: service_started
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -146,11 +201,10 @@ services:
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8012"
 
   payments-retry-worker:
-    build:
-      context: ./services/payments
+    image: crm-payments:latest
     environment:
       CONTACT_SERVICE_URL: "http://contact-service:8005"
-      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://incessantly-golden-gannet.cloudpub.ru}"
+      PUBLIC_PAYMENTS_BASE_URL: "${PUBLIC_PAYMENTS_BASE_URL:-https://militantly-diligent-seahorse.cloudpub.ru}"
       ONEC_TRANSPORT_MODE: "bridge"
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
@@ -174,8 +228,8 @@ services:
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-8795868534:AAGhWziwIb7xFA-SFQ-VXh59Vfl9otrvDvg}"
       TELEGRAM_BRIDGE_SECRET: "${TELEGRAM_BRIDGE_SECRET:-crm-telegram-bridge-2026}"
       CHAT_SERVICE_URL: "http://chat-service:8010"
-      TELEGRAM_POLL_TIMEOUT: "5"
-      TELEGRAM_IDLE_SLEEP: "0.4"
+      TELEGRAM_POLL_INTERVAL: "1.0"
+      TELEGRAM_OUTBOUND_LIMIT: "100"
       TELEGRAM_WELCOME_TEXT: "Привет! Это CRM-бот. Напишите сообщение, и менеджер ответит вам в этом чате."
     depends_on:
       - chat-service
@@ -184,6 +238,8 @@ services:
   api-gateway:
     build:
       context: ./api-gateway
+      <<: *django-build
+    image: crm-api-gateway:latest
     ports:
       - "8000:8000"
     environment:
@@ -195,13 +251,22 @@ services:
       CHAT_SERVICE_URL: "http://chat-service:8010"
       PAYMENTS_SERVICE_URL: "http://payments:8012"
     depends_on:
-      - user-service
-      - contact-service
-      - calendar
-      - marketing
-      - documents
-      - chat-service
-      - payments
+      django-base:
+        condition: service_completed_successfully
+      user-service:
+        condition: service_started
+      contact-service:
+        condition: service_started
+      calendar:
+        condition: service_started
+      marketing:
+        condition: service_started
+      documents:
+        condition: service_started
+      chat-service:
+        condition: service_started
+      payments:
+        condition: service_started
     volumes:
       - ./databases:/app/databases
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -209,6 +274,7 @@ services:
   frontend:
     build:
       context: ./frontend/vue-project
+    image: crm-frontend:latest
     ports:
       - "3000:3000"
     environment:

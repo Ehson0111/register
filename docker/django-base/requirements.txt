@@ -1,0 +1,15 @@
+# Общие зависимости всех Django-микросервисов CRM (одна установка при сборке базового образа)
+Django==5.2.7
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+djangorestframework-simplejwt==5.5.1
+python-decouple==3.8
+django-filter==25.1
+requests==2.32.3
+glom==24.11.0
+python-stdnum==2.1
+minio==7.2.16
+html2text==2024.2.26
+mail-parser==4.1.2
+yookassa==3.7.0
+azure-ai-inference

@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/DocumentsView.vue -->
+<!--
+  [VIEW] DocumentsView — документы (загрузка, список)
+  Маршрут: /manager/documents | Сервис: services/documentsService.ts
+-->
 <template>
   <div class="space-y-6">
     <div class="flex justify-between items-center flex-wrap gap-4">
@@ -80,11 +83,19 @@
             <div class="flex items-center space-x-3">
               <button
                 @click="downloadDocument(doc)"
-                :disabled="downloadId === doc.id"
+                :disabled="downloadId === doc.id || deletingId === doc.id"
                 class="text-blue-600 hover:text-blue-700 p-1 disabled:opacity-50"
                 title="Скачать"
               >
                 <ArrowDownTrayIcon class="w-5 h-5" />
+              </button>
+              <button
+                @click="deleteDocument(doc)"
+                :disabled="deletingId === doc.id || downloadId === doc.id"
+                class="text-red-600 hover:text-red-700 p-1 disabled:opacity-50"
+                title="Удалить"
+              >
+                <TrashIcon class="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -182,7 +193,8 @@ import { ref, computed, onMounted } from 'vue'
 import {
   DocumentIcon,
   ArrowUpTrayIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  TrashIcon
 } from '@heroicons/vue/24/outline'
 import documentsService, { type ClientDocument } from '../../services/documentsService'
 import contactService, { type Contact } from '../../services/contactService'
@@ -202,6 +214,7 @@ const uploadForm = ref({
 const uploadLoading = ref(false)
 const uploadError = ref('')
 const downloadId = ref<number | null>(null)
+const deletingId = ref<number | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 const filteredDocuments = computed(() => {
@@ -296,6 +309,24 @@ async function downloadDocument(doc: ClientDocument) {
     error.value = e.response?.data?.error || e.message || 'Ошибка скачивания'
   } finally {
     downloadId.value = null
+  }
+}
+
+async function deleteDocument(doc: ClientDocument) {
+  const confirmed = window.confirm(
+    `Удалить документ «${doc.original_filename}»? Файл будет удалён из хранилища без возможности восстановления.`
+  )
+  if (!confirmed) return
+
+  deletingId.value = doc.id
+  error.value = ''
+  try {
+    await documentsService.delete(doc.id)
+    documents.value = documents.value.filter((d) => d.id !== doc.id)
+  } catch (e: any) {
+    error.value = e.response?.data?.error || e.message || 'Не удалось удалить документ'
+  } finally {
+    deletingId.value = null
   }
 }
 

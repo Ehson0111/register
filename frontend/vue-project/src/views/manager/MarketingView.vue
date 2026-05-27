@@ -1,4 +1,7 @@
-<!-- frontend/src/views/manager/MarketingView.vue -->
+<!--
+  [VIEW] MarketingView — маркетинговые кампании, шаблоны, рассылки
+  Маршрут: /manager/marketing | Сервис: services/marketingService.ts
+-->
 <template>
   <div class="space-y-6">
     <div class="flex justify-between items-center">

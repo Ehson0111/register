@@ -59,7 +59,7 @@
             />
           </svg>
         </template>
-        <template #right>
+        <template #right>   <!-- Кнопка показа/скрытия пароля -->
           <button
             type="button"
             @click="showPassword = !showPassword"
@@ -171,59 +171,59 @@ export default {
     BaseInput,
   },
   setup() {
-    const authStore = useAuthStore();
-    const router = useRouter();
+    const authStore = useAuthStore();//Получает доступ к хранилищу Pinia/Vuex, где хранятся данные о пользователе (авторизован ли он, его роль и т.д.)
+    const router = useRouter();//Получает доступ к маршрутизатору Vue Router, который используется для перенаправления на другие страницы   
 
-    const formData = ref({
+    const formData = ref({ //Форма данных для входа
       email: "",
       password: "",
       remember: false,
     });
 
-    const errors = ref({});
+    const errors = ref({}); //Ошибки валидации
     const loading = ref(false);
-    const showPassword = ref(false);
+    const showPassword = ref(false); //Показывает/скрывает пароль
 
-    const isFormValid = computed(() => {
+    const isFormValid = computed(() => { //Проверяет, заполнены ли все поля формы
       return formData.value.email && formData.value.password;
     });
-    const validateForm = () => {
+    const validateForm = () => { //Валидирует форму данных для входа и возвращает true, если все поля заполнены корректно, иначе false
       errors.value = {};
 
-      if (!formData.value.email) {
+      if (!formData.value.email) { //Если email не заполнен, добавляем ошибку
         errors.value.email = "Email is required";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) { //Если email не валиден, добавляем ошибку
         errors.value.email = "Please enter a valid email address";
       }
-      if (!formData.value.password) {
+      if (!formData.value.password) { //Если пароль не заполнен, добавляем ошибку
         errors.value.password = "Password is required";
-      } else if (formData.value.password.length < 6) {
+      } else if (formData.value.password.length < 6) { //Если пароль меньше 6 символов, добавляем ошибку
         errors.value.password = "Password must be at least 6 characters";
       }
 
-      return Object.keys(errors.value).length === 0;
+      return Object.keys(errors.value).length === 0; //Возвращает true, если все поля заполнены корректно, иначе false
     };
-    const handleSubmit = async () => {
+    const handleSubmit = async () => { //Обрабатывает отправку формы данных для входа
       if (!validateForm()) return;
 
       try {
-        loading.value = true;
+        loading.value = true; //Устанавливает состояние загрузки
         errors.value = {};
 
-        const result = await authStore.login({
+        const result = await authStore.login({ //Вызывает метод login из хранилища Pinia/Vuex, который отправляет данные для входа на сервер
           email: formData.value.email,
           password: formData.value.password,
         });
 
-        if (result.success) {
+        if (result.success) { //Если вход успешен, перенаправляем на страницу клиентского кабинета или менеджера
  
           const userRole = authStore.user?.role;
-          if (userRole === "manager" || userRole === "admin") {
+          if (userRole === "manager" || userRole === "admin") { //Если пользователь менеджер или администратор, перенаправляем на страницу менеджера
             router.push("/manager/dashboard");
-          } else if (userRole === "client") {
+          } else if (userRole === "client") { //Если пользователь клиент, перенаправляем на страницу клиента
             router.push("/client/dashboard");
           } else {
-            router.push("/"); // fallback
+            router.push("/"); // fallback //Если пользователь не менеджер или клиент, перенаправляем на страницу входа по умолчанию  
           }
         } else {
           errors.value.general = result.error || "Login failed";

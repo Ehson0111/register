@@ -11,7 +11,6 @@
 - `services/applications` — заявки из почты, аудит обработки, API для почтового модуля.
 - `services/chatService` — чаты менеджеров, AI-чат, Telegram bridge.
 - `services/payments` — счета/инвойсы, платежи YooKassa, синхронизация с 1С.
-- `services/work_process` — движок workflow-автоматизаций (триггеры, условия, действия).
 - `services/tgbots` — Telegram бот-поллер для интеграции с chat-service.
 - `frontend/vue-project` — Vue 3 SPA для менеджера и клиента.
 - `docker-compose.yml` — оркестрация всех сервисов и инфраструктуры.
@@ -135,12 +134,11 @@
 - Auth/users: `/api/auth/*`, `/api/users/*`.
 - Contacts/services/deals/client: `/api/contacts/*`, `/api/services/*`, `/api/deals/*`, `/api/deal-stages/*`, `/api/client/*`, `/api/contacts/analytics/*`, `/api/audit-trail/*`.
 - Calendar: `/api/tasks/*`, `/api/tasks/today`, `/api/tasks/upcoming`, `/api/tasks/overdue`, `/api/tasks/stats`, `/api/tasks/by_date_range`, `/api/tasks/by_month`, `/api/daily`, `/api/monthly`.
-- Marketing: `/api/marketing/templates/*`, `/api/marketing/campaigns/*`, `/api/marketing/send-campaign`, `/api/marketing/send-individual`, `/api/marketing/send-quick-message`, `/api/marketing/history`.
+- Marketing: `/api/marketing/templates/*`, `/api/marketing/campaigns/*`, `/api/marketing/campaigns/stats`, `/api/marketing/send-campaign`, `/api/marketing/send-quick-message`.
 - Documents: `/api/documents/upload`, `/api/documents/<client_id>/list`, `/api/documents/download/<id>`.
 - Chat: `/api/chat/rooms/*`, `/api/chat/rooms/ai`, `/api/chat/rooms/<room_id>/ai/reset`, `/api/chat/rooms/<room_id>/messages`, `/api/chat/telegram/inbound`, `/api/chat/telegram/outbound`.
 - Payments: `/api/payment/deals/<deal_id>/invoice`, `/api/payment/invoices/<invoice_id>/retry-sync`, `/api/payment/webhook`, плюс web-страницы оплаты `/payment/pay/<invoice_id>`, `/payment/result/<invoice_id>`.
 - Applications/mail: `/api/applications/*`, `/api/applications/fetch_from_mail`, `/api/mail/*`.
-- Work process: `/api/work-process/catalog`, `/api/work-process/events`, `/api/work-process/workflows/*`, `/api/work-process/workflows/<id>/run`, `/api/work-process/workflows/<id>/executions`.
 
 ## Интеграции и фоновые процессы
 

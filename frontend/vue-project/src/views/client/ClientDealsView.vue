@@ -1,3 +1,7 @@
+<!--
+   ClientDealsView — список заявок клиента с фильтром по статусу
+  Маршрут: /client/deals | API: clientService.getDeals(status?)
+-->
 <template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">

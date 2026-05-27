@@ -1,3 +1,7 @@
+<!--
+  [VIEW] DealsKanbanView — канбан-доска сделок по колонкам статусов
+  Маршрут: /manager/deals-kanban | Альтернатива табличному DealsView
+-->
 <template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
