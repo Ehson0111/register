@@ -17,6 +17,8 @@ from .serializers import (
     StaffCreateUserSerializer,
     StaffUserActiveSerializer,
     StaffUserRoleSerializer,
+    StaffUserPasswordSerializer,
+    ProfilePasswordChangeSerializer,
 )
 
 import logging
@@ -142,12 +144,34 @@ class ProfileUpdateView(generics.UpdateAPIView):
         return profile
 
 
-class StaffUserListCreateView(generics.ListCreateAPIView):
-    """
-    Список пользователей и создание: менеджер — только клиенты; администратор — менеджеры и клиенты.
-    """
+class ProfilePasswordChangeView(generics.GenericAPIView):
+    """Смена пароля текущего пользователя."""
 
     permission_classes = [IsAuthenticated, IsManagerOrAdmin]
+    serializer_class = ProfilePasswordChangeSerializer
+    http_method_names = ['patch', 'head', 'options']
+
+    def patch(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        logger.info("Profile password changed for user id=%s email=%s", request.user.id, request.user.email)
+        return Response({'success': True, 'message': 'Пароль обновлён'})
+
+
+class StaffUserListCreateView(generics.ListCreateAPIView):
+    """
+    GET — список пользователей (менеджер/админ, для чатов и панели).
+    POST — создание сотрудника (только администратор; роли admin/manager).
+    """
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), IsAdmin()]
+        return [IsAuthenticated(), IsManagerOrAdmin()]
 
     def get_queryset(self):
         return User.objects.all().order_by('-date_joined')
@@ -197,3 +221,61 @@ class StaffUserRoleUpdateView(generics.UpdateAPIView):
         ctx = super().get_serializer_context()
         ctx['request'] = self.request
         return ctx
+
+
+class StaffUserPasswordUpdateView(generics.GenericAPIView):
+    """Смена пароля менеджера — только администратор."""
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = User.objects.all()
+    serializer_class = StaffUserPasswordSerializer
+    http_method_names = ['patch', 'head', 'options']
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if instance.role != User.ROLE_MANAGER:
+            return Response(
+                {'detail': 'Пароль можно менять только у менеджеров.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(
+            data=request.data,
+            context={'request': request, 'user': instance},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        logger.info("Admin changed password for manager id=%s email=%s", instance.id, instance.email)
+        return Response({'success': True, 'message': 'Пароль обновлён'})
+
+
+class StaffUserDestroyView(generics.DestroyAPIView):
+    """Удаление менеджера — только администратор (не себя и не других админов)."""
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+    queryset = User.objects.all()
+    http_method_names = ['delete', 'head', 'options']
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if instance.pk == request.user.pk:
+            return Response(
+                {'detail': 'Нельзя удалить свою учётную запись.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if instance.role == User.ROLE_ADMIN:
+            return Response(
+                {'detail': 'Нельзя удалить администратора.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if instance.role != User.ROLE_MANAGER:
+            return Response(
+                {'detail': 'Удалять можно только учётные записи менеджеров.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        logger.info("Admin deleted manager id=%s email=%s", instance.id, instance.email)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

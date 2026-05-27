@@ -68,13 +68,13 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class StaffCreateUserSerializer(serializers.ModelSerializer):
-    """Создание пользователя: менеджер — только клиент; администратор — менеджер или клиент."""
+    """Создание сотрудника CRM: только администратор; роли — администратор или менеджер."""
 
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(
-        choices=[User.ROLE_MANAGER, User.ROLE_CLIENT],
-        help_text='Менеджер через API может выбрать только client.',
+        choices=[User.ROLE_ADMIN, User.ROLE_MANAGER],
+        help_text='Доступны только роли администратора и менеджера.',
     )
 
     class Meta:
@@ -94,21 +94,9 @@ class StaffCreateUserSerializer(serializers.ModelSerializer):
         except exceptions.ValidationError as e:
             raise serializers.ValidationError({"password": list(e.messages)})
 
-        request = self.context.get('request')
-        actor = getattr(request, 'user', None) if request else None
-        actor_role = getattr(actor, 'role', None) if actor and actor.is_authenticated else None
         role = attrs.get('role')
-
-        if actor_role == User.ROLE_MANAGER:
-            if role != User.ROLE_CLIENT:
-                raise serializers.ValidationError(
-                    {'role': 'Менеджер может создавать только клиентов. Менеджеров добавляет администратор.'}
-                )
-        elif actor_role == User.ROLE_ADMIN:
-            if role not in (User.ROLE_MANAGER, User.ROLE_CLIENT):
-                raise serializers.ValidationError({'role': 'Недопустимая роль.'})
-        else:
-            raise serializers.ValidationError({'role': 'Нет прав для создания пользователя.'})
+        if role not in (User.ROLE_ADMIN, User.ROLE_MANAGER):
+            raise serializers.ValidationError({'role': 'Можно назначить только администратора или менеджера.'})
 
         return attrs
 
@@ -145,9 +133,9 @@ class StaffUserActiveSerializer(serializers.ModelSerializer):
 
 
 class StaffUserRoleSerializer(serializers.ModelSerializer):
-    """Смена роли пользователя — только администратор CRM."""
+    """Смена роли сотрудника — только администратор; только admin или manager."""
 
-    role = serializers.ChoiceField(choices=User.ROLE_CHOICES)
+    role = serializers.ChoiceField(choices=[User.ROLE_ADMIN, User.ROLE_MANAGER])
 
     class Meta:
         model = User
@@ -169,7 +157,67 @@ class StaffUserRoleSerializer(serializers.ModelSerializer):
         if instance and getattr(instance, "role", None) == User.ROLE_ADMIN:
             raise serializers.ValidationError({'role': 'Нельзя менять роль другого администратора.'})
 
-        if new_role not in (User.ROLE_ADMIN, User.ROLE_MANAGER, User.ROLE_CLIENT):
-            raise serializers.ValidationError({'role': 'Недопустимая роль.'})
+        if new_role not in (User.ROLE_ADMIN, User.ROLE_MANAGER):
+            raise serializers.ValidationError({'role': 'Можно назначить только администратора или менеджера.'})
+
+        if instance and getattr(instance, 'role', None) == User.ROLE_CLIENT:
+            raise serializers.ValidationError({'role': 'Роль клиента нельзя менять в этом разделе.'})
 
         return attrs
+
+
+class StaffUserPasswordSerializer(serializers.Serializer):
+    """Смена пароля менеджера администратором."""
+
+    password = serializers.CharField(write_only=True, min_length=8)
+    password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({'password_confirm': 'Пароли не совпадают'})
+        try:
+            validate_password(attrs['password'])
+        except exceptions.ValidationError as e:
+            raise serializers.ValidationError({'password': list(e.messages)})
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context['user']
+        user.set_password(self.validated_data['password'])
+        user.save(update_fields=['password'])
+        return user
+
+
+class ProfilePasswordChangeSerializer(serializers.Serializer):
+    """Смена пароля для текущего пользователя."""
+
+    current_password = serializers.CharField(write_only=True, min_length=1)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=8)
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if not request or not getattr(request, 'user', None) or not request.user.is_authenticated:
+            raise serializers.ValidationError({'detail': 'Требуется авторизация.'})
+
+        user = request.user
+
+        if not user.check_password(attrs['current_password']):
+            raise serializers.ValidationError({'current_password': 'Неверный текущий пароль'})
+
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({'new_password_confirm': 'Пароли не совпадают'})
+
+        try:
+            validate_password(attrs['new_password'], user)
+        except exceptions.ValidationError as e:
+            raise serializers.ValidationError({'new_password': list(e.messages)})
+
+        return attrs
+
+    def save(self, **kwargs):
+        request = self.context['request']
+        user = request.user
+        user.set_password(self.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user

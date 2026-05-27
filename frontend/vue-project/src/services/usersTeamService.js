@@ -15,3 +15,11 @@ export async function patchTeamUserActive(id, is_active) {
 export async function patchTeamUserRole(id, role) {
   return api.patch(`/users/team/${id}/role/`, { role })
 }
+
+export async function deleteTeamUser(id) {
+  return api.delete(`/users/team/${id}/delete/`)
+}
+
+export async function patchTeamUserPassword(id, payload) {
+  return api.patch(`/users/team/${id}/password/`, payload)
+}

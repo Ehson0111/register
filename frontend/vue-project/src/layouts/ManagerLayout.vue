@@ -133,6 +133,7 @@
             </router-link>
 
             <router-link
+              v-if="isAdmin"
               to="/manager/users"
               class="menu-link"
               :class="{ 'menu-link-active': $route.path.includes('/manager/users') }"
@@ -209,6 +210,8 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const backgroundImageUrl = "/manager-bg.jpg";
+
+const isAdmin = computed(() => authStore.user?.role === "admin");
 
 const portalRoleLabel = computed(() => {
   const r = authStore.user?.role;

@@ -112,7 +112,8 @@ const routes = [
       {
         path: 'users',
         name: 'ManagerUsers',
-        component: () => import('@/views/manager/UsersTeamView.vue')
+        component: () => import('@/views/manager/UsersTeamView.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   },
@@ -149,6 +150,8 @@ router.beforeEach((to, from, next) => {
     const r = authStore.user?.role
     if (r === 'manager' || r === 'admin') next('/manager/dashboard')
     else next('/login')
+  } else if (to.meta.requiresAdmin && authStore.user?.role !== 'admin') {
+    next('/manager/dashboard')
   } else if (to.meta.managerPortal) { //Если маршрут открыт для менеджеров и пользователь не менеджер, перенаправляем на страницу входа
     const r = authStore.user?.role
     if (r === 'manager' || r === 'admin') next()

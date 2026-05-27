@@ -272,8 +272,16 @@ async function changePassword() {
   passwordLoading.value = true
   
   try {
-    // TODO: добавить API для смены пароля, если есть
-    passwordError.value = 'Смена пароля пока не реализована на сервере'
+    await authService.changePassword({
+      current_password: password.value.current,
+      new_password: password.value.new,
+      new_password_confirm: password.value.confirm
+    })
+    passwordSuccess.value = true
+    setTimeout(() => { passwordSuccess.value = false }, 3000)
+    password.value.current = ''
+    password.value.new = ''
+    password.value.confirm = ''
   } catch (e: any) {
     passwordError.value = e.response?.data?.error || e.message || 'Ошибка смены пароля'
   } finally {

@@ -40,6 +40,10 @@ const authService = {
     return await api.put('/users/profile/update/', userData)
   },
 
+  async changePassword(payload) {
+    return await api.patch('/users/profile/change-password/', payload)
+  },
+
   async logout() {
     // In a real app, you might want to call a logout endpoint
     // to invalidate the token on the server
