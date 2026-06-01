@@ -9,7 +9,7 @@ YOOKASSA_SHOP_ID = '1335151'
 YOOKASSA_SECRET_KEY = 'test_3RDrQQ3KHo_QzYn9jw0orffJb1u8ILESiNzOfuIyi4I'
 
 CONTACT_SERVICE_URL = os.getenv('CONTACT_SERVICE_URL', 'http://127.0.0.1:8005')
-PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://militantly-diligent-seahorse.cloudpub.ru')
+PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://mainly-musical-dormouse.cloudpub.ru')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@crm.local')
 
 ONEC_BASE_URL = os.getenv('ONEC_BASE_URL', 'http://host.docker.internal/1c/odata/standard.odata/')
@@ -32,13 +32,13 @@ ONEC_HEALTH_TIMEOUT_SECONDS = int(os.getenv('ONEC_HEALTH_TIMEOUT_SECONDS', '45')
 ONEC_HEALTHCHECK_TIMEOUT_SECONDS = int(os.getenv('ONEC_HEALTHCHECK_TIMEOUT_SECONDS', '10'))
 ONEC_HEALTHCHECK_INTERVAL_SECONDS = float(os.getenv('ONEC_HEALTHCHECK_INTERVAL_SECONDS', '2'))
 ONEC_ORGANIZATION_KEY = os.getenv('ONEC_ORGANIZATION_KEY', '')
-ONEC_PAYMENT_INVOICE_FIELD = os.getenv('ONEC_PAYMENT_INVOICE_FIELD', 'РЎС‡РµС‚_Key')
-ONEC_STATUS_UNPAID_VALUE = os.getenv('ONEC_STATUS_UNPAID_VALUE', 'РќРµРћРїР»Р°С‡РµРЅ')
-ONEC_STATUS_PAID_VALUE = os.getenv('ONEC_STATUS_PAID_VALUE', 'РћРїР»Р°С‡РµРЅ')
+ONEC_PAYMENT_INVOICE_FIELD = os.getenv('ONEC_PAYMENT_INVOICE_FIELD', '\u0421\u0447\u0435\u0442_Key')
+ONEC_STATUS_UNPAID_VALUE = os.getenv('ONEC_STATUS_UNPAID_VALUE', '\u041d\u0435\u041e\u043f\u043b\u0430\u0447\u0435\u043d')
+ONEC_STATUS_PAID_VALUE = os.getenv('ONEC_STATUS_PAID_VALUE', '\u041e\u043f\u043b\u0430\u0447\u0435\u043d')
 ONEC_DEFAULT_CUSTOMER_TYPE = os.getenv('ONEC_DEFAULT_CUSTOMER_TYPE', 'crm')
 ONEC_DEFAULT_PAYMENT_METHOD = os.getenv('ONEC_DEFAULT_PAYMENT_METHOD', 'yookassa')
-ONEC_SERVICE_UNIT = os.getenv('ONEC_SERVICE_UNIT', 'С€С‚')
-ONEC_SERVICE_ACTIVITY = os.getenv('ONEC_SERVICE_ACTIVITY', 'РђРєС‚РёРІРЅР°')
+ONEC_SERVICE_UNIT = os.getenv('ONEC_SERVICE_UNIT', 'шт')
+ONEC_SERVICE_ACTIVITY = os.getenv('ONEC_SERVICE_ACTIVITY', 'Активна')
 ONEC_AUTO_POST_DOCUMENTS = os.getenv('ONEC_AUTO_POST_DOCUMENTS', 'false').lower() == 'true'
 ONEC_POSTING_MODE_OPERATIONAL = os.getenv('ONEC_POSTING_MODE_OPERATIONAL', 'false').lower() == 'true'
 INVOICE_RETRY_WORKER_INTERVAL_SECONDS = int(os.getenv('INVOICE_RETRY_WORKER_INTERVAL_SECONDS', '30'))
@@ -138,10 +138,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+_payments_db_dir = BASE_DIR / 'databases'
+_payments_db_dir.mkdir(parents=True, exist_ok=True)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': _payments_db_dir / 'payments.db',
     }
 }
 
@@ -158,9 +161,8 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,       # РёСЃРїРѕР»СЊР·СѓРµРј С‚РѕС‚ Р¶Рµ SECRET_KEY, С‡С‚Рѕ Рё РІ user-service
+    'SIGNING_KEY': SECRET_KEY,        
     'AUTH_HEADER_TYPES': ('Bearer',),
-    # РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РјРѕР¶РЅРѕ СЏРІРЅРѕ Р·Р°РґР°С‚СЊ USER_ID_CLAIM РёР»Рё РґСЂСѓРіРёРµ РѕРїС†РёРё
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     }

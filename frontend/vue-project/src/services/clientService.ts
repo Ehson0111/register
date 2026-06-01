@@ -26,7 +26,6 @@ export interface ClientDeal {
   service: number
   service_name: string
   amount: number
-  probability: number
   status: string
   status_display: string
   status_color: string

@@ -325,7 +325,6 @@ def create_client_request(request):
         title=f"Запрос: {service.name}",
         description=request.data.get('message', ''),
         amount=request.data.get('budget', service.price),  # Можно переопределить бюджет
-        probability=10,  # Начальная вероятность
         status='new'
     )
     

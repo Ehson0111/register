@@ -49,13 +49,21 @@ def register_payment_in_onec(invoice, payment_payload, *, client=None):
             invoice.paid_at = parsed_captured
 
         payload = client.register_payment(invoice, payment_payload)
-        invoice.onec_payment_document_id = payload.get("payment_document_id_1c", "")
+        invoice.onec_payment_document_id = payload.get("payment_document_id_1c", "") or invoice.onec_payment_document_id
         invoice.status = Invoice.Status.PAID
-        invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
         invoice.crm_sync_status = Invoice.SyncStatus.SYNCED
-        invoice.last_onec_error = ""
         invoice.last_crm_error = ""
-        invoice.next_retry_at = None
+        if payload.get("invoice_status_updated") is True:
+            invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
+            invoice.last_onec_error = ""
+            invoice.next_retry_at = None
+        else:
+            # Оплата создана и проведена, но статус счёта в 1С не обновился.
+            # Сохраняем оплату в CRM и включаем ретраи только на обновление статуса счёта.
+            invoice.mark_retry(
+                error_text=payload.get("invoice_status_update_error") or "Статус счёта в 1С не обновился",
+                onec=True,
+            )
         if not invoice.paid_at:
             invoice.paid_at = timezone.now()
         invoice.save()
@@ -79,6 +87,22 @@ def retry_due_invoice_sync(invoice, *, client=None):
     
     try:
         if invoice.payment_id:
+            # Если оплата уже зафиксирована в CRM, не создаём повторные оплаты в 1С.
+            # Пытаемся только дожать обновление статуса счёта в 1С.
+            if invoice.status == Invoice.Status.PAID and invoice.onec_payment_document_id:
+                if client.is_invoice_paid_in_onec(invoice.onec_document_id):
+                    invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
+                    invoice.last_onec_error = ""
+                    invoice.next_retry_at = None
+                    invoice.save(update_fields=["onec_sync_status", "last_onec_error", "next_retry_at"])
+                    return invoice
+                if not client.ensure_invoice_paid_status(invoice):
+                    raise OneCErrorV2("Статус счёта в 1С не «Оплачен» после PATCH")
+                invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
+                invoice.last_onec_error = ""
+                invoice.next_retry_at = None
+                invoice.save(update_fields=["onec_sync_status", "last_onec_error", "next_retry_at"])
+                return invoice
             payment_payload = {
                 "id": invoice.payment_id,
                 "status": "succeeded",

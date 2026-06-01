@@ -427,7 +427,6 @@ const confirmApprove = async () => {
       contact: contactId,
       service: serviceId,
       amount: draft.amount > 0 ? draft.amount : 1,
-      probability: 10,
       status: "new",
       expected_close_date: draft.expectedCloseDate || undefined,
     });

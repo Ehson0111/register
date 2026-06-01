@@ -127,24 +127,6 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-500 mb-1"
-                  >Вероятность успеха</label
-                >
-                <div class="flex items-center space-x-3">
-                  <div class="flex-1 bg-gray-200 rounded-full h-3">
-                    <div
-                      class="h-3 rounded-full transition-all duration-500"
-                      :class="getProbabilityColor(dealdetail?.probability || 0)"
-                      :style="{ width: `${dealdetail?.probability || 0}%` }"
-                    ></div>
-                  </div>
-                  <span class="text-lg font-medium text-gray-900 min-w-12">
-                    {{ dealdetail?.probability }}%
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1"
                   >Дней в работе</label
                 >
                 <p class="text-lg text-gray-900">
@@ -385,6 +367,14 @@
             </div>
 
             <button
+              @click="refreshInvoiceStatus()"
+              :disabled="refreshingInvoice"
+              class="w-full px-4 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+            >
+              {{ refreshingInvoice ? "Обновление..." : "Обновить статус оплаты" }}
+            </button>
+
+            <button
               v-if="invoice.onec_sync_status === 'error'"
               @click="retryInvoiceSync"
               :disabled="retryingInvoice"
@@ -466,7 +456,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
 import dealService from "../../services/dealService";
@@ -504,6 +494,8 @@ const invoice = ref<DealInvoice | null>(null)
 const invoiceLoading = ref(false)
 const issuingInvoice = ref(false)
 const retryingInvoice = ref(false)
+const refreshingInvoice = ref(false)
+let invoicePollTimer: ReturnType<typeof setInterval> | null = null
 const auditTrail = ref<AuditTrailItem[]>([]);
 const auditLoading = ref(false);
 const closeModal = () => {
@@ -513,7 +505,7 @@ const closeModal = () => {
 
 const handleDealSaved = () => {
   closeModal()
-  loadDeals()
+  loadDeal()
 }
 const searchQuery = ref('')
 const statusFilter = ref('')
@@ -630,12 +622,6 @@ const syncStatusTextClass = (status: string) => {
   }
   return classes[status] || "text-gray-600"
 }
-
-const getProbabilityColor = (probability: number) => {
-  if (probability >= 80) return "bg-green-500";
-  if (probability >= 50) return "bg-yellow-500";
-  return "bg-red-500";
-};
 
 const getStageDotClass = (stageStatus: string) => {
   const currentStatus = dealdetail.value?.status;
@@ -754,6 +740,11 @@ const loadInvoice = async (dealId: number) => {
   try {
     invoiceLoading.value = true
     invoice.value = await paymentService.getDealInvoice(dealId)
+    if (invoice.value?.status === "waiting") {
+      startInvoicePolling()
+    } else {
+      stopInvoicePolling()
+    }
   } catch (error) {
     console.error("Ошибка загрузки счета:", error)
   } finally {
@@ -780,6 +771,50 @@ const issueInvoice = async () => {
     }
   } finally {
     issuingInvoice.value = false
+  }
+}
+
+const stopInvoicePolling = () => {
+  if (invoicePollTimer) {
+    clearInterval(invoicePollTimer)
+    invoicePollTimer = null
+  }
+}
+
+const startInvoicePolling = () => {
+  stopInvoicePolling()
+  if (!invoice.value || invoice.value.status !== "waiting") return
+  invoicePollTimer = setInterval(() => {
+    refreshInvoiceStatus(true)
+  }, 15000)
+}
+
+const refreshInvoiceStatus = async (silent = false) => {
+  if (!dealdetail.value) return
+  try {
+    refreshingInvoice.value = true
+    const previousStatus = invoice.value?.status
+    const loaded = await paymentService.getDealInvoice(dealdetail.value.id)
+    invoice.value = loaded
+    if (!silent) {
+      if (loaded?.status === "paid" && previousStatus !== "paid") {
+        showSuccess("Оплата подтверждена")
+      } else {
+        showSuccess("Данные счёта обновлены")
+      }
+    }
+  } catch (error: any) {
+    console.error("Ошибка обновления счета:", error)
+    if (!silent) {
+      showError(error?.response?.data?.detail || "Не удалось обновить статус")
+    }
+  } finally {
+    refreshingInvoice.value = false
+    if (invoice.value?.status === "waiting") {
+      startInvoicePolling()
+    } else {
+      stopInvoicePolling()
+    }
   }
 }
 
@@ -824,11 +859,21 @@ const loadDeal = async () => {
   }
 };
 
-// Инициализация
+watch(
+  () => invoice.value?.status,
+  (status) => {
+    if (status === "waiting") startInvoicePolling()
+    else stopInvoicePolling()
+  },
+)
+
 onMounted(() => {
-  loadDeals();
-  loadDeal();
-});
+  loadDeal()
+})
+
+onUnmounted(() => {
+  stopInvoicePolling()
+})
 </script>
 
 <style scoped>

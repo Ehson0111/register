@@ -77,7 +77,6 @@ export interface Deal {
   service: number
   service_name: string
   amount: number
-  probability: number
   status: string
   status_display: string
   status_color: string
@@ -105,7 +104,6 @@ export interface CreateDealData {
   contact: number
   service: number
   amount: number
-  probability: number
   status: string
   stage?: number | null
   expected_close_date?: string

@@ -181,7 +181,6 @@ class DealListSerializer(serializers.ModelSerializer):
 
             'service_name',
             'amount',
-            'probability',
             'status',
             'status_display',
             'status_color',
@@ -220,7 +219,6 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'service',
             'service_name',
             'amount',
-            'probability',
             'status',
             'status_display',
             'status_color',
@@ -254,7 +252,6 @@ class CreateDealSerializer(serializers.ModelSerializer):
             'contact',
             'service',
             'amount',
-            'probability',
             'status',
             "stage",
             'expected_close_date'
@@ -262,11 +259,6 @@ class CreateDealSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """Дополнительная валидация"""
-        if data.get('probability') < 0 or data.get('probability') > 100:
-            raise serializers.ValidationError({
-                "probability": "Вероятность должна быть от 0 до 100%"
-            })
-        
         if data.get('amount') <= 0:
             raise serializers.ValidationError({
                 "amount": "Сумма сделки должна быть больше 0"

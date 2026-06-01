@@ -98,6 +98,19 @@ def _extract_amount(deal):
         raise RuntimeError(f"Некорректная сумма сделки: {raw_amount}") from exc
 
 
+def _crm_sync_key(invoice):
+    """Стабильный ключ для сравнения — без лишнего пересоздания счёта в 1С."""
+    amount = invoice.amount
+    amount_key = f"{float(amount):.2f}" if amount is not None else "0.00"
+    return (
+        invoice.contact_id,
+        invoice.service_id,
+        amount_key,
+        (invoice.contact_email or "").strip().lower(),
+        (invoice.contact_phone or "").strip(),
+    )
+
+
 def _apply_crm_context(invoice, deal, contact):
     service_id, service_name = _extract_service_context(deal)
     invoice.deal_title = deal.get("title", "")
@@ -109,6 +122,24 @@ def _apply_crm_context(invoice, deal, contact):
     invoice.service_name = service_name
     invoice.comment = deal.get("description", "") or deal.get("title", "")
     invoice.amount = _extract_amount(deal)
+
+
+def _sync_payment_status_from_yookassa(invoice):
+    """Подтягивает статус оплаты из YooKassa, если webhook ещё не отработал."""
+    if invoice.status == Invoice.Status.PAID:
+        return invoice
+    if not invoice.payment_id:
+        return invoice
+    try:
+        payment = Payment.find_one(invoice.payment_id)
+        if getattr(payment, "status", None) != "succeeded":
+            return invoice
+        payment_payload = payment.json if hasattr(payment, "json") else {}
+        _mark_invoice_paid_from_payment(invoice, payment_payload)
+        invoice.refresh_from_db()
+    except Exception:
+        logger.exception("Не удалось синхронизировать оплату из YooKassa для счёта %s", invoice.id)
+    return invoice
 
 
 def _fetch_deal_context(request, deal_id):
@@ -181,6 +212,7 @@ class DealInvoiceView(APIView):
         if not invoice:
             return Response(status=status.HTTP_204_NO_CONTENT)
         try:
+            invoice = _sync_payment_status_from_yookassa(invoice)
             invoice = retry_due_invoice_sync(invoice)
         except Exception:
             pass
@@ -198,21 +230,9 @@ class DealInvoiceView(APIView):
             invoice = Invoice.objects.filter(deal_id=deal_id).first()
             created_new = invoice is None
             if invoice:
-                previous_sync_key = (
-                    invoice.contact_id,
-                    invoice.service_id,
-                    str(invoice.amount),
-                    invoice.contact_email,
-                    invoice.contact_phone,
-                )
+                previous_sync_key = _crm_sync_key(invoice)
                 _apply_crm_context(invoice, deal, contact)
-                current_sync_key = (
-                    invoice.contact_id,
-                    invoice.service_id,
-                    str(invoice.amount),
-                    invoice.contact_email,
-                    invoice.contact_phone,
-                )
+                current_sync_key = _crm_sync_key(invoice)
                 # Если данные сделки/контакта поменялись, повторно отправляем счёт в 1С с актуальными полями.
                 if previous_sync_key != current_sync_key:
                     invoice.sent_to_1c = False
@@ -238,7 +258,12 @@ class DealInvoiceView(APIView):
         try:
             invoice.payment_url = _public_payment_url(invoice.id, request=request)
             invoice.save(update_fields=["payment_url"])
-            if not invoice.sent_to_1c or invoice.onec_sync_status != Invoice.SyncStatus.SYNCED:
+            already_in_onec = (
+                invoice.sent_to_1c
+                and invoice.onec_sync_status == Invoice.SyncStatus.SYNCED
+                and bool(invoice.onec_document_id)
+            )
+            if not already_in_onec:
                 create_invoice_in_onec(invoice)
             try:
                 _send_payment_link(invoice)
@@ -266,24 +291,21 @@ class RetryInvoiceSyncView(APIView):
     def post(self, request, invoice_id):
         invoice = get_object_or_404(Invoice, id=invoice_id)
         try:
-            if not invoice.sent_to_1c:
+            invoice = _sync_payment_status_from_yookassa(invoice)
+            invoice.refresh_from_db()
+            if invoice.onec_sync_status == Invoice.SyncStatus.ERROR:
+                invoice.next_retry_at = None
+                invoice = retry_due_invoice_sync(invoice)
+            elif not invoice.sent_to_1c:
                 create_invoice_in_onec(invoice)
                 invoice.payment_url = invoice.payment_url or _public_payment_url(invoice.id, request=request)
-            else:
-                register_payment_in_onec(
-                    invoice,
-                    {
-                        "id": invoice.payment_id,
-                        "status": "succeeded",
-                        "amount": {"value": str(invoice.amount), "currency": "RUB"},
-                        "captured_at": invoice.paid_at.isoformat() if invoice.paid_at else None,
-                        "payment_method": {"type": "yookassa"},
-                    },
-                )
-            invoice.last_onec_error = ""
-            invoice.next_retry_at = None
-            if invoice.payment_url and not invoice.pay_link_sent_at:
-                _send_payment_link(invoice)
+                invoice.refresh_from_db()
+            if invoice.payment_url and not invoice.pay_link_sent_at and invoice.status != Invoice.Status.PAID:
+                try:
+                    _send_payment_link(invoice)
+                except Exception as mail_exc:
+                    invoice.crm_sync_status = Invoice.SyncStatus.ERROR
+                    invoice.last_crm_error = str(mail_exc)
             invoice.save()
             return Response(InvoiceSerializer(invoice).data)
         except Exception as exc:

@@ -179,9 +179,8 @@ services:
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
       ONEC_BRIDGE_SECRET: "${ONEC_BRIDGE_SECRET:-crm-onec-bridge-secret-2026}"
-      ONEC_HEALTHCHECK_PATH: "$metadata"
+      ONEC_HEALTHCHECK_PATH: "$$metadata"
       ONEC_RESTART_EACH_REQUEST: "true"
-      ONEC_PAYMENT_INVOICE_FIELD: "${ONEC_PAYMENT_INVOICE_FIELD:-Счет_Key}"
       DEFAULT_FROM_EMAIL: "no-reply@crm.local"
       EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
       EMAIL_HOST: "mailhog"
@@ -209,9 +208,8 @@ services:
       ONEC_ODATA_BASE_URL: "http://host.docker.internal/1c/odata/standard.odata/"
       ONEC_BRIDGE_URL: "http://host.docker.internal:8013/invoke"
       ONEC_BRIDGE_SECRET: "${ONEC_BRIDGE_SECRET:-crm-onec-bridge-secret-2026}"
-      ONEC_HEALTHCHECK_PATH: "$metadata"
+      ONEC_HEALTHCHECK_PATH: "$$metadata"
       ONEC_RESTART_EACH_REQUEST: "true"
-      ONEC_PAYMENT_INVOICE_FIELD: "${ONEC_PAYMENT_INVOICE_FIELD:-Счет_Key}"
       INVOICE_RETRY_WORKER_INTERVAL_SECONDS: "30"
     depends_on:
       - payments

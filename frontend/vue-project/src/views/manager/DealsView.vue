@@ -147,9 +147,6 @@
                 Сумма
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Вероятность
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Статус
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -192,18 +189,6 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {{ formatCurrency(parseFloat(deal.amount)) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="w-full bg-gray-200 rounded-full h-2 mr-2">
-                    <div 
-                      class="h-2 rounded-full transition-all"
-                      :class="getProbabilityColor(deal.probability)"
-                      :style="{ width: `${deal.probability}%` }"
-                    ></div>
-                  </div>
-                  <span class="text-sm text-gray-600">{{ deal.probability }}%</span>
-                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span 
@@ -377,12 +362,6 @@ const getStatusClass = (status: string) => {
     on_hold: 'bg-slate-300 text-slate-900'
   }
   return classes[status] || 'bg-slate-300 text-slate-900'
-}
-
-const getProbabilityColor = (probability: number) => {
-  if (probability >= 80) return 'bg-green-500'
-  if (probability >= 50) return 'bg-yellow-500'
-  return 'bg-red-500'
 }
 
 const formatCurrency = (amount: number) => {

@@ -16,6 +16,39 @@ class OneCErrorV2(RuntimeError):
     pass
 
 
+# Значения перечисления 1С «СтатусыСчета» — только ASCII в исходнике, без риска
+# поломки кодировки при сборке Docker / переменных окружения Windows.
+ONEC_INVOICE_STATUS_PAID = "\u041e\u043f\u043b\u0430\u0447\u0435\u043d"  # Оплачен
+ONEC_INVOICE_STATUS_UNPAID = "\u041d\u0435\u041e\u043f\u043b\u0430\u0447\u0435\u043d"  # НеОплачен
+ONEC_PAYMENT_INVOICE_LINK_FIELD = "\u0421\u0447\u0435\u0442_Key"  # Счет_Key
+# UTF-8 «Оплачен», ошибочно прочитанный как cp1252 (то, что видит 1С в ошибке OData).
+ONEC_INVOICE_STATUS_PAID_MOJIBAKE = ONEC_INVOICE_STATUS_PAID.encode("utf-8").decode("cp1252")
+
+
+def _coerce_payment_invoice_field(value):
+    normalized = str(value or "").strip()
+    if not normalized or "?" in normalized:
+        return ONEC_PAYMENT_INVOICE_LINK_FIELD
+    return normalized
+
+
+def _coerce_invoice_status_value(value, *, default):
+    if not value:
+        return default
+    normalized = str(value).strip()
+    if normalized in (ONEC_INVOICE_STATUS_PAID, ONEC_INVOICE_STATUS_UNPAID):
+        return normalized
+    if normalized == ONEC_INVOICE_STATUS_PAID_MOJIBAKE:
+        return ONEC_INVOICE_STATUS_PAID
+    try:
+        repaired = normalized.encode("cp1252").decode("utf-8")
+        if repaired in (ONEC_INVOICE_STATUS_PAID, ONEC_INVOICE_STATUS_UNPAID):
+            return repaired
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        pass
+    return default if normalized == ONEC_INVOICE_STATUS_PAID_MOJIBAKE else normalized
+
+
 def is_admin():
     """Проверка, запущен ли процесс от имени администратора (только Windows)."""
     try:
@@ -77,6 +110,21 @@ class OneCClientV2:
         self.max_retries = int(getattr(settings, "ONEC_MAX_RETRIES", 3))
         self.is_docker_runtime = os.path.exists("/.dockerenv")
         self.base_url_candidates = self._build_base_url_candidates()
+        self.paid_status_value = _coerce_invoice_status_value(
+            getattr(settings, "ONEC_STATUS_PAID_VALUE", ONEC_INVOICE_STATUS_PAID),
+            default=ONEC_INVOICE_STATUS_PAID,
+        )
+        self.unpaid_status_value = _coerce_invoice_status_value(
+            getattr(settings, "ONEC_STATUS_UNPAID_VALUE", ONEC_INVOICE_STATUS_UNPAID),
+            default=ONEC_INVOICE_STATUS_UNPAID,
+        )
+        self.payment_invoice_field = _coerce_payment_invoice_field(
+            getattr(settings, "ONEC_PAYMENT_INVOICE_FIELD", ONEC_PAYMENT_INVOICE_LINK_FIELD),
+        )
+
+    def _invoice_entity_path(self, invoice_guid):
+        guid = str(invoice_guid).strip()
+        return f"Document_СчетПокупателю(guid'{guid}')"
 
     def _get_session(self):
         """Создаёт сессию с авторизацией если нужно"""
@@ -112,12 +160,17 @@ class OneCClientV2:
         host = parsed.hostname or ""
         candidate_hosts = [host]
         if host in ("localhost", "127.0.0.1"):
+            # Если явно настроили localhost/127.0.0.1, пробуем и host.docker.internal
+           
             if self.is_docker_runtime:
                 candidate_hosts = ["host.docker.internal", host]
             else:
                 candidate_hosts.append("host.docker.internal")
         else:
-            candidate_hosts.extend(["host.docker.internal", "localhost", "127.0.0.1"])
+            # В Docker НЕЛЬЗЯ падать на localhost/127.0.0.1 как на "fallback":
+            candidate_hosts.append("host.docker.internal")
+            if not self.is_docker_runtime:
+                candidate_hosts.extend(["localhost", "127.0.0.1"])
 
         seen = set()
         candidates = []
@@ -141,7 +194,7 @@ class OneCClientV2:
             url = f"{base_url}/{endpoint.lstrip('/')}"
             try:
                 for attempt in range(self.max_retries):
-                    if self.auto_restart and attempt > 0:
+                    if self.auto_restart:
                         restart_iis()
                     try:
                         response = session.request(
@@ -274,7 +327,7 @@ class OneCClientV2:
             "Организация_Key": org_guid,
             "Клиент_Key": client_guid,
             "СуммаДокумента": float(invoice.amount),
-            "СтатусСчета": "НеОплачен",
+            "СтатусСчета": self.unpaid_status_value,
             "Состав": [
                 {
                     "LineNumber": 1,
@@ -409,7 +462,7 @@ class OneCClientV2:
         # Это повторяет рабочий сценарий из ручных тестов 1С и безопасно для уже проведённого документа.
         post_invoice_resp = self._request_with_retry(
             "POST",
-            f"Document_СчетПокупателю('{invoice.onec_document_id}')/Post",
+            f"{self._invoice_entity_path(invoice.onec_document_id)}/Post",
             json={"PostingModeOperational": True},
         )
         if post_invoice_resp.status_code not in (200, 204):
@@ -426,8 +479,8 @@ class OneCClientV2:
         confirmed_at = (parsed_captured.isoformat() if parsed_captured else None) or now_iso
         yk_payment_id = (payment_payload.get("id") or invoice.payment_id or "").strip()
 
-        invoice_link_field = getattr(settings, "ONEC_PAYMENT_INVOICE_FIELD", "Счет_Key")
-        paid_status_value = getattr(settings, "ONEC_STATUS_PAID_VALUE", "Оплачен")
+        invoice_link_field = self.payment_invoice_field
+        paid_status_value = self.paid_status_value
 
         # Создаём оплату
         payment_guid = str(uuid.uuid4())
@@ -461,34 +514,71 @@ class OneCClientV2:
             raise OneCErrorV2(f"Оплата создана но не проведена: {post_resp.status_code} - {post_resp.text}")
 
         # Во многих конфигурациях 1С создание документа оплаты не меняет статус счёта автоматически.
-        # После успешного проведения оплаты явно помечаем счёт как оплаченный.
+        # После успешного проведения оплаты пробуем явно пометить счёт как оплаченный.
+        # ВАЖНО: если обновить статус счёта не удалось, НЕ падаем с ошибкой (иначе ретрай создаст дубль оплаты).
         payment_date_invoice = getattr(settings, "ONEC_PAYMENT_DATE_USE_CAPTURED", "false").lower() == "true"
         invoice_payment_date = confirmed_at if payment_date_invoice else now_iso
         update_variants = [
-            {"СтатусСчета": paid_status_value, "ДатаОплаты": invoice_payment_date},
             {"СтатусСчета": paid_status_value},
+            {"СтатусСчета": paid_status_value, "ДатаОплаты": invoice_payment_date},
         ]
         update_error = None
+        invoice_path = self._invoice_entity_path(invoice.onec_document_id)
         for payload in update_variants:
             try:
-                self._request_with_retry(
-                    "PATCH",
-                    f"Document_СчетПокупателю('{invoice.onec_document_id}')",
-                    json=payload,
-                )
+                self._request_with_retry("PATCH", invoice_path, json=payload)
                 update_error = None
                 break
             except OneCErrorV2 as exc:
                 update_error = exc
                 continue
 
-        if update_error is not None:
-            raise OneCErrorV2(f"Оплата создана, но статус счёта не обновился: {update_error}")
-        
+        status_updated = update_error is None
+        if not status_updated and self.is_invoice_paid_in_onec(invoice.onec_document_id):
+            status_updated = True
+            update_error = None
+
         return {
             "payment_document_id_1c": payment_guid,
-            "invoice_status": "Оплачен"
+            "invoice_status": self.paid_status_value,
+            "invoice_status_updated": status_updated,
+            "invoice_status_update_error": (str(update_error) if update_error is not None else ""),
         }
+
+    def ensure_invoice_paid_status(self, invoice):
+        """
+        Пытается обновить статус счёта в 1С на 'Оплачен' без создания повторной оплаты.
+        Используется ретрай-воркером, если оплата уже есть, но статус счёта не обновился.
+        """
+        if not invoice.onec_document_id:
+            raise OneCErrorV2("У счета нет onec_document_id для обновления статуса в 1С")
+        invoice_path = self._invoice_entity_path(invoice.onec_document_id)
+        if self.is_invoice_paid_in_onec(invoice.onec_document_id):
+            return True
+        self._request_with_retry(
+            "PATCH",
+            invoice_path,
+            json={"СтатусСчета": self.paid_status_value},
+        )
+        return self.is_invoice_paid_in_onec(invoice.onec_document_id)
+
+    def fetch_invoice(self, onec_document_id):
+        response = self._request_with_retry(
+            "GET",
+            self._invoice_entity_path(onec_document_id),
+        )
+        return response.json()
+
+    def is_invoice_paid_in_onec(self, onec_document_id):
+        try:
+            data = self.fetch_invoice(onec_document_id)
+        except OneCErrorV2:
+            return False
+        status = _coerce_invoice_status_value(
+            data.get("СтатусСчета"),
+            default="",
+        )
+        return status == self.paid_status_value
 
     def health_check(self):
         """Проверка доступности OData сервиса 1С"""

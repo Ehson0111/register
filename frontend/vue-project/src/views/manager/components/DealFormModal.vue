@@ -121,24 +121,7 @@
                     </p>
                     </div>
 
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Вероятность (%)
-                      </label>
-                      <input
-                        v-model="formData.probability"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="5"
-                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div class="flex justify-between text-sm text-gray-600 mt-1">
-                        <span>0%</span>
-                        <span class="font-medium">{{ formData.probability }}%</span>
-                        <span>100%</span>
-                      </div>
-                    </div>
+                    <!-- Вероятность успеха убрана -->
                   </div>
 
                   <!-- Статус, этап и дата закрытия -->
@@ -273,7 +256,6 @@ const formData = ref<any>({
   contact: 0,
   service: 0,
   amount: 0,
-  probability: 50,
   status: 'new',
   stage: null,
   expected_close_date: ''
@@ -338,7 +320,6 @@ const resetForm = () => {
     contact: 0,
     service: 0,
     amount: 0,
-    probability: 50,
     status: 'new',
     stage: null,
     expected_close_date: ''

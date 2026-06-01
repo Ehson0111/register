@@ -88,7 +88,6 @@
                 {{ formatCurrency(Number(deal.amount || 0)) }}
               </div>
               <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>Вероятность: {{ deal.probability }}%</span>
                 <span>{{ deal.expected_close_date ? formatDate(deal.expected_close_date) : "Без даты" }}</span>
               </div>
             </article>
