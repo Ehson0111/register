@@ -61,8 +61,12 @@ def message_bodies(msg) -> tuple[str, str]:
 
 
 def message_plain_text(msg) -> str:
-    plain, _ = message_bodies(msg)
-    return plain
+    plain, html = message_bodies(msg)
+    html_as_text = html_to_text(html) if html else ""
+    # У Яндекс.Форм полный текст часто только в HTML — берём более полный вариант.
+    if len(html_as_text) > len(plain) + 20:
+        return html_as_text
+    return plain or html_as_text
 
 
 def addresses_to_string(raw: str) -> str:

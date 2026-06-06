@@ -21,7 +21,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 
 // Валидация email
-const isValidEmail = (email: string) => {
+const isValidEmail = (email: string) => {           
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 

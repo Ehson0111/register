@@ -95,7 +95,8 @@
                 </div>
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">
-                <div>{{ parseApplication(item).email || "-" }}</div>
+                <div>{{ contactDisplayName(item) }}</div>
+                <div class="text-xs text-gray-500">{{ parseApplication(item).email || "-" }}</div>
                 <div class="text-xs text-gray-500">{{ parseApplication(item).phone || "-" }}</div>
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">
@@ -114,9 +115,9 @@
                   <button
                     @click="openApprove(item)"
                     class="px-3 py-1.5 text-xs rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                    :disabled="isLocked(item)"
+                    :disabled="isLocked(item) || approvalLoading"
                   >
-                    Одобрить
+                    {{ approvalLoading ? "..." : "Одобрить" }}
                   </button>
                   <button
                     @click="reject(item)"
@@ -133,34 +134,34 @@
       </div>
     </div>
 
-    <TransitionRoot appear :show="!!approvalDraft" as="template">
+    <TransitionRoot appear :show="showApprovalModal" as="template">
       <Dialog as="div" @close="closeApprovalModal" class="relative z-50">
         <TransitionChild
-          as="template"
+          as="div"
           enter="duration-300 ease-out"
           enter-from="opacity-0"
           enter-to="opacity-100"
           leave="duration-200 ease-in"
           leave-from="opacity-100"
           leave-to="opacity-0"
-        >
-          <div class="fixed inset-0 bg-black/65" />
-        </TransitionChild>
+          class="fixed inset-0 bg-black/65"
+        />
 
         <div class="fixed inset-0 overflow-y-auto">
           <div class="flex min-h-full items-center justify-center p-4 text-center">
             <TransitionChild
-              as="template"
+              as="div"
               enter="duration-300 ease-out"
               enter-from="opacity-0 scale-95"
               enter-to="opacity-100 scale-100"
               leave="duration-200 ease-in"
               leave-from="opacity-100 scale-100"
               leave-to="opacity-0 scale-95"
+              class="w-full max-w-2xl"
             >
               <DialogPanel
                 v-if="approvalDraft"
-                class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+                class="w-full transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
               >
                 <DialogTitle as="h3" class="text-lg font-semibold text-gray-900">
                   Одобрение заявки #{{ approvalDraft.id }}
@@ -168,15 +169,26 @@
                 <p class="text-sm text-gray-500 mt-2 mb-4">
                   Перед подтверждением можно подправить данные, которые пойдут в контакт и сделку.
                 </p>
+                <p
+                  v-if="approvalMissingFields.length"
+                  class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4"
+                >
+                  Не удалось прочитать из письма: {{ approvalMissingFields.join(", ") }}.
+                  Заполните вручную или нажмите «Забрать из почты», чтобы обновить текст заявки.
+                </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input v-model="approvalDraft.firstName" type="text" placeholder="Имя" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
                   <input v-model="approvalDraft.lastName" type="text" placeholder="Фамилия" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.company" type="text" placeholder="Компания" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white md:col-span-2" />
+                  <input v-model="approvalDraft.inn" type="text" placeholder="ИНН" maxlength="12" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.position" type="text" placeholder="Должность" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.address" type="text" placeholder="Адрес" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white md:col-span-2" />
                   <input v-model="approvalDraft.email" type="email" placeholder="Email" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
                   <input v-model="approvalDraft.phone" type="text" placeholder="Телефон" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
                   <input v-model="approvalDraft.serviceName" type="text" placeholder="Услуга" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
                   <input v-model.number="approvalDraft.amount" type="number" placeholder="Сумма" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
                   <input v-model="approvalDraft.expectedCloseDate" type="date" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
-                  <input v-model="approvalDraft.title" type="text" placeholder="Название сделки" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white" />
+                  <input v-model="approvalDraft.title" type="text" placeholder="Название сделки" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white md:col-span-2" />
                 </div>
                 <textarea
                   v-model="approvalDraft.description"
@@ -211,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   TransitionRoot,
   TransitionChild,
@@ -224,12 +236,20 @@ import applicationsService, { type ApplicationAuditItem, type ApplicationItem } 
 import contactService from "../../services/contactService";
 import serviceService from "../../services/serviceService";
 import { useAuthStore } from "../../store/auth";
+import {
+  contactDisplayName,
+  parseApplication,
+} from "../../utils/applicationParser";
 
 type Decision = "approved" | "rejected";
 type Draft = {
   id: number;
   firstName: string;
   lastName: string;
+  company: string;
+  inn: string;
+  position: string;
+  address: string;
   email: string;
   phone: string;
   serviceName: string;
@@ -249,28 +269,19 @@ const auditTrail = ref<ApplicationAuditItem[]>([]);
 const searchQuery = ref("");
 const statusFilter = ref("all");
 const approvalDraft = ref<Draft | null>(null);
+const approvalLoading = ref(false);
+/** Отдельно от draft: закрытие анимации не должно обнулять форму до конца leave */
+const showApprovalModal = ref(false);
 
-const parseApplication = (item: ApplicationItem) => {
-  const text = item.text || "";
-  const read = (label: string) => {
-    const m = text.match(new RegExp(`${label}:\\s*(.+)`, "i"));
-    return m?.[1]?.trim() || "";
-  };
-  const subjectDeal = item.subject.replace(/^Новая заявка:\s*/i, "").trim();
-  return {
-    phone: read("Контакт"),
-    serviceName: read("Услуга"),
-    amount: Number((read("Сумма сделки") || "0").replace(/[^\d.]/g, "")) || 0,
-    email: read("Почта"),
-    expectedCloseDate: read("Ожидаемая дата закрытия"),
-    description: (() => {
-      const m = text.match(/Описание:\s*([\s\S]*)/i);
-      if (!m) return "";
-      return (m[1] || "").split("Это письмо содержит ответы")[0].trim();
-    })(),
-    title: read("Название сделки") || subjectDeal || "Заявка с сайта",
-  };
-};
+const approvalMissingFields = computed(() => {
+  const d = approvalDraft.value;
+  if (!d) return [];
+  const missing: string[] = [];
+  if (!d.firstName && !d.lastName) missing.push("имя");
+  if (!d.email) missing.push("email");
+  if (!d.phone) missing.push("телефон");
+  return missing;
+});
 
 const getDecision = (applicationId: number): Decision | null => {
   const audit = auditTrail.value.find((item) => item.application === applicationId);
@@ -358,37 +369,54 @@ const syncFromMail = async () => {
 
 const closeApprovalModal = () => {
   if (approving.value) return;
-  approvalDraft.value = null;
+  showApprovalModal.value = false;
 };
 
-const openApprove = (item: ApplicationItem) => {
-  const parsed = parseApplication(item);
-  const email = parsed.email || `lead-${item.id}@example.com`;
-  approvalDraft.value = {
-    id: item.id,
-    firstName: "Новый",
-    lastName: "Клиент",
-    email,
-    phone: parsed.phone || "",
-    serviceName: parsed.serviceName || "",
-    amount: parsed.amount || 0,
-    expectedCloseDate: parsed.expectedCloseDate || "",
-    title: parsed.title || "Заявка с сайта",
-    description: parsed.description || item.text || "",
-  };
+const openApprove = async (item: ApplicationItem) => {
+  try {
+    approvalLoading.value = true;
+    const full = await applicationsService.getApplication(item.id);
+    const idx = allApplications.value.findIndex((a) => a.id === item.id);
+    if (idx !== -1) allApplications.value[idx] = full;
+
+    const parsed = parseApplication(full);
+    approvalDraft.value = {
+      id: full.id,
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      company: parsed.company,
+      inn: parsed.inn,
+      position: parsed.position,
+      address: parsed.address,
+      email: parsed.email,
+      phone: parsed.phone,
+      serviceName: parsed.serviceName,
+      amount: parsed.amount,
+      expectedCloseDate: parsed.expectedCloseDate,
+      title: parsed.title,
+      description: parsed.description,
+    };
+    showApprovalModal.value = true;
+  } catch (error) {
+    console.error("Ошибка загрузки заявки", error);
+    showError("Не удалось загрузить данные заявки");
+  } finally {
+    approvalLoading.value = false;
+  }
 };
 
 const ensureContactId = async (draft: Draft): Promise<number> => {
   try {
     const created = await contactService.createContact({
-      first_name: draft.firstName || "Новый",
-      last_name: draft.lastName || "Клиент",
+      first_name: draft.firstName || "Клиент",
+      last_name: draft.lastName || "",
       email: draft.email,
       phone: draft.phone || "",
-      company: "",
+      company: draft.company || "",
+      inn: draft.inn || "",
       status: "lead",
-      position: "",
-      address: "",
+      position: draft.position || "",
+      address: draft.address || "",
       notes: "Создано из заявки",
     });
     return created.contact.id;
@@ -449,7 +477,7 @@ const confirmApprove = async () => {
       },
       ...auditTrail.value,
     ];
-    approvalDraft.value = null;
+    showApprovalModal.value = false;
     await Promise.all([loadApplications(), loadAuditTrail()]);
     showSuccess("Заявка одобрена: контакт и сделка созданы");
   } catch (error) {
@@ -491,6 +519,15 @@ const reject = async (item: ApplicationItem) => {
 const formatDate = (date: string) => new Date(date).toLocaleString("ru-RU");
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(amount);
+
+watch(showApprovalModal, (open) => {
+  if (open) return;
+  window.setTimeout(() => {
+    if (!showApprovalModal.value) {
+      approvalDraft.value = null;
+    }
+  }, 220);
+});
 
 onMounted(async () => {
   await Promise.all([loadApplications(), loadAuditTrail()]);

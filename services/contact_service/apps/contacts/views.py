@@ -630,40 +630,91 @@ class AuditTrailListView(generics.ListAPIView):
 
 
 
+def _parse_analytics_period(request):
+    """
+    Период аналитики:
+    - ?days=30 (0 — всё время)
+    - ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD (свой диапазон)
+    """
+    date_from_raw = request.query_params.get('date_from')
+    date_to_raw = request.query_params.get('date_to')
+    if date_from_raw:
+        try:
+            date_from = datetime.fromisoformat(date_from_raw)
+            if timezone.is_naive(date_from):
+                date_from = timezone.make_aware(
+                    date_from.replace(hour=0, minute=0, second=0, microsecond=0),
+                    timezone.get_current_timezone(),
+                )
+            date_to = timezone.now()
+            if date_to_raw:
+                date_to = datetime.fromisoformat(date_to_raw)
+                if timezone.is_naive(date_to):
+                    date_to = timezone.make_aware(
+                        date_to.replace(hour=23, minute=59, second=59, microsecond=999999),
+                        timezone.get_current_timezone(),
+                    )
+            return date_from, date_to
+        except (TypeError, ValueError):
+            pass
+
+    raw = request.query_params.get('days', '30')
+    try:
+        days = int(raw)
+    except (TypeError, ValueError):
+        days = 30
+    if days <= 0:
+        return None, None
+    return timezone.now() - timedelta(days=days), None
+
+
+def _apply_period_filter(qs, since, until=None):
+    if since:
+        qs = qs.filter(created_at__gte=since)
+    if until:
+        qs = qs.filter(created_at__lte=until)
+    return qs
+
+
+def _deals_period_q(since, until=None):
+    period_deals = Q()
+    if since:
+        period_deals &= Q(deals__created_at__gte=since)
+    if until:
+        period_deals &= Q(deals__created_at__lte=until)
+    return period_deals
+
+
 @api_view(['GET'])
 @permission_classes([IsManager])
 def analytics_overview(request):
     """Общая аналитика по CRM"""
-    user = request.user
+    since, until = _parse_analytics_period(request)
+    contacts_qs = _apply_period_filter(Contact.objects.all(), since, until)
+    deals_qs = _apply_period_filter(Deal.objects.all(), since, until)
 
-    # Общие данные
-    total_contacts = Contact.objects.count()
-    total_deals = Deal.objects.count()
+    total_contacts = contacts_qs.count()
+    total_deals = deals_qs.count()
     total_services = Service.objects.filter(is_active=True).count()
 
-    # Сделки по статусам
-    deals_by_status = Deal.objects.values('status').annotate(
+    deals_by_status = deals_qs.values('status').annotate(
         count=Count('id'),
         total_amount=Sum('amount')
     )
 
-    # Контакты по статусам
-    contacts_by_status = Contact.objects.values('status').annotate(
+    contacts_by_status = contacts_qs.values('status').annotate(
         count=Count('id')
     )
 
-    # Сумма всех успешных сделок
-    total_revenue = Deal.objects.filter(status=Deal.DEAL_WON).aggregate(
+    total_revenue = deals_qs.filter(status=Deal.DEAL_WON).aggregate(
         total=Sum('amount')
     )['total'] or 0
 
-    # Средняя стоимость сделки
-    avg_deal_amount = Deal.objects.aggregate(
+    avg_deal_amount = deals_qs.aggregate(
         avg=Avg('amount')
     )['avg'] or 0
 
-    # Конверсия (процент выигранных сделок от всех сделок)
-    won_deals = Deal.objects.filter(status=Deal.DEAL_WON).count()
+    won_deals = deals_qs.filter(status=Deal.DEAL_WON).count()
     conversion_rate = (won_deals / total_deals * 100) if total_deals > 0 else 0
 
     return Response({
@@ -682,13 +733,12 @@ def analytics_overview(request):
 @api_view(['GET'])
 @permission_classes([IsManager])
 def analytics_timeline(request):
-    """Аналитика по времени (последние 30 дней)"""
-    thirty_days_ago = timezone.now() - timedelta(days=30)
+    """Аналитика по времени за выбранный период (?days=)"""
+    since, until = _parse_analytics_period(request)
+    if not since:
+        since = timezone.now() - timedelta(days=30)
 
-    # Сделки за последние 30 дней
-    recent_deals = Deal.objects.filter(
-        created_at__gte=thirty_days_ago
-    ).extra({
+    recent_deals = _apply_period_filter(Deal.objects.all(), since, until).extra({
         'date': "DATE(created_at)"
     }).values('date').annotate(
         count=Count('id'),
@@ -696,18 +746,17 @@ def analytics_timeline(request):
     ).order_by('date')
 
     # Контакты за последние 30 дней
-    recent_contacts = Contact.objects.filter(
-        created_at__gte=thirty_days_ago
-    ).extra({
+    recent_contacts = _apply_period_filter(Contact.objects.all(), since, until).extra({
         'date': "DATE(created_at)"
     }).values('date').annotate(
         count=Count('id')
     ).order_by('date')
 
     # Выигранные сделки за последние 30 дней
-    won_deals = Deal.objects.filter(
-        status=Deal.DEAL_WON,
-        created_at__gte=thirty_days_ago
+    won_deals = _apply_period_filter(
+        Deal.objects.filter(status=Deal.DEAL_WON),
+        since,
+        until,
     ).extra({
         'date': "DATE(created_at)"
     }).values('date').annotate(
@@ -725,19 +774,20 @@ def analytics_timeline(request):
 @permission_classes([IsManager])
 def analytics_top_contacts(request):
     """Топ контактов по количеству сделок и сумме"""
-    # Топ контактов по количеству сделок
+    since, until = _parse_analytics_period(request)
+    period_deals = _deals_period_q(since, until)
+
     contacts_by_deal_count = Contact.objects.annotate(
-        deal_count=Count('deals'),
-        total_deal_amount=Sum('deals__amount'),
-        won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
-        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+        deal_count=Count('deals', filter=period_deals),
+        total_deal_amount=Sum('deals__amount', filter=period_deals),
+        won_deals=Count('deals', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
+        won_amount=Sum('deals__amount', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
     ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
 
-    # Топ контактов по сумме сделок
     contacts_by_deal_amount = Contact.objects.annotate(
-        total_deal_amount=Sum('deals__amount'),
-        deal_count=Count('deals'),
-        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+        total_deal_amount=Sum('deals__amount', filter=period_deals),
+        deal_count=Count('deals', filter=period_deals),
+        won_amount=Sum('deals__amount', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
     ).filter(total_deal_amount__gt=0).order_by('-total_deal_amount')[:10]
 
     return Response({
@@ -770,19 +820,20 @@ def analytics_top_contacts(request):
 @permission_classes([IsManager])
 def analytics_top_services(request):
     """Топ услуг по популярности и доходу"""
-    # Топ услуг по количеству сделок
+    since, until = _parse_analytics_period(request)
+    period_deals = _deals_period_q(since, until)
+
     services_by_deal_count = Service.objects.filter(is_active=True).annotate(
-        deal_count=Count('deals'),
-        total_amount=Sum('deals__amount'),
-        won_deals=Count('deals', filter=Q(deals__status=Deal.DEAL_WON)),
-        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+        deal_count=Count('deals', filter=period_deals),
+        total_amount=Sum('deals__amount', filter=period_deals),
+        won_deals=Count('deals', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
+        won_amount=Sum('deals__amount', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
     ).filter(deal_count__gt=0).order_by('-deal_count')[:10]
 
-    # Топ услуг по доходу
     services_by_revenue = Service.objects.filter(is_active=True).annotate(
-        total_amount=Sum('deals__amount'),
-        deal_count=Count('deals'),
-        won_amount=Sum('deals__amount', filter=Q(deals__status=Deal.DEAL_WON))
+        total_amount=Sum('deals__amount', filter=period_deals),
+        deal_count=Count('deals', filter=period_deals),
+        won_amount=Sum('deals__amount', filter=period_deals & Q(deals__status=Deal.DEAL_WON)),
     ).filter(total_amount__gt=0).order_by('-total_amount')[:10]
 
     return Response({
@@ -815,7 +866,7 @@ def analytics_top_services(request):
 @permission_classes([IsManager])
 def analytics_deal_performance(request):
     """Анализ эффективности сделок"""
-    # Анализ по месяцам
+    since, until = _parse_analytics_period(request)
     current_year = timezone.now().year
     monthly_performance = []
 
@@ -824,6 +875,7 @@ def analytics_deal_performance(request):
             created_at__year=current_year,
             created_at__month=month
         )
+        month_deals = _apply_period_filter(month_deals, since, until)
 
         total_deals = month_deals.count()
         won_deals = month_deals.filter(status=Deal.DEAL_WON).count()

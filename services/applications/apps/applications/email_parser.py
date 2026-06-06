@@ -61,9 +61,18 @@ class YandexMailParser:
                     str(msg_id),
                 )
                   
-                  #проверка дубликатов
-                if Applications.objects.filter(message_id=message_id).exists():
+                existing = Applications.objects.filter(message_id=message_id).first()
+                if existing:
                     duplicates += 1
+                    # Обновляем текст, если в почте появился более полный вариант (старые импорты без HTML-полей)
+                    status, data = self.imap.fetch(msg_id, "(RFC822)")
+                    email_msg = message_from_bytes(data[0][1])
+                    fresh_text = message_plain_text(email_msg)
+                    if len(fresh_text) > len(existing.text or "") + 20:
+                        raw_subject = email_msg.get("Subject", "") or ""
+                        existing.text = fresh_text
+                        existing.subject = refine_subject(raw_subject, fresh_text) or existing.subject
+                        existing.save(update_fields=["text", "subject", "updated_at"])
                     continue
 
                 status, data = self.imap.fetch(msg_id, "(RFC822)")

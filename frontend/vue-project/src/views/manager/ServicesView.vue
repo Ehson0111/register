@@ -257,7 +257,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useToast } from '../../../src/composables/useToast'
 import serviceService, { type Service } from '../../../src/services/serviceService'
 import ServiceFormModal from './components/ServiceFormModal.vue'
@@ -275,6 +276,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const { showSuccess, showError } = useToast()
+const route = useRoute()
 
 // Состояние
 const services = ref<Service[]>([])
@@ -383,8 +385,33 @@ const handleServiceSaved = () => {
   loadServices()
 }
 
+const openServiceFromQuery = async () => {
+  const rawId = route.query.id
+  if (!rawId) return
+
+  const serviceId = Number(rawId)
+  if (!Number.isFinite(serviceId)) return
+
+  let service = services.value.find((item) => item.id === serviceId)
+  if (!service) {
+    try {
+      service = await serviceService.getService(serviceId)
+    } catch {
+      return
+    }
+  }
+
+  editingService.value = service
+  showCreateModal.value = true
+}
+
 // Инициализация
-onMounted(() => {
-  loadServices()
+onMounted(async () => {
+  await loadServices()
+  await openServiceFromQuery()
+})
+
+watch(() => route.query.id, () => {
+  openServiceFromQuery()
 })
 </script>

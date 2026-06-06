@@ -10,7 +10,53 @@
     </div>
 
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-      <div class="flex flex-wrap items-center gap-4">
+      <div class="flex flex-wrap items-end gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Период</label>
+          <select
+            v-model="periodMode"
+            @change="onPeriodModeChange"
+            class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="30">Последние 30 дней</option>
+            <option value="90">Последние 3 месяца</option>
+            <option value="365">Последний год</option>
+            <option value="0">Всё время</option>
+            <option value="custom-days">Свой период (дней)</option>
+            <option value="custom-range">Свой период (даты)</option>
+          </select>
+        </div>
+        <div v-if="periodMode === 'custom-days'">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Количество дней</label>
+          <input
+            v-model.number="customDays"
+            type="number"
+            min="1"
+            max="3650"
+            @change="fetchAnalytics"
+            class="border border-gray-300 rounded-md px-3 py-2 w-28 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div v-if="periodMode === 'custom-range'" class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">С</label>
+            <input
+              v-model="dateFrom"
+              type="date"
+              @change="fetchAnalytics"
+              class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">По</label>
+            <input
+              v-model="dateTo"
+              type="date"
+              @change="fetchAnalytics"
+              class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
         <button
           @click="fetchAnalytics"
           class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -170,7 +216,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import contactService, { type AnalyticsOverview } from '../../services/contactService'
+import contactService, { type AnalyticsOverview, type AnalyticsQueryParams } from '../../services/contactService'
 import { getDealStatusLabel } from '../../constants/dealStatuses'
 import {
   UserGroupIcon,
@@ -179,6 +225,10 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const loading = ref(false)
+const periodMode = ref('30')
+const customDays = ref(45)
+const dateFrom = ref('')
+const dateTo = ref('')
 
 const overviewStats = ref<any[]>([])
 const topContacts = ref<any[]>([])
@@ -187,14 +237,39 @@ const dealsByStatus = ref<any[]>([])
 const contactsByStatus = ref<any[]>([])
 const monthlyPerformance = ref<any[]>([])
 
+const buildPeriodParams = (): AnalyticsQueryParams => {
+  if (periodMode.value === 'custom-range' && dateFrom.value) {
+    return {
+      date_from: dateFrom.value,
+      ...(dateTo.value ? { date_to: dateTo.value } : {}),
+    }
+  }
+  if (periodMode.value === 'custom-days') {
+    return { days: String(Math.max(1, customDays.value || 30)) }
+  }
+  return { days: periodMode.value }
+}
+
+const onPeriodModeChange = () => {
+  if (periodMode.value === 'custom-range' && !dateFrom.value) {
+    const today = new Date()
+    const monthAgo = new Date(today)
+    monthAgo.setDate(today.getDate() - 30)
+    dateTo.value = today.toISOString().slice(0, 10)
+    dateFrom.value = monthAgo.toISOString().slice(0, 10)
+  }
+  fetchAnalytics()
+}
+
 const fetchAnalytics = async () => {
   loading.value = true
   try {
+    const periodParams = buildPeriodParams()
     const [overview, topContactsRes, topServicesRes, performance] = await Promise.all([
-      contactService.getAnalyticsOverview(),
-      contactService.getTopContacts(),
-      contactService.getTopServices(),
-      contactService.getDealPerformance(),
+      contactService.getAnalyticsOverview(periodParams),
+      contactService.getTopContacts(periodParams),
+      contactService.getTopServices(periodParams),
+      contactService.getDealPerformance(periodParams),
     ])
 
     updateOverviewStats(overview)

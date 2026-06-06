@@ -160,6 +160,12 @@ export interface TopService {
   won_amount: number
 }
 
+export interface AnalyticsQueryParams {
+  days?: string
+  date_from?: string
+  date_to?: string
+}
+
 export interface DealPerformance {
   monthly_performance: Array<{
     month: number
@@ -312,24 +318,35 @@ class ContactService {
 
   // ==================== ANALYTICS ====================
   
-  async getAnalyticsOverview(): Promise<AnalyticsOverview> {
-    const response = await api.get('/contacts/analytics/overview/')
+  async getAnalyticsOverview(params?: AnalyticsQueryParams): Promise<AnalyticsOverview> {
+    const response = await api.get('/contacts/analytics/overview/', { params: this.buildAnalyticsParams(params) })
     return response.data
   }
 
-  async getTopContacts(): Promise<{ by_deal_count: TopContact[], by_deal_amount: TopContact[] }> {
-    const response = await api.get('/contacts/analytics/top-contacts/')
+  async getTopContacts(params?: AnalyticsQueryParams): Promise<{ by_deal_count: TopContact[], by_deal_amount: TopContact[] }> {
+    const response = await api.get('/contacts/analytics/top-contacts/', { params: this.buildAnalyticsParams(params) })
     return response.data
   }
 
-  async getTopServices(): Promise<{ by_popularity: TopService[], by_revenue: TopService[] }> {
-    const response = await api.get('/contacts/analytics/top-services/')
+  async getTopServices(params?: AnalyticsQueryParams): Promise<{ by_popularity: TopService[], by_revenue: TopService[] }> {
+    const response = await api.get('/contacts/analytics/top-services/', { params: this.buildAnalyticsParams(params) })
     return response.data
   }
 
-  async getDealPerformance(): Promise<DealPerformance> {
-    const response = await api.get('/contacts/analytics/deal-performance/')
+  async getDealPerformance(params?: AnalyticsQueryParams): Promise<DealPerformance> {
+    const response = await api.get('/contacts/analytics/deal-performance/', { params: this.buildAnalyticsParams(params) })
     return response.data
+  }
+
+  private buildAnalyticsParams(params?: AnalyticsQueryParams) {
+    if (!params) return { days: '30' }
+    if (params.date_from) {
+      return {
+        date_from: params.date_from,
+        ...(params.date_to ? { date_to: params.date_to } : {}),
+      }
+    }
+    return { days: params.days ?? '30' }
   }
 
   async getContactDealsStats(contactId: number): Promise<ContactDealsStats> {

@@ -78,28 +78,42 @@
                 <label class="block font-medium text-gray-500 mb-1"
                   >Контакт</label
                 >
-                <div class="flex items-center space-x-3">
+                <button
+                  v-if="dealdetail?.contact"
+                  type="button"
+                  @click="goToContact"
+                  class="flex items-center space-x-3 group text-left rounded-lg -ml-1 px-1 py-0.5 hover:bg-blue-50 transition-colors"
+                  title="Открыть карточку контакта"
+                >
                   <div
-                    class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+                    class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors"
                   >
                     <span class="text-blue-600 font-medium text-sm">
                       {{ getInitials(dealdetail?.contact_name || "") }}
                     </span>
                   </div>
 
-                  <span class="text-lg font-medium text-gray-900">{{
+                  <span class="text-lg font-medium text-blue-600 group-hover:underline">{{
                     dealdetail?.contact_name
                   }}</span>
-                </div>
+                </button>
+                <p v-else class="text-lg text-gray-900">{{ dealdetail?.contact_name || "—" }}</p>
               </div>
 
               <div>
                 <label class="block text-sm font-medium text-gray-500 mb-1"
                   >Услуга</label
                 >
-                <p class="text-lg text-gray-900">
+                <button
+                  v-if="dealdetail?.service"
+                  type="button"
+                  @click="goToService"
+                  class="text-lg font-medium text-blue-600 hover:underline text-left rounded px-1 -ml-1 hover:bg-blue-50 transition-colors"
+                  title="Открыть карточку услуги"
+                >
                   {{ dealdetail?.service_name }}
-                </p>
+                </button>
+                <p v-else class="text-lg text-gray-900">{{ dealdetail?.service_name || "—" }}</p>
               </div>
 
               <div>
@@ -369,7 +383,7 @@
             <button
               @click="refreshInvoiceStatus()"
               :disabled="refreshingInvoice"
-              class="w-full px-4 py-3 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+              class="w-full px-4 py-3 bg-gray-100 text-black-800 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
             >
               {{ refreshingInvoice ? "Обновление..." : "Обновить статус оплаты" }}
             </button>
@@ -502,6 +516,7 @@ const closeModal = () => {
   showCreateModal.value = false
   editingDeal.value = null
 }
+
 
 const handleDealSaved = () => {
   closeModal()
@@ -684,6 +699,16 @@ const auditActionText = (action: string) => {
     contact_updated: "Изменен связанный контакт",
   };
   return map[action] || action;
+};
+
+const goToContact = () => {
+  if (!dealdetail.value?.contact) return;
+  router.push({ name: "ContactDetail", params: { id: dealdetail.value.contact } });
+};
+
+const goToService = () => {
+  if (!dealdetail.value?.service) return;
+  router.push({ name: "ManagerServices", query: { id: String(dealdetail.value.service) } });
 };
 
 // Действия со сделкой
