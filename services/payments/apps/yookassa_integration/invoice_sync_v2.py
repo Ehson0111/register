@@ -107,7 +107,8 @@ def retry_due_invoice_sync(invoice, *, client=None):
                 "id": invoice.payment_id,
                 "status": "succeeded",
                 "amount": {"value": str(invoice.amount), "currency": "RUB"},
-                "captured_at": invoice.paid_at.isoformat() if invoice.paid_at else None,
+                # "captured_at": invoice.paid_at.isoformat() if invoice.paid_at else None,
+                "captured_at": invoice.paid_at.replace(microsecond=0).isoformat() if invoice.paid_at else None,
                 "payment_method": {"type": "yookassa"},
             }
             return register_payment_in_onec(invoice, payment_payload, client=client)

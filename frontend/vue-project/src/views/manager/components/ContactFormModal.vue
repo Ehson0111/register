@@ -96,7 +96,11 @@
                       v-model="formData.phone"
                       type="tel"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      :class="{ 'border-red-300': errors.phone }"
                     />
+                    <p v-if="errors.phone" class="text-red-600 text-sm mt-1">
+                      {{ errors.phone }}
+                    </p>
                   </div>
 
                   <div>
@@ -108,7 +112,11 @@
                       type="text"
                       maxlength="12"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      :class="{ 'border-red-300': errors.inn }"
                     />
+                    <p v-if="errors.inn" class="text-red-600 text-sm mt-1">
+                      {{ errors.inn }}
+                    </p>
                   </div>
 
                   <!-- Компания -->
@@ -290,16 +298,30 @@ const validateForm = (): boolean => {
 
   if (!formData.value.first_name.trim()) {
     errors.value.first_name = 'Имя обязательно'
+  } else if (formData.value.first_name.trim().length < 2) {
+    errors.value.first_name = 'Имя должно содержать минимум 2 символа'
   }
 
   if (!formData.value.last_name.trim()) {
     errors.value.last_name = 'Фамилия обязательна'
+  } else if (formData.value.last_name.trim().length < 2) {
+    errors.value.last_name = 'Фамилия должна содержать минимум 2 символа'
   }
 
   if (!formData.value.email.trim()) {
     errors.value.email = 'Email обязателен'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email.trim())) {
     errors.value.email = 'Введите корректный email'
+  }
+
+  const phone = (formData.value.phone || '').trim()
+  if (phone && !/^[\d\s+\-()]{7,20}$/.test(phone)) {
+    errors.value.phone = 'Некорректный формат телефона'
+  }
+
+  const inn = (formData.value.inn || '').trim()
+  if (inn && !/^\d{10}$|^\d{12}$/.test(inn)) {
+    errors.value.inn = 'ИНН должен содержать 10 или 12 цифр'
   }
 
   if (!formData.value.status || !formData.value.status.trim()) {
@@ -331,7 +353,13 @@ const handleSubmit = async () => {
     console.error('Ошибка сохранения контакта:', error)
     
     if (error.response?.data?.errors) {
-      errors.value = error.response.data.errors
+      const serverErrors = error.response.data.errors
+      errors.value = Object.fromEntries(
+        Object.entries(serverErrors).map(([key, value]) => [
+          key,
+          Array.isArray(value) ? String(value[0]) : String(value),
+        ]),
+      )
     } else if (error.response?.data?.message) {
       errors.value.general = error.response.data.message
     } else {

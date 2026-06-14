@@ -6,14 +6,6 @@ const authService = {
     return await api.post('/auth/login/', credentials)
   },
 
-  async register(userData) {
-    return await api.post('/users/register/', userData)
-  },
-
-  async registerVerify(payload) {
-    return await api.post('/users/register/verify/', payload)
-  },
-
   async refreshToken(refresh) {
     // Важно: refresh делаем через отдельный axios, чтобы не попасть в interceptor recursion.
     const plain = axios.create({

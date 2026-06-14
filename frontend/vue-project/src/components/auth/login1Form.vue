@@ -137,17 +137,6 @@
       >
         Sign In
       </BaseButton>
-      <div class="text-center text-sm">
-        <p class="text-gray-600">
-          Don't have an account?
-          <router-link
-            to="/register"
-            class="text-black hover:text-gray-700 font-medium"
-          >
-            Sign up here
-          </router-link>
-        </p>
-      </div>
     </form>
   </div>
 </template>
@@ -215,15 +204,13 @@ export default {
           password: formData.value.password,
         });
 
-        if (result.success) { //Если вход успешен, перенаправляем на страницу клиентского кабинета или менеджера
- 
+        if (result.success) {
           const userRole = authStore.user?.role;
-          if (userRole === "manager" || userRole === "admin") { //Если пользователь менеджер или администратор, перенаправляем на страницу менеджера
+          if (userRole === "manager" || userRole === "admin") {
             router.push("/manager/dashboard");
-          } else if (userRole === "client") { //Если пользователь клиент, перенаправляем на страницу клиента
-            router.push("/client/dashboard");
           } else {
-            router.push("/"); // fallback //Если пользователь не менеджер или клиент, перенаправляем на страницу входа по умолчанию  
+            errors.value.general = "Вход доступен только менеджерам и администраторам CRM";
+            await authStore.logout();
           }
         } else {
           errors.value.general = result.error || "Login failed";

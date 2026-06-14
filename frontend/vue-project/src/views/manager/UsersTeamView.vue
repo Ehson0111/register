@@ -803,7 +803,6 @@ const form = ref({
 function roleLabel(role) {
   if (role === 'admin') return 'Администратор'
   if (role === 'manager') return 'Менеджер'
-  if (role === 'client') return 'Клиент'
   return role
 }
 

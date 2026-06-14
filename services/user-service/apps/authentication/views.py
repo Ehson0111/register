@@ -59,6 +59,11 @@ def login_view(request):
 
     user = authenticate(username=email, password=password)
     if user and user.is_active:
+      if getattr(user, 'role', None) not in (User.ROLE_MANAGER, User.ROLE_ADMIN):
+          return Response(
+              {'error': 'Вход доступен только менеджерам и администраторам CRM'},
+              status=status.HTTP_403_FORBIDDEN,
+          )
       refresh = RefreshToken.for_user(user)
 
 # Добавляем данные в refresh (на всякий случай, для рефреша)

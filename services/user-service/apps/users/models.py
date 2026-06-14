@@ -7,16 +7,14 @@ class User(AbstractUser):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=150)
 
-    # Роли (код в БД; «Администратор» = полный контроль в разделе пользователей)
+    # Роли CRM: только администратор и менеджер.
     ROLE_ADMIN = 'admin'
     ROLE_MANAGER = 'manager'
-    ROLE_CLIENT = 'client'
     ROLE_CHOICES = [
         (ROLE_ADMIN, 'Администратор'),
         (ROLE_MANAGER, 'Менеджер'),
-        (ROLE_CLIENT, 'Клиент'),
     ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_CLIENT)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_MANAGER)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

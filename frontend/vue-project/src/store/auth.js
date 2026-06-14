@@ -42,27 +42,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(userData) {
-    try {
-      loading.value = true
-      const response = await authService.register(userData)
-
-      if (response.data) {
-        return { success: true, message: 'Registration successful' }
-      }
-
-      return { success: false, error: 'Registration failed' }
-    } catch (error) {
-      console.error('Registration error:', error)
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Registration failed'
-      }
-    } finally {
-      loading.value = false
-    }
-  }
-
   async function logout() {
     token.value = null
     refreshToken.value = null
@@ -122,7 +101,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     userName,
     login,
-    register,
     logout,
     fetchProfile,
     refreshAccessToken

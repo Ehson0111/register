@@ -13,12 +13,6 @@ const routes = [
     component: () => import('@/views/Login1View.vue')
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/RegisterView.vue'),
-    meta: { requiresGuest: true }
-  },
-  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/ForgotPasswordView.vue'),
@@ -116,18 +110,6 @@ const routes = [
         meta: { requiresAdmin: true }
       }
     ]
-  },
-  {
-    path: '/client',
-    component: () => import('@/layouts/ClientLayout.vue'),
-    redirect: '/client/dashboard',
-    meta: { requiresAuth: true, role: 'client' },
-    children: [
-      { path: 'dashboard', name: 'ClientDashboard', component: () => import('@/views/client/ClientDashboardView.vue') },
-      { path: 'deals', name: 'ClientDeals', component: () => import('@/views/client/ClientDealsView.vue') },
-      { path: 'services', name: 'ClientServices', component: () => import('@/views/client/ClientServicesView.vue') },
-      { path: 'profile', name: 'ClientProfile', component: () => import('@/views/client/ClientProfileView.vue') }
-    ]
   }
 ]
 
@@ -143,23 +125,15 @@ router.beforeEach((to, from, next) => {
 // Если маршрут требует авторизацию и пользователь не авторизован, перенаправляем на страницу входа 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) { //Если маршрут открыт для гостей и пользователь авторизован, перенаправляем на главную страницу
-    const role = authStore.user?.role
-    next(role === 'client' ? '/client/dashboard' : '/manager/dashboard')
-  } else if (to.meta.role === 'client' && authStore.user?.role !== 'client') { //Если маршрут открыт для клиентов и пользователь не клиент, перенаправляем на страницу входа
-    const r = authStore.user?.role
-    if (r === 'manager' || r === 'admin') next('/manager/dashboard')
-    else next('/login')
+  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    next('/manager/dashboard')
   } else if (to.meta.requiresAdmin && authStore.user?.role !== 'admin') {
     next('/manager/dashboard')
-  } else if (to.meta.managerPortal) { //Если маршрут открыт для менеджеров и пользователь не менеджер, перенаправляем на страницу входа
+  } else if (to.meta.managerPortal) {
     const r = authStore.user?.role
     if (r === 'manager' || r === 'admin') next()
-    else if (r === 'client') next('/client/dashboard')
     else next('/login')
-  } else if (to.path === '/client') { //Если маршрут открыт для клиентов, перенаправляем на страницу клиентского кабинета  
-    next('/client/dashboard')
-  } else { //Если все условия не выполнены, пропускаем на маршрут по умолчанию
+  } else {
     next()
   }
 })

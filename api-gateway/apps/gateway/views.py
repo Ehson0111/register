@@ -36,7 +36,6 @@ class ProxyView(View):
             return 'user-service'
         if (path.startswith('/api/contacts/') or
             path.startswith('/api/deal-stages/') or
-            path.startswith('/api/client/') or
             path.startswith('/api/services/') or
             path.startswith('/api/deals/') or
             path.startswith('/api/audit-trail/')):

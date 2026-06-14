@@ -323,7 +323,9 @@ class OneCClientV2:
     def _build_invoice_payload(self, invoice, client_guid, service_guid, service_price):
         base_payload = {
             "Ref_Key": str(uuid.uuid4()),
-            "Date": datetime.now().isoformat(),
+            # "Date": datetime.now().isoformat(),
+            "Date": timezone.now().replace(microsecond=0).isoformat(),
+
             # "Организация_Key": org_guid,
             "Клиент_Key": client_guid,
             "СуммаДокумента": float(invoice.amount),
@@ -360,6 +362,7 @@ class OneCClientV2:
 
         minimal_payload = dict(no_custom_crm_fields)
         minimal_payload.pop("EmailКлиента", None)
+        
         minimal_payload.pop("Комментарий", None)
 
         return [full_payload, no_custom_crm_fields, minimal_payload]
@@ -475,8 +478,8 @@ class OneCClientV2:
         amount = payment_payload.get("amount", {}).get("value") or float(invoice.amount)
         captured_raw = payment_payload.get("captured_at") or ""
         parsed_captured = parse_datetime(captured_raw) if captured_raw else None
-        now_iso = timezone.now().isoformat()
-        confirmed_at = (parsed_captured.isoformat() if parsed_captured else None) or now_iso
+        now_iso = timezone.now().replace(microsecond=0).isoformat()
+        confirmed_at = (parsed_captured.replace(microsecond=0).isoformat() if parsed_captured else None) or now_iso
         yk_payment_id = (payment_payload.get("id") or invoice.payment_id or "").strip()
 
         invoice_link_field = self.payment_invoice_field

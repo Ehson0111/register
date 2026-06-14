@@ -9,7 +9,7 @@ YOOKASSA_SHOP_ID = '1335151'
 YOOKASSA_SECRET_KEY = 'test_3RDrQQ3KHo_QzYn9jw0orffJb1u8ILESiNzOfuIyi4I'
 
 CONTACT_SERVICE_URL = os.getenv('CONTACT_SERVICE_URL', 'http://127.0.0.1:8005')
-PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://mainly-musical-dormouse.cloudpub.ru')
+PUBLIC_PAYMENTS_BASE_URL = os.getenv('PUBLIC_PAYMENTS_BASE_URL', 'https://weekly-sanctioned-kingbird.cloudpub.ru')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@crm.local')
 
 ONEC_BASE_URL = os.getenv('ONEC_BASE_URL', 'http://host.docker.internal/1c/odata/standard.odata/')

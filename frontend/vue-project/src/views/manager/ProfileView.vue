@@ -200,7 +200,6 @@ const passwordSuccess = ref(false)
 function roleTitle(code: string) {
   if (code === 'admin') return 'Администратор'
   if (code === 'manager') return 'Менеджер'
-  if (code === 'client') return 'Клиент'
   return 'Сотрудник'
 }
 

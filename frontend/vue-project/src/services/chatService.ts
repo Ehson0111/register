@@ -46,7 +46,7 @@ export interface TeamUser {
   email: string
   first_name: string
   last_name: string
-  role: 'admin' | 'manager' | 'client'
+  role: 'admin' | 'manager'
   role_display?: string
   is_active: boolean
 }

@@ -23,39 +23,6 @@ class UserWithProfileSerializer(serializers.ModelSerializer):
                   'last_name', 'is_active', 'date_joined', 'profile', 'role']
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Публичная регистрация: всегда создаётся клиент (роль нельзя выбрать из API)."""
-
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True)
-
-    class Meta:
-        model = User
-        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password_confirm']
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Пользователь с таким email уже существует.")
-        return value
-
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password_confirm": "Пароли не совпадают"})
-        try:
-            validate_password(attrs['password'])
-        except exceptions.ValidationError as e:
-            raise serializers.ValidationError({"password": list(e.messages)})
-        return attrs
-
-    def create(self, validated_data):
-        validated_data.pop('password_confirm')
-        user = User.objects.create_user(**validated_data)
-        user.role = User.ROLE_CLIENT
-        user.save(update_fields=['role'])
-        UserProfile.objects.get_or_create(user=user)
-        return user
-
-
 class UserListSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source='get_role_display', read_only=True)
 
@@ -159,9 +126,6 @@ class StaffUserRoleSerializer(serializers.ModelSerializer):
 
         if new_role not in (User.ROLE_ADMIN, User.ROLE_MANAGER):
             raise serializers.ValidationError({'role': 'Можно назначить только администратора или менеджера.'})
-
-        if instance and getattr(instance, 'role', None) == User.ROLE_CLIENT:
-            raise serializers.ValidationError({'role': 'Роль клиента нельзя менять в этом разделе.'})
 
         return attrs
 

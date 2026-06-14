@@ -1,7 +1,11 @@
 
+import re
 
 from rest_framework import serializers
 from .models import Contact, Service, Deal, DealStage, AuditTrail, ContactCompanyDetails
+
+PHONE_RE = re.compile(r"^[\d\s+\-()]{7,20}$")
+INN_RE = re.compile(r"^\d{10}$|^\d{12}$")
 
 
 class ContactCompanyDetailsSerializer(serializers.ModelSerializer):
@@ -115,12 +119,47 @@ class AddContactSerializer(serializers.ModelSerializer):
             'notes'
         ]
     
+    def validate_first_name(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Имя должно содержать минимум 2 символа")
+        return value
+
+    def validate_last_name(self, value):
+        value = (value or "").strip()
+        if len(value) < 2:
+            raise serializers.ValidationError("Фамилия должна содержать минимум 2 символа")
+        return value
+
     def validate_email(self, value):
-        """Валидация уникальности email при создании"""
-        if Contact.objects.filter(email=value).exists():
+        """Валидация email и уникальности при создании"""
+        value = (value or "").strip().lower()
+        if Contact.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("Контакт с таким email уже существует")
         return value
-    
+
+    def validate_phone(self, value):
+        value = (value or "").strip()
+        if not value:
+            return value
+        if not PHONE_RE.match(value):
+            raise serializers.ValidationError("Некорректный формат телефона")
+        return value
+
+    def validate_inn(self, value):
+        value = (value or "").strip()
+        if not value:
+            return value
+        if not INN_RE.match(value):
+            raise serializers.ValidationError("ИНН должен содержать 10 или 12 цифр")
+        return value
+
+    def validate_status(self, value):
+        valid = {choice[0] for choice in Contact.STATUS_CHOICES}
+        if value not in valid:
+            raise serializers.ValidationError("Недопустимый статус контакта")
+        return value
+
     def create(self, validated_data):
         """Создание контакта"""
         return Contact.objects.create(**validated_data)
