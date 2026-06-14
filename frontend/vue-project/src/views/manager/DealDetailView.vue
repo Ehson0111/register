@@ -383,7 +383,7 @@
             <button
               @click="refreshInvoiceStatus()"
               :disabled="refreshingInvoice"
-              class="w-full px-4 py-3 bg-gray-100 text-black-800 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+              class="w-full px-4 py-3 bg-gray-100 text-black  rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
             >
               {{ refreshingInvoice ? "Обновление..." : "Обновить статус оплаты" }}
             </button>

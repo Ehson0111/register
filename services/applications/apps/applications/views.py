@@ -22,7 +22,7 @@ from .mail_client import YandexMailboxClient
 
 class ApplicationsViewSet(viewsets.ModelViewSet): 
     """
-    Минимальный CRUD по заявкам.
+     CRUD по заявкам.
 
     - GET /api/applications/ — список с фильтром по is_processed и поиском по subject/text
       (query-параметры: is_processed=true|false, search=текст)

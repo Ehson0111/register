@@ -48,7 +48,8 @@ def _audit(request, action, entity_type, entity_id=None, metadata=None):
 class ContactListView(generics.ListCreateAPIView):
     queryset = Contact.objects.all()
     serializer_class = ContactListSerializer
-    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend] #GET /api/contacts/?search=John&status=active
+
     permission_classes = [IsManager]
     search_fields = ['first_name', 'last_name', 'email', 'company']
     filterset_fields = ['status', 'company']

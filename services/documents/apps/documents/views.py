@@ -13,6 +13,7 @@ import uuid
 
 class DocumentUploadView(APIView):
     permission_classes = [IsAuthenticated] # 
+    
     def post(self, request):
         serializer = UploadDocumentSerializer(data=request.data)
         
@@ -114,11 +115,13 @@ class DocumentDownloadView(APIView):
         try:
             # Проверяем существование объекта и получаем метаданные (включая размер)
             stat = minio_client.stat_object(settings.MINIO_BUCKET, document.object_name)
+            
             # Получаем объект для стриминга
+            
             obj = minio_client.get_object(settings.MINIO_BUCKET, document.object_name)
    
             def file_stream():
-                try:
+                try:  
                     for data in obj.stream(1024 * 1024):
                         if data:
                             yield data
@@ -149,7 +152,7 @@ class DocumentDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            document = ClientDocument.objects.get(pk=pk)
+            document = ClientDocument.objects.g et(pk=pk)
         except ClientDocument.DoesNotExist:
             raise Http404("Документ не найден")
 
