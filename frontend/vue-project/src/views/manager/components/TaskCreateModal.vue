@@ -2,7 +2,7 @@
   [MODAL] TaskCreateModal — создание новой задачи
 -->
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div class="fixed inset-0 bg-white flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-lg w-full max-w-md">
       <!-- Заголовок -->
       <div class="border-b border-gray-200 px-6 py-4">

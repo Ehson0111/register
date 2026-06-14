@@ -197,12 +197,18 @@
                   >
                     Сегодня
                   </span>
-                  <span 
+                  <!-- <span 
                     v-else-if="getTasksForDay(day.date).length > 0" 
                     class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded"
                   >
                     {{ getTasksForDay(day.date).length }}
-                  </span>
+                  </span> -->
+                  <span 
+                        v-else-if="getTasksForDay(day.date).length > 0" 
+                        class="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium"
+                      >
+                        {{ getTasksForDay(day.date).length }}
+                      </span>
                 </div>
               </div>
 
@@ -258,7 +264,7 @@
                 <!-- Сообщение о пустом дне -->
                 <div 
                   v-else-if="getTasksForDay(day.date).length === 0 && day.isCurrentMonth"
-                  class="text-xs text-gray-400 text-center py-2"
+                  class="text-xs text-blue-400 text-center py-2"
                 >
                   Нет задач
                 </div>
@@ -717,31 +723,31 @@ const handleTypeFilter = () => {
   applyFilters();
 };
 
-// Операции с задачами
-const handleCreateTask = async (taskData) => {
-  try {
-    loading.value = true;
-    const newTask = await calendarService.createTask({
-      ...taskData,
-      task_type: taskData.task_type || "task",
-      is_recurring: false,
-      recurrence_rule: "",
-    });
+  // Операции с задачами
+  const handleCreateTask = async (taskData) => {
+    try {
+      loading.value = true;
+      const newTask = await calendarService.createTask({
+        ...taskData,
+        task_type: taskData.task_type || "task",
+        is_recurring: false,
+        recurrence_rule: "",
+      });
 
-    tasks.value = [newTask, ...tasks.value];
-    await loadStats();
-    showCreateModal.value = false;
-    applyFilters();
-    showSuccess("Задача успешно создана!");
-  } catch (error) {
-    console.error("Ошибка создания задачи:", error);
-    showError(
-      `Ошибка создания задачи: ${error.response?.data?.error || error.message}`
-    );
-  } finally {
-    loading.value = false;
-  }
-};
+      tasks.value = [newTask, ...tasks.value];
+      await loadStats();
+      showCreateModal.value = false;
+      applyFilters();
+      showSuccess("Задача успешно создана!");
+    } catch (error) {
+      console.error("Ошибка создания задачи:", error);
+      showError(
+        `Ошибка создания задачи: ${error.response?.data?.error || error.message}`
+      );
+    } finally {
+      loading.value = false;
+    }
+  };
 
 const editTask = (task) => {
   selectedTask.value = { ...task };
