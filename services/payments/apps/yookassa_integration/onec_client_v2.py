@@ -17,7 +17,7 @@ class OneCErrorV2(RuntimeError):
 
 
 # Значения перечисления 1С «СтатусыСчконета» — только ASCII в исходнике, без риска
-# поломки кодировки при сборке Docker / переменных окружения Windows.
+
 ONEC_INVOICE_STATUS_PAID = "\u041e\u043f\u043b\u0430\u0447\u0435\u043d"  # Оплачен
 ONEC_INVOICE_STATUS_UNPAID = "\u041d\u0435\u041e\u043f\u043b\u0430\u0447\u0435\u043d"  # НеОплачен
 ONEC_PAYMENT_INVOICE_LINK_FIELD = "\u0421\u0447\u0435\u0442_Key"  # Счет_Key
@@ -60,7 +60,7 @@ def is_admin():
 
 
 def restart_iis():
-    """Перезапуск IIS/пула 1С для учебной версии (если доступна команда)."""
+    """Перезапуск IIS/пула 1С для учебной версии """
     command = getattr(settings, "ONEC_RESTART_COMMAND", "").strip()
     timeout = int(getattr(settings, "ONEC_RESTART_TIMEOUT_SECONDS", 30))
 
@@ -320,11 +320,11 @@ class OneCClientV2:
             raise OneCErrorV2(f"Не удалось создать клиента в 1С для CRM_ID={invoice.contact_id}")
         return self._get_by_crm_id("Catalog_Клиенты", invoice.contact_id) or {"Ref_Key": client_guid}
 
-    def _build_invoice_payload(self, invoice, org_guid, client_guid, service_guid, service_price):
+    def _build_invoice_payload(self, invoice, client_guid, service_guid, service_price):
         base_payload = {
             "Ref_Key": str(uuid.uuid4()),
             "Date": datetime.now().isoformat(),
-            "Организация_Key": org_guid,
+            # "Организация_Key": org_guid,
             "Клиент_Key": client_guid,
             "СуммаДокумента": float(invoice.amount),
             "СтатусСчета": self.unpaid_status_value,
@@ -347,12 +347,12 @@ class OneCClientV2:
             base_payload["Комментарий"] = invoice.comment[:300]
         return base_payload
 
-    def _build_invoice_payload_variants(self, invoice, org_guid, client_guid, service_guid, service_price):
+    def _build_invoice_payload_variants(self, invoice, client_guid, service_guid, service_price):
         """
         1С-конфигурации могут отличаться по доступным реквизитам.
         Пытаемся от полного набора полей к базовому.
         """
-        full_payload = self._build_invoice_payload(invoice, org_guid, client_guid, service_guid, service_price)
+        full_payload = self._build_invoice_payload(invoice, client_guid, service_guid, service_price)
 
         no_custom_crm_fields = dict(full_payload)
         no_custom_crm_fields.pop("CRM_Invoice_ID", None)
@@ -399,14 +399,14 @@ class OneCClientV2:
             raise OneCErrorV2(f"Клиент с CRM_ID={invoice.contact_id} не найден и не создан в 1С")
         client_guid = client['Ref_Key']
         
-        # Получаем первую организацию (можно настроить выбор по ID)
-        orgs = self._load_catalog_items_with_fallback("Catalog_Организации", params={"$top": 1})
-        if not orgs:
-            raise OneCErrorV2("Нет организаций в справочнике 1С")
-        org_guid = orgs[0]['Ref_Key']
+        # # Получаем первую организацию (можно настроить выбор по ID)
+        # orgs = self._load_catalog_items_with_fallback("Catalog_Организации", params={"$top": 1})
+        # if not orgs:
+        #     raise OneCErrorV2("Нет организаций в справочнике 1С")
+        # org_guid = orgs[0]['Ref_Key']
         
         variants = self._build_invoice_payload_variants(
-            invoice, org_guid, client_guid, service_guid, service_price
+            invoice, client_guid, service_guid, service_price
         )
         resp = None
         invoice_guid = ""

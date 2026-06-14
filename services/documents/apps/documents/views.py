@@ -152,7 +152,7 @@ class DocumentDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            document = ClientDocument.objects.g et(pk=pk)
+            document = ClientDocument.objects.get(pk=pk)
         except ClientDocument.DoesNotExist:
             raise Http404("Документ не найден")
 

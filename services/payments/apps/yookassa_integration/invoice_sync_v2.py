@@ -7,7 +7,7 @@ from .onec_client_v2 import OneCClientV2, OneCErrorV2
 
 def create_invoice_in_onec(invoice, *, client=None):
     """
-    Создание счета в 1С через новый bridge сервис
+    Создание счета в 1С через новый  сервис
     """
     client = client or OneCClientV2()
     
