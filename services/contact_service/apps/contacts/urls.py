@@ -39,4 +39,6 @@ urlpatterns = [
     path('contacts/analytics/top-services/', views.analytics_top_services, name='analytics-top-services'),
     path('contacts/analytics/deal-performance/', views.analytics_deal_performance, name='analytics-deal-performance'),
     path('audit-trail/', views.AuditTrailListView.as_view(), name='audit-trail-list'),
+    path('deals/<int:deal_id>/audit/', views.deal_audit_trail, name='deal-audit-trail'),
+
 ] 

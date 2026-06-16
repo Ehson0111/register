@@ -66,7 +66,6 @@ class Order(models.Model):
         FAILED = 'failed', 'Ошибка'
         REFUNDED = 'refunded', 'Возврат'
     
-    # ... твои существующие поля (номер заказа, сумма, клиент и т.д.)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_status = models.CharField(
         max_length=20,

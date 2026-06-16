@@ -19,7 +19,14 @@ export interface Contact {
   created_at: string
   company_details?: ContactCompanyDetails
 }
-
+ 
+export interface DealAuditResponse {
+  deal_id: number
+  deal_title: string
+  audit_trail: AuditTrailItem[]
+  contacts_map: Record<number, string>  // id → имя
+}
+ 
 export interface ContactCompanyDetails {
   company_name: string
   inn: string
@@ -203,8 +210,11 @@ export interface AuditTrailItem {
 }
 
 class ContactService {
-  // ==================== CONTACTS ====================
-  
+  //   CONTACTS    
+  async getDealAuditTrail(dealId: number): Promise<DealAuditResponse> {
+  const response = await api.get(`/deals/${dealId}/audit/`)
+  return response.data
+}
   async getContacts(params?: any): Promise<Contact[]> {
     const response = await api.get('/contacts/', { params })
     return response.data

@@ -5,55 +5,76 @@ from .models import Invoice
 from .onec_client_v2 import OneCClientV2, OneCErrorV2
 
 
-def create_invoice_in_onec(invoice, *, client=None):
+def create_invoice_in_onec(invoice, *, client=None): #создаёт счёт в 1С
     """
     Создание счета в 1С через новый  сервис
     """
-    client = client or OneCClientV2()
+    client = client or OneCClientV2() # Создаём клиент для 1С (если не передан)
     
     try:
-        payload = client.create_invoice(invoice)
+        payload = client.create_invoice(invoice)  # Отправляем счёт в 1С
+        # Сохраняем ID из 1С в CRM
+
         invoice.onec_document_id = payload.get("external_id_1c", "")
         invoice.onec_invoice_number = payload.get("invoice_number_1c") or invoice.invoice_number
-        invoice.sent_to_1c = True
-        invoice.status = Invoice.Status.WAITING
-        invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
+        # Меняем статусы
+
+        invoice.sent_to_1c = True  # Отправлен в 1С
+
+        invoice.status = Invoice.Status.WAITING     # Ждёт оплаты
+
+        invoice.onec_sync_status = Invoice.SyncStatus.SYNCED # Синхронизирован
+        # Очищаем ошибки
+
         invoice.last_onec_error = ""
-        invoice.next_retry_at = None
-        invoice.save()
+        invoice.next_retry_at = None  # Больше не ждём повтор
+        
+        invoice.save()   # Сохраняем в БД
+
+        
         return invoice
     except OneCErrorV2 as e:
-        invoice.mark_retry(error_text=str(e), onec=True)
+        invoice.mark_retry(error_text=str(e), onec=True) # Помечаем для повтора
         invoice.save()
-        raise
+        raise # Пробрасываем ошибку дальше (в views.py)
+    
 
 
-def register_payment_in_onec(invoice, payment_payload, *, client=None):
+def register_payment_in_onec(invoice, payment_payload, *, client=None): #регистрирует оплату в 1С
     """
-    Регистрация оплаты в 1С через новый bridge сервис
+    Регистрация оплаты в 1С через новый   сервис
     """
     client = client or OneCClientV2()
 
-    incoming_yk_id = (payment_payload.get("id") or "").strip()
-    stored_yk_id = (invoice.payment_id or "").strip()
+
+    # Защита от дублей (идемпотентность):
+    incoming_yk_id = (payment_payload.get("id") or "").strip()  # ID из вебхук
+    stored_yk_id = (invoice.payment_id or "").strip()    # ID в CRM
     if invoice.status == Invoice.Status.PAID and invoice.onec_payment_document_id:
         if not incoming_yk_id:
-            return invoice
+            return invoice  # Нет ID  выходим
         if stored_yk_id and incoming_yk_id == stored_yk_id:
-            return invoice
+            return invoice # Та же оплата  выходим
 
     try:
+        
+        # Парсинг даты оплаты:
+
         captured_raw = payment_payload.get("captured_at") or ""
         parsed_captured = parse_datetime(captured_raw) if captured_raw else None
         if parsed_captured:
             invoice.paid_at = parsed_captured
 
+
+        # Регистрация оплаты в 1С:
+
         payload = client.register_payment(invoice, payment_payload)
         invoice.onec_payment_document_id = payload.get("payment_document_id_1c", "") or invoice.onec_payment_document_id
-        invoice.status = Invoice.Status.PAID
-        invoice.crm_sync_status = Invoice.SyncStatus.SYNCED
+        invoice.status = Invoice.Status.PAID # Оплачен
+        invoice.crm_sync_status = Invoice.SyncStatus.SYNCED # Синхронизировано
         invoice.last_crm_error = ""
-        if payload.get("invoice_status_updated") is True:
+        if payload.get("invoice_status_updated") is True:     # Всё хорошо
+
             invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
             invoice.last_onec_error = ""
             invoice.next_retry_at = None
@@ -73,31 +94,38 @@ def register_payment_in_onec(invoice, payment_payload, *, client=None):
         invoice.save()
         raise
 
-
-def retry_due_invoice_sync(invoice, *, client=None):
+ 
+def retry_due_invoice_sync(invoice, *, client=None): # повторяет синхронизацию при ошибках
     """
     Повторная синхронизация счета с 1С
     """
     if invoice.onec_sync_status != Invoice.SyncStatus.ERROR:
-        return invoice
+        return invoice  # Нет ошибки  не нужно
     if invoice.next_retry_at and invoice.next_retry_at > timezone.now():
-        return invoice
+        return invoice  # Ещё не пришло время   ждём
 
     client = client or OneCClientV2()
     
     try:
+        # Есть оплата (payment_id)
+
+
         if invoice.payment_id:
-            # Если оплата уже зафиксирована в CRM, не создаём повторные оплаты в 1С.
-            # Пытаемся только дожать обновление статуса счёта в 1С.
+            
+             #   : Счёт уже оплачен в CRM, но статус в 1С не обновился
             if invoice.status == Invoice.Status.PAID and invoice.onec_payment_document_id:
+                #   Проверяем статус счёта в 1С     
                 if client.is_invoice_paid_in_onec(invoice.onec_document_id):
+                    # Уже оплачен просто обновляем статус в CRM
+
                     invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
                     invoice.last_onec_error = ""
                     invoice.next_retry_at = None
                     invoice.save(update_fields=["onec_sync_status", "last_onec_error", "next_retry_at"])
                     return invoice
+                # Пытаемся обновить статус счёта в 1С
                 if not client.ensure_invoice_paid_status(invoice):
-                    raise OneCErrorV2("Статус счёта в 1С не «Оплачен» после PATCH")
+                    raise OneCErrorV2("Статус счёта в 1С не «Оплачен» после обновление")
                 invoice.onec_sync_status = Invoice.SyncStatus.SYNCED
                 invoice.last_onec_error = ""
                 invoice.next_retry_at = None
@@ -115,5 +143,4 @@ def retry_due_invoice_sync(invoice, *, client=None):
         else:
             return create_invoice_in_onec(invoice, client=client)
     except OneCErrorV2 as e:
-        # Ошибка уже обработана в функциях выше
         raise

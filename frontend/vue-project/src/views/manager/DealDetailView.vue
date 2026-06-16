@@ -3,8 +3,6 @@
   Маршрут: /manager/deals/:id
 -->
 <template>
-
-
   <div class="space-y-6" v-if="dealdetail">
     <!-- Заголовок и навигация -->
     <div class="flex justify-between items-start">
@@ -31,7 +29,13 @@
           class="px-6 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center transition-colors disabled:opacity-60"
         >
           <DocumentTextIcon class="w-5 h-5 mr-2" />
-          <span>{{ issuingInvoice ? 'Выставление...' : invoice ? 'Счет выставлен' : 'Выставить счет' }}</span>
+          <span>{{
+            issuingInvoice
+              ? "Выставление..."
+              : invoice
+              ? "Счет выставлен"
+              : "Выставить счет"
+          }}</span>
         </button>
         <!-- показываем если сделка не закрытаа-->
         <button
@@ -93,11 +97,14 @@
                     </span>
                   </div>
 
-                  <span class="text-lg font-medium text-blue-600 group-hover:underline">{{
-                    dealdetail?.contact_name
-                  }}</span>
+                  <span
+                    class="text-lg font-medium text-blue-600 group-hover:underline"
+                    >{{ dealdetail?.contact_name }}</span
+                  >
                 </button>
-                <p v-else class="text-lg text-gray-900">{{ dealdetail?.contact_name || "—" }}</p>
+                <p v-else class="text-lg text-gray-900">
+                  {{ dealdetail?.contact_name || "—" }}
+                </p>
               </div>
 
               <div>
@@ -113,7 +120,9 @@
                 >
                   {{ dealdetail?.service_name }}
                 </button>
-                <p v-else class="text-lg text-gray-900">{{ dealdetail?.service_name || "—" }}</p>
+                <p v-else class="text-lg text-gray-900">
+                  {{ dealdetail?.service_name || "—" }}
+                </p>
               </div>
 
               <div>
@@ -211,7 +220,7 @@
         </div>
 
         <!-- История изменений -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <!-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 class="text-xl font-semibold text-gray-900 mb-4">История изменений</h2>
           <div v-if="auditLoading" class="text-sm text-gray-500">Загрузка истории...</div>
           <div v-else-if="auditTrail.length === 0" class="text-sm text-gray-500">
@@ -226,9 +235,131 @@
               <p class="text-xs text-gray-500 whitespace-nowrap">{{ formatDateTime(item.created_at) }}</p>
             </li>
           </ul>
+        </div> -->
+        <!-- История изменений -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            История изменений
+          </h2>
+
+          <div v-if="auditLoading" class="text-center py-8">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"
+            ></div>
+            <p class="text-gray-500 mt-2">Загрузка истории...</p>
+          </div>
+
+          <div v-else-if="auditTrail.length === 0" class="text-center py-8">
+            <ClockIcon class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p class="text-gray-500">
+              По этой сделке пока нет записей в истории
+            </p>
+          </div>
+
+          <!-- Временная шкала -->
+          <div v-else class="relative">
+            <!-- Вертикальная линия -->
+            <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+            <div class="space-y-6">
+              <div
+                v-for="(item, index) in auditTrail"
+                :key="item.id"
+                class="relative pl-12"
+              >
+                <!-- Точка на временной шкале -->
+                <div
+                  class="absolute left-2.5 w-3 h-3 rounded-full border-2 border-white shadow"
+                  :class="getAuditDotClass(item.action)"
+                ></div>
+
+                <!-- Карточка события -->
+                <div
+                  class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                >
+                  <!-- Заголовок -->
+                  <div class="flex items-start justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-lg">{{
+                        getAuditIcon(item.action)
+                      }}</span>
+                      <h4 class="font-semibold text-gray-900">
+                        {{ auditActionText(item.action) }}
+                      </h4>
+                    </div>
+                    <span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+                      {{ formatDateTime(item.created_at) }}
+                    </span>
+                  </div>
+
+                  <!-- Исполнитель -->
+                  <div
+                    class="flex items-center space-x-2 mb-2 text-sm text-gray-600"
+                  >
+                    <UserIcon class="w-4 h-4" />
+                    <span>{{ item.actor || "Система" }}</span>
+                  </div>
+
+                  <!-- Детали изменения -->
+                  <div v-if="item.action === 'deal_created'" class="mt-2">
+                    <div
+                      class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                      :class="getStatusClass(item.metadata?.status)"
+                    >
+                      {{ getStatusText(item.metadata?.status) }}
+                    </div>
+                    <span
+                      v-if="item.metadata?.contact_id"
+                      class="ml-2 text-sm text-blue-600 font-medium"
+                    >
+                  с контактом <span class="text-blue-600 font-medium">{{ getContactNameById(item.metadata.contact_id) }}</span>
+                    </span>
+                  </div>
+
+                  <div
+                    v-else-if="item.action === 'deal_status_changed'"
+                    class="mt-2"
+                  >
+                    <div class="flex items-center space-x-3 text-sm">
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full font-medium"
+                        :class="getStatusClass(item.metadata?.old_status)"
+                      >
+                        {{ getStatusText(item.metadata?.old_status) }}
+                      </span>
+
+                      <ArrowRightIcon class="w-4 h-4 text-gray-400" />
+
+                      <span
+                        class="inline-flex items-center px-3 py-1 rounded-full font-medium"
+                        :class="getStatusClass(item.metadata?.new_status)"
+                      >
+                        {{ getStatusText(item.metadata?.new_status) }}
+                      </span>
+                    </div>
+
+                    <div
+                      v-if="
+                        item.metadata?.old_stage || item.metadata?.new_stage
+                      "
+                      class="mt-2 flex items-center space-x-3 text-sm"
+                    >
+                      <span class="text-gray-500">Этап:</span>
+                      <span class="font-medium">{{
+                        item.metadata?.old_stage || "нет"
+                      }}</span>
+                      <ArrowRightIcon class="w-4 h-4 text-gray-400" />
+                      <span class="font-medium">{{
+                        item.metadata?.new_stage || "нет"
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
- 
 
       <!-- Правая колонка - действия и статистика -->
       <div class="space-y-6">
@@ -274,7 +405,13 @@
               class="w-full flex items-center space-x-3 px-4 py-3 text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-lg transition-colors disabled:opacity-60"
             >
               <DocumentTextIcon class="w-5 h-5" />
-              <span>{{ issuingInvoice ? "Выставление счета..." : invoice ? "Счет уже создан" : "Выставить счет" }}</span>
+              <span>{{
+                issuingInvoice
+                  ? "Выставление счета..."
+                  : invoice
+                  ? "Счет уже создан"
+                  : "Выставить счет"
+              }}</span>
             </button>
             <button
               v-if="!dealdetail?.is_closed"
@@ -316,13 +453,20 @@
           </div>
         </div>
 
-        <div v-if="dealdetail?.status === 'won'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div
+          v-if="dealdetail?.status === 'won'"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+        >
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
             Счет и оплата
           </h3>
-          <div v-if="invoiceLoading" class="text-sm text-gray-500">Загрузка счета...</div>
+          <div v-if="invoiceLoading" class="text-sm text-gray-500">
+            Загрузка счета...
+          </div>
           <div v-else-if="!invoice" class="space-y-3">
-            <p class="text-sm text-gray-600">По этой успешно закрытой сделке счет еще не выставлен.</p>
+            <p class="text-sm text-gray-600">
+              По этой успешно закрытой сделке счет еще не выставлен.
+            </p>
             <button
               @click="issueInvoice"
               :disabled="issuingInvoice"
@@ -335,41 +479,63 @@
             <div class="flex justify-between items-center">
               <div>
                 <p class="text-sm text-gray-500">Номер счета</p>
-                <p class="font-semibold text-gray-900">{{ invoice.onec_invoice_number || invoice.invoice_number }}</p>
+                <p class="font-semibold text-gray-900">
+                  {{ invoice.onec_invoice_number || invoice.invoice_number }}
+                </p>
               </div>
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" :class="invoiceStatusClass(invoice.status)">
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                :class="invoiceStatusClass(invoice.status)"
+              >
                 {{ invoiceStatusText(invoice.status) }}
               </span>
             </div>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span class="text-gray-600">Сумма</span>
-                <span class="text-gray-900 font-medium">{{ formatCurrency(Number(invoice.amount || 0)) }}</span>
+                <span class="text-gray-900 font-medium">{{
+                  formatCurrency(Number(invoice.amount || 0))
+                }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Контрагент 1С</span>
-                <span class="text-gray-900 font-medium">{{ invoice.onec_document_id || "Ожидает номер из 1С" }}</span>
+                <span class="text-gray-900 font-medium">{{
+                  invoice.onec_document_id || "Ожидает номер из 1С"
+                }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Синхронизация 1С</span>
-                <span class="font-medium" :class="syncStatusTextClass(invoice.onec_sync_status)">
+                <span
+                  class="font-medium"
+                  :class="syncStatusTextClass(invoice.onec_sync_status)"
+                >
                   {{ syncStatusText(invoice.onec_sync_status) }}
                 </span>
               </div>
-              <div v-if="invoice.onec_payment_document_id" class="flex justify-between">
+              <div
+                v-if="invoice.onec_payment_document_id"
+                class="flex justify-between"
+              >
                 <span class="text-gray-600">Документ оплаты 1С</span>
-                <span class="text-gray-900 font-medium">{{ invoice.onec_payment_document_id }}</span>
+                <span class="text-gray-900 font-medium">{{
+                  invoice.onec_payment_document_id
+                }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-600">Отправка ссылки клиенту</span>
-                <span class="font-medium" :class="syncStatusTextClass(invoice.crm_sync_status)">
+                <span
+                  class="font-medium"
+                  :class="syncStatusTextClass(invoice.crm_sync_status)"
+                >
                   {{ syncStatusText(invoice.crm_sync_status) }}
                 </span>
               </div>
             </div>
 
             <div v-if="invoice.payment_url" class="space-y-2">
-              <p class="text-sm text-gray-500 break-all">{{ invoice.payment_url }}</p>
+              <p class="text-sm text-gray-500 break-all">
+                {{ invoice.payment_url }}
+              </p>
               <a
                 :href="invoice.payment_url"
                 target="_blank"
@@ -383,9 +549,11 @@
             <button
               @click="refreshInvoiceStatus()"
               :disabled="refreshingInvoice"
-              class="w-full px-4 py-3 bg-gray-100 text-black  rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+              class="w-full px-4 py-3 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
             >
-              {{ refreshingInvoice ? "Обновление..." : "Обновить статус оплаты" }}
+              {{
+                refreshingInvoice ? "Обновление..." : "Обновить статус оплаты"
+              }}
             </button>
 
             <button
@@ -394,7 +562,9 @@
               :disabled="retryingInvoice"
               class="w-full px-4 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-60"
             >
-              {{ retryingInvoice ? "Повтор..." : "Повторить синхронизацию с 1С" }}
+              {{
+                retryingInvoice ? "Повтор..." : "Повторить синхронизацию с 1С"
+              }}
             </button>
 
             <p v-if="invoice.last_onec_error" class="text-xs text-red-600">
@@ -457,15 +627,13 @@
         Вернуться назад
       </button>
     </div>
-  
-  
-  <DealFormModal
+
+    <DealFormModal
       :show="showCreateModal"
       :deal="editingDeal"
       @close="closeModal"
       @saved="handleDealSaved"
     />
-
   </div>
 </template>
 
@@ -474,10 +642,12 @@ import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useToast } from "../../composables/useToast";
 import dealService from "../../services/dealService";
-import contactService, { type AuditTrailItem } from "../../services/contactService";
-import paymentService, { type DealInvoice } from "../../services/paymentService";
+ import contactService, { type AuditTrailItem } from "../../services/contactService";
+import paymentService, {
+  type DealInvoice,
+} from "../../services/paymentService";
 
-import DealFormModal from './components/DealFormModal.vue'
+import DealFormModal from "./components/DealFormModal.vue";
 
 import {
   ArrowLeftIcon,
@@ -489,72 +659,116 @@ import {
   PencilSquareIcon,
   DocumentTextIcon,
   EnvelopeIcon,
+  ClockIcon, // ← добавить
+  UserIcon, // ← добавить
+  ArrowRightIcon, // ← добавить
   ExclamationTriangleIcon,
 } from "@heroicons/vue/24/outline";
+const contactsMap = ref<Record<number, string>>({});
 
 
-const editingDeal = ref<any | null>(null)
-const showCreateModal=ref(false)
+const editingDeal = ref<any | null>(null);
+const showCreateModal = ref(false);
+// Иконки для разных типов действий
+const getAuditIcon = (action: string) => {
+  const icons: Record<string, string> = {
+    deal_created: "📝",
+    deal_status_changed: " ",
+    deal_updated: "✏️",
+    contact_updated: "👤",
+  };
+  return icons[action] || "📌";
+};
+const getContactNameById = (contactId: number): string => {
+  return contactsMap.value[contactId] || `Контакт #${contactId}`;
+};
+// Цвет точки на временной шкале
+const getAuditDotClass = (action: string) => {
+  const classes: Record<string, string> = {
+    deal_created: "bg-blue-500",
+    deal_status_changed: "bg-orange-500",
+    deal_updated: "bg-purple-500",
+    contact_updated: "bg-green-500",
+  };
+  return classes[action] || "bg-gray-500";
+};
 
-
+// Получение текста статуса
+const getStatusText = (status: string) => {
+  const texts: Record<string, string> = {
+    new: "Новая",
+    in_progress: "В работе",
+    won: "Выиграна",
+    lost: "Проиграна",
+    on_hold: "На паузе",
+  };
+  return texts[status] || status || "Не указан";
+};
+const auditActionText = (action: string) => {
+  const map: Record<string, string> = {
+    deal_created: "Создание сделки",
+    deal_status_changed: "Изменение статуса",
+    deal_updated: "Обновление сделки",
+    contact_updated: "Обновление контакта",
+  };
+  return map[action] || action;
+};
 const route = useRoute();
 const router = useRouter();
 const { showSuccess, showError } = useToast();
-const deals = ref<any[]>([])
+const deals = ref<any[]>([]);
 
 const dealdetail = ref<any | null>(null);
 const loading = ref(true);
-const invoice = ref<DealInvoice | null>(null)
-const invoiceLoading = ref(false)
-const issuingInvoice = ref(false)
-const retryingInvoice = ref(false)
-const refreshingInvoice = ref(false)
-let invoicePollTimer: ReturnType<typeof setInterval> | null = null
+const invoice = ref<DealInvoice | null>(null);
+const invoiceLoading = ref(false);
+const issuingInvoice = ref(false);
+const retryingInvoice = ref(false);
+const refreshingInvoice = ref(false);
+let invoicePollTimer: ReturnType<typeof setInterval> | null = null;
 const auditTrail = ref<AuditTrailItem[]>([]);
 const auditLoading = ref(false);
 const closeModal = () => {
-  showCreateModal.value = false
-  editingDeal.value = null
-}
-
+  showCreateModal.value = false;
+  editingDeal.value = null;
+};
 
 const handleDealSaved = () => {
-  closeModal()
-  loadDeal()
-}
-const searchQuery = ref('')
-const statusFilter = ref('')
-const serviceFilter = ref('')
+  closeModal();
+  loadDeal();
+};
+const searchQuery = ref("");
+const statusFilter = ref("");
+const serviceFilter = ref("");
 
 // Загрузка данных
 const loadDeals = async () => {
   try {
-    loading.value = true
-    const params: any = {}
-    
+    loading.value = true;
+    const params: any = {};
+
     if (searchQuery.value) {
-      params.search = searchQuery.value
+      params.search = searchQuery.value;
     }
-    
+
     if (statusFilter.value) {
-      params.status = statusFilter.value
+      params.status = statusFilter.value;
     }
 
     if (serviceFilter.value) {
-      params.service = serviceFilter.value
+      params.service = serviceFilter.value;
     }
 
-    deals.value = await dealService.getDeals(params)
+    deals.value = await dealService.getDeals(params);
 
-    loadDeal()
-
+    loadDeal();
   } catch (error) {
-    console.error('Ошибка загрузки сделок:', error)
-    showError('Не удалось загрузить сделки')
+    console.error("Ошибка загрузки сделок:", error);
+    showError("Не удалось загрузить сделки");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 // Ини
 // Стадии сделки
 const dealStages = [
@@ -566,7 +780,6 @@ const dealStages = [
 
 // Вспомогательные функции
 //фио Пример: "John Doe" → "JD", "Мария Иванова" → "МИ"
-
 
 const getInitials = (fullName: string) => {
   if (!fullName) return "??";
@@ -606,9 +819,9 @@ const invoiceStatusText = (status: string) => {
     waiting: "Ожидает оплаты",
     paid: "Оплачен",
     cancelled: "Отменен",
-  }
-  return texts[status] || status
-}
+  };
+  return texts[status] || status;
+};
 
 const invoiceStatusClass = (status: string) => {
   const classes: Record<string, string> = {
@@ -616,27 +829,27 @@ const invoiceStatusClass = (status: string) => {
     waiting: "bg-blue-100 text-blue-800",
     paid: "bg-green-100 text-green-800",
     cancelled: "bg-red-100 text-red-800",
-  }
-  return classes[status] || "bg-slate-100 text-slate-700"
-}
+  };
+  return classes[status] || "bg-slate-100 text-slate-700";
+};
 
 const syncStatusText = (status: string) => {
   const texts: Record<string, string> = {
     pending: "В процессе",
     synced: "Готово",
     error: "Ошибка",
-  }
-  return texts[status] || status
-}
+  };
+  return texts[status] || status;
+};
 
 const syncStatusTextClass = (status: string) => {
   const classes: Record<string, string> = {
     pending: "text-amber-600",
     synced: "text-green-600",
     error: "text-red-600",
-  }
-  return classes[status] || "text-gray-600"
-}
+  };
+  return classes[status] || "text-gray-600";
+};
 
 const getStageDotClass = (stageStatus: string) => {
   const currentStatus = dealdetail.value?.status;
@@ -670,7 +883,7 @@ const getStageTextClass = (stageStatus: string) => {
   }
 };
 
-const formatCurrency = (amount: number) => {  
+const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
     currency: "RUB",
@@ -690,30 +903,35 @@ const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleString("ru-RU");
 };
 
-const canIssueInvoice = computed(() => dealdetail.value?.status === "won")
+const canIssueInvoice = computed(() => dealdetail.value?.status === "won");
 
-const auditActionText = (action: string) => {
-  const map: Record<string, string> = {
-    deal_created: "Сделка создана",
-    deal_status_changed: "Изменен статус сделки",
-    contact_updated: "Изменен связанный контакт",
-  };
-  return map[action] || action;
-};
+// const auditActionText = (action: string) => {
+//   const map: Record<string, string> = {
+//     deal_created: "Сделка создана",
+//     deal_status_changed: "Изменен статус сделки",
+//     contact_updated: "Изменен связанный контакт",
+//   };
+//   return map[action] || action;
+// };
 
 const goToContact = () => {
   if (!dealdetail.value?.contact) return;
-  router.push({ name: "ContactDetail", params: { id: dealdetail.value.contact } });
+  router.push({
+    name: "ContactDetail",
+    params: { id: dealdetail.value.contact },
+  });
 };
 
 const goToService = () => {
   if (!dealdetail.value?.service) return;
-  router.push({ name: "ManagerServices", query: { id: String(dealdetail.value.service) } });
+  router.push({
+    name: "ManagerServices",
+    query: { id: String(dealdetail.value.service) },
+  });
 };
 
 // Действия со сделкой
 const changeDealStatus = async (status: "won" | "lost") => {
-  
   if (!dealdetail.value) return;
 
   const statusNames = {
@@ -740,142 +958,154 @@ const changeDealStatus = async (status: "won" | "lost") => {
     showError("Не удалось изменить статус сделки");
   }
 };
-
 const loadAuditTrail = async (dealId: number) => {
   try {
     auditLoading.value = true;
-    auditTrail.value = await contactService.getAuditTrail({
-      entity_type: "deal",
-      entity_id: dealId,
-    });
+    const response = await contactService.getDealAuditTrail(dealId);
+    auditTrail.value = response.audit_trail;
+    contactsMap.value = response.contacts_map || {};
   } catch (error) {
     console.error("Ошибка загрузки истории сделки:", error);
+    auditTrail.value = [];
   } finally {
     auditLoading.value = false;
   }
 };
 
 const editDeal = (deal: any | null) => {
-  if (!deal) return
-  editingDeal.value = deal
-  showCreateModal.value = true
+  if (!deal) return;
+  editingDeal.value = deal;
+  showCreateModal.value = true;
 };
 
 const loadInvoice = async (dealId: number) => {
   try {
-    invoiceLoading.value = true
-    invoice.value = await paymentService.getDealInvoice(dealId)
+    invoiceLoading.value = true;
+    invoice.value = await paymentService.getDealInvoice(dealId);
     if (invoice.value?.status === "waiting") {
-      startInvoicePolling()
+      startInvoicePolling();
     } else {
-      stopInvoicePolling()
+      stopInvoicePolling();
     }
   } catch (error) {
-    console.error("Ошибка загрузки счета:", error)
+    console.error("Ошибка загрузки счета:", error);
   } finally {
-    invoiceLoading.value = false
+    invoiceLoading.value = false;
   }
-}
+};
 
 const issueInvoice = async () => {
-  if (!dealdetail.value) return
+  if (!dealdetail.value) return;
   try {
-    issuingInvoice.value = true
-    invoice.value = await paymentService.createInvoiceFromDeal(dealdetail.value.id)
+    issuingInvoice.value = true;
+    invoice.value = await paymentService.createInvoiceFromDeal(
+      dealdetail.value.id
+    );
     if (invoice.value.crm_sync_status === "error") {
-      showSuccess("Счет создан и зарегистрирован в 1С, но отправка ссылки клиенту требует проверки")
+      showSuccess(
+        "Счет создан и зарегистрирован в 1С, но отправка ссылки клиенту требует проверки"
+      );
     } else {
-      showSuccess("Счет успешно выставлен, ссылка на оплату отправлена клиенту")
+      showSuccess(
+        "Счет успешно выставлен, ссылка на оплату отправлена клиенту"
+      );
     }
   } catch (error: any) {
-    console.error("Ошибка выставления счета:", error)
-    const message = error?.response?.data?.detail || "Не удалось выставить счет"
-    showError(message)
+    console.error("Ошибка выставления счета:", error);
+    const message =
+      error?.response?.data?.detail || "Не удалось выставить счет";
+    showError(message);
     if (error?.response?.data?.invoice) {
-      invoice.value = error.response.data.invoice
+      invoice.value = error.response.data.invoice;
     }
   } finally {
-    issuingInvoice.value = false
+    issuingInvoice.value = false;
   }
-}
+};
 
 const stopInvoicePolling = () => {
   if (invoicePollTimer) {
-    clearInterval(invoicePollTimer)
-    invoicePollTimer = null
+    clearInterval(invoicePollTimer);
+    invoicePollTimer = null;
   }
-}
+};
 
 const startInvoicePolling = () => {
-  stopInvoicePolling()
-  if (!invoice.value || invoice.value.status !== "waiting") return
+  stopInvoicePolling();
+  if (!invoice.value || invoice.value.status !== "waiting") return;
   invoicePollTimer = setInterval(() => {
-    refreshInvoiceStatus(true)
-  }, 15000)
-}
+    refreshInvoiceStatus(true);
+  }, 15000);
+};
 
 const refreshInvoiceStatus = async (silent = false) => {
-  if (!dealdetail.value) return
+  if (!dealdetail.value) return;
   try {
-    refreshingInvoice.value = true
-    const previousStatus = invoice.value?.status
-    const loaded = await paymentService.getDealInvoice(dealdetail.value.id)
-    invoice.value = loaded
+    refreshingInvoice.value = true;
+    const previousStatus = invoice.value?.status;
+    const loaded = await paymentService.getDealInvoice(dealdetail.value.id);
+    invoice.value = loaded;
     if (!silent) {
       if (loaded?.status === "paid" && previousStatus !== "paid") {
-        showSuccess("Оплата подтверждена")
+        showSuccess("Оплата подтверждена");
       } else {
-        showSuccess("Данные счёта обновлены")
+        showSuccess("Данные счёта обновлены");
       }
     }
   } catch (error: any) {
-    console.error("Ошибка обновления счета:", error)
+    console.error("Ошибка обновления счета:", error);
     if (!silent) {
-      showError(error?.response?.data?.detail || "Не удалось обновить статус")
+      showError(error?.response?.data?.detail || "Не удалось обновить статус");
     }
   } finally {
-    refreshingInvoice.value = false
+    refreshingInvoice.value = false;
     if (invoice.value?.status === "waiting") {
-      startInvoicePolling()
+      startInvoicePolling();
     } else {
-      stopInvoicePolling()
+      stopInvoicePolling();
     }
   }
-}
-
-const retryInvoiceSync = async () => {
-  if (!invoice.value) return
-  try {
-    retryingInvoice.value = true
-    invoice.value = await paymentService.retryInvoiceSync(invoice.value.id)
-    showSuccess("Синхронизация счета с 1С повторена")
-  } catch (error: any) {
-    console.error("Ошибка повторной синхронизации:", error)
-    showError(error?.response?.data?.detail || "Не удалось повторить синхронизацию")
-    if (error?.response?.data?.invoice) {
-      invoice.value = error.response.data.invoice
-    }
-  } finally {
-    retryingInvoice.value = false
-  }
-}
-
-const openMarketingForDeal = () => {
-  if (!dealdetail.value) return
-  router.push({
-    name: 'ManagerMarketing',
-    query: { recipientId: String(dealdetail.value.contact) }
-  })
 };
 
+const retryInvoiceSync = async () => {
+  if (!invoice.value) return;
+  try {
+    retryingInvoice.value = true;
+    invoice.value = await paymentService.retryInvoiceSync(invoice.value.id);
+    showSuccess("Синхронизация счета с 1С повторена");
+  } catch (error: any) {
+    console.error("Ошибка повторной синхронизации:", error);
+    showError(
+      error?.response?.data?.detail || "Не удалось повторить синхронизацию"
+    );
+    if (error?.response?.data?.invoice) {
+      invoice.value = error.response.data.invoice;
+    }
+  } finally {
+    retryingInvoice.value = false;
+  }
+};
+
+const openMarketingForDeal = () => {
+  if (!dealdetail.value) return;
+  router.push({
+    name: "ManagerMarketing",
+    query: { recipientId: String(dealdetail.value.contact) },
+  });
+};
 // Загрузка данных
 const loadDeal = async () => {
   try {
     loading.value = true;
     const dealId = parseInt(route.params.id as string);
     dealdetail.value = await dealService.getDeal(dealId);
-    await loadAuditTrail(dealId);
-    await loadInvoice(dealId);
+    
+    // Аудит и счёт загружаем параллельно
+    await Promise.all([
+      loadAuditTrail(dealId).catch(err => console.error('Аудит не загрузился:', err)),
+      loadInvoice(dealId).catch(err => console.error('Счёт не загрузился:', err))
+    ]);
+    
   } catch (error) {
     console.error("Ошибка загрузки сделки:", error);
     showError("Не удалось загрузить данные сделки");
@@ -887,18 +1117,18 @@ const loadDeal = async () => {
 watch(
   () => invoice.value?.status,
   (status) => {
-    if (status === "waiting") startInvoicePolling()
-    else stopInvoicePolling()
-  },
-)
+    if (status === "waiting") startInvoicePolling();
+    else stopInvoicePolling();
+  }
+);
 
 onMounted(() => {
-  loadDeal()
-})
+  loadDeal();
+});
 
 onUnmounted(() => {
-  stopInvoicePolling()
-})
+  stopInvoicePolling();
+});
 </script>
 
 <style scoped>

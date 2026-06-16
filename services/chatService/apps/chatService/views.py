@@ -24,23 +24,25 @@ from .telegram_service import (
     telegram_secret_valid,
 )
 
+# ChatRoomListCreateView — список и создание чатов
 
 class ChatRoomListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsManagerOrAdmin]
+# GET — получить список чатов
 
     def get_queryset(self):
         user = self.request.user
         base = ChatRoom.objects.filter(is_active=True).select_related("telegram_binding")
-        if is_staff_user(user):
+        if is_staff_user(user):#роль пользвоаетль
             base = base.filter(
                 Q(participants__user_id=user.id) | Q(telegram_binding__isnull=False)
             )
         else:
             base = base.filter(participants__user_id=user.id)
         return (
-            base.annotate(messages_count=Count("messages"))
-            .prefetch_related("participants", "messages")
-            .distinct()
+            base.annotate(messages_count=Count("messages")) #добавляет поле messages_count (количество сообщений в чате)
+            .prefetch_related("participants", "messages") #одгружает участников и сообщения (оптимизация)
+            .distinct() #убирает дубли (могут появиться из-за JOIN
         )
 
     def get_serializer_class(self):
@@ -48,7 +50,7 @@ class ChatRoomListCreateView(generics.ListCreateAPIView):
             return ChatRoomCreateSerializer
         return ChatRoomListSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs): #создание чата 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -106,7 +108,10 @@ class ChatAIRoomEnsureView(APIView):
         if actor_role not in CRM_STAFF_ROLES:
             return Response({"detail": "Недостаточно прав."}, status=status.HTTP_403_FORBIDDEN)
 
-        with transaction.atomic():
+        with transaction.atomic(): #Всё внутри будет выполняться как одна транзакция.
+            #Если где-то ошибка  ничего не сохранится.
+
+
             room = (
                 ChatRoom.objects.filter(
                     is_active=True, is_ai=True, participants__user_id=actor.id
@@ -145,6 +150,8 @@ class ChatAIRoomEnsureView(APIView):
                     ),
                 )
                 room.save(update_fields=["updated_at"])
+#Обновляем время последнего изменения.
+
 
         output = (
             ChatRoom.objects.filter(id=room.id)
@@ -218,9 +225,15 @@ class ChatRoomDetailView(generics.RetrieveDestroyAPIView):
 
 class ChatMessageListCreateView(APIView):
     permission_classes = [IsManagerOrAdmin]
+#Вспомогательный метод: находит комнату и проверяет доступ.
+
 
     def get_room(self, room_id):
-        room = get_object_or_404(
+        room = get_object_or_404( 
+                                
+        #  Делает JOIN с указанной связанной таблицей и загружает все данные одним запросом.
+            
+
             ChatRoom.objects.select_related("telegram_binding"),
             pk=room_id,
             is_active=True,
@@ -238,7 +251,7 @@ class ChatMessageListCreateView(APIView):
     def post(self, request, room_id):
         room = self.get_room(room_id)
         serializer = ChatMessageCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=True) 
 
         user = request.user
         user_role = getattr(user, "role", None)

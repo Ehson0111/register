@@ -761,3 +761,39 @@ def analytics_deal_performance(request):
         'monthly_performance': monthly_performance,
         'probability_analysis': probability_analysis
     })
+    
+# apps/contacts/views.py - добавьте этот код
+@api_view(['GET'])
+@permission_classes([IsManager])
+def deal_audit_trail(request, deal_id):
+    """Получение истории изменений для конкретной сделки"""
+    deal = get_object_or_404(Deal, id=deal_id)
+    
+    audit_records = AuditTrail.objects.filter(
+        entity_type='deal',
+        entity_id=deal_id
+    ).order_by('-created_at')
+    
+    # Собираем все contact_id из metadata
+    contact_ids = set()
+    for record in audit_records:
+        if record.metadata and 'contact_id' in record.metadata:
+            contact_ids.add(record.metadata['contact_id'])
+    
+    # Загружаем имена контактов одним запросом
+    contacts_map = {}
+    if contact_ids:
+        contacts = Contact.objects.filter(id__in=contact_ids).values('id', 'first_name', 'last_name')
+        contacts_map = {
+            c['id']: f"{c['first_name']} {c['last_name']}"
+            for c in contacts
+        }
+    
+    serializer = AuditTrailSerializer(audit_records, many=True)
+    
+    return Response({
+        'deal_id': deal_id,
+        'deal_title': deal.title,
+        'audit_trail': serializer.data,
+        'contacts_map': contacts_map,  # ← словарь id → имя
+    })

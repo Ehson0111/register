@@ -2,7 +2,6 @@ import json
 import logging
 import time
 import uuid
-
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
@@ -38,7 +37,7 @@ def _auth_headers_from_request(request):
 
 def _contact_service_url(path):
     base = settings.CONTACT_SERVICE_URL.rstrip("/")
-    return f"{base}/api{path}"
+    return f"{base}/api{path}"  
 
 
 def _resolve_public_base_url(request=None):
@@ -180,7 +179,6 @@ def _send_payment_link(invoice):
     invoice.last_crm_error = ""
     invoice.pay_link_sent_at = timezone.now()
     return True
-
 
 def _mark_invoice_paid_from_payment(invoice, payment_payload):
     """
@@ -402,14 +400,14 @@ def payment_result(request, invoice_id):
     if invoice.status == Invoice.Status.PAID:
         return HttpResponse(
             f"""
-            <h1>✅ Оплата прошла успешно!</h1>
+            <h1> Оплата прошла успешно!</h1>
             <p>Счёт №{invoice.onec_invoice_number or invoice.invoice_number} на сумму {invoice.amount} руб. оплачен.</p>
             <p>Статусы в 1С и CRM обновлены.</p>
             """
         )
     return HttpResponse(
         f"""
-        <h1>⏳ Оплата ещё обрабатывается</h1>
+        <h1> Оплата ещё обрабатывается</h1>
         <p>Счёт №{invoice.onec_invoice_number or invoice.invoice_number} создан и ожидает подтверждения.</p>
         <p>Если оплата уже списалась, обновите страницу через несколько секунд.</p>
         """

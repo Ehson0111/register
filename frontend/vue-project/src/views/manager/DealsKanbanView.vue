@@ -1,13 +1,15 @@
 <!--
-  [VIEW] DealsKanbanView — канбан-доска сделок по колонкам статусов
-  Маршрут: /manager/deals-kanban | Альтернатива табличному DealsView
+  Маршрут: /manager/deals-kanban  
 -->
 <template>
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Канбан сделок</h1>
-        <p class="text-gray-600 mt-1">Сделки распределены по текущим статусам, можно перетаскивать между колонками</p>
+        <p class="text-gray-600 mt-1">
+          Сделки распределены по текущим статусам, можно перетаскивать между
+          колонками
+        </p>
       </div>
       <div class="flex items-center gap-2">
         <router-link
@@ -38,25 +40,38 @@
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-10 text-gray-500">Загрузка канбана...</div>
+    <div v-if="loading" class="text-center py-10 text-gray-500">
+      Загрузка канбана...
+    </div>
+
     <div v-else class="overflow-x-auto pb-2">
       <div class="flex gap-4 min-w-max">
         <section
           v-for="column in statusColumns"
           :key="column.status"
           class="w-80 bg-gray-50 border border-gray-200 rounded-xl transition-colors"
-          :class="{ 'ring-2 ring-blue-300 border-blue-300': dropTargetStatus === column.status }"
+          :class="{
+            'ring-2 ring-blue-300 border-blue-300':
+              dropTargetStatus === column.status,
+          }"
           @dragover.prevent="onColumnDragOver(column.status)"
           @dragenter.prevent="onColumnDragOver(column.status)"
           @dragleave="onColumnDragLeave(column.status)"
           @drop.prevent="onColumnDrop(column.status)"
         >
-          <header class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+          <header
+            class="px-4 py-3 border-b border-gray-200 flex items-center justify-between"
+          >
             <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full" :class="column.dotClass"></span>
+              <span
+                class="w-2.5 h-2.5 rounded-full"
+                :class="column.dotClass"
+              ></span>
               <h3 class="font-medium text-gray-900">{{ column.label }}</h3>
             </div>
-            <span class="text-xs text-gray-500">{{ dealsByStatus(column.status).length }}</span>
+            <span class="text-xs text-gray-500">{{
+              dealsByStatus(column.status).length
+            }}</span>
           </header>
 
           <div class="p-3 space-y-3 min-h-[220px] max-h-[70vh] overflow-y-auto">
@@ -76,7 +91,10 @@
                 >
                   {{ deal.title }}
                 </button>
-                <span class="text-xs px-2 py-0.5 rounded-full" :class="statusClass(deal.status)">
+                <span
+                  class="text-xs px-2 py-0.5 rounded-full"
+                  :class="statusClass(deal.status)"
+                >
                   {{ dealStatusLabel(deal) }}
                 </span>
               </div>
@@ -87,8 +105,14 @@
               <div class="text-sm font-semibold text-gray-900">
                 {{ formatCurrency(Number(deal.amount || 0)) }}
               </div>
-              <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>{{ deal.expected_close_date ? formatDate(deal.expected_close_date) : "Без даты" }}</span>
+              <div
+                class="flex items-center justify-between text-xs text-gray-500"
+              >
+                <span>{{
+                  deal.expected_close_date
+                    ? formatDate(deal.expected_close_date)
+                    : "Без даты"
+                }}</span>
               </div>
             </article>
 
@@ -106,18 +130,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
-import { useToast } from "../../composables/useToast"
-import dealService from "../../services/dealService"
-import type { Deal } from "../../services/contactService"
-import { getDealStatusLabel } from "../../constants/dealStatuses"
+import { computed, onMounted, ref } from "vue";
+import { useToast } from "../../composables/useToast";
+import dealService from "../../services/dealService";
+import type { Deal } from "../../services/contactService";
+import { getDealStatusLabel } from "../../constants/dealStatuses";
 
-const { showSuccess, showError } = useToast()
-const deals = ref<Deal[]>([])
-const loading = ref(false)
-const searchQuery = ref("")
-const draggedDealId = ref<number | null>(null)
-const dropTargetStatus = ref<string | null>(null)
+// const { showSuccess, showError } = useToast()
+// const deals = ref<Deal[]>([])
+// const loading = ref(false)
+// const searchQuery = ref("")
+// const draggedDealId = ref<number | null>(null)
+// const dropTargetStatus = ref<string | null>(null)
+
+const { showSuccess, showError } = useToast(); // Уведомления
+const deals = ref<Deal[]>([]); // Массив всех сделок
+const loading = ref(false); // Флаг загрузки (показывать спиннер)
+const searchQuery = ref(""); // Текст поиска
+const draggedDealId = ref<number | null>(null); // ID перетаскиваемой сделки
+const dropTargetStatus = ref<string | null>(null); // Колонка под курсором
 
 const statusColumns = computed(() => [
   { status: "new", label: "Новые", dotClass: "bg-blue-500" },
@@ -125,75 +156,83 @@ const statusColumns = computed(() => [
   { status: "on_hold", label: "На паузе", dotClass: "bg-slate-500" },
   { status: "won", label: "Выиграны", dotClass: "bg-green-500" },
   { status: "lost", label: "Проиграны", dotClass: "bg-red-500" },
-])
+]);
 
-const dealsByStatus = (status: string) => deals.value.filter((deal) => deal.status === status)
+const dealsByStatus = (status: string) => 
+  deals.value.filter((deal) => deal.status === status);
 
-const dealStatusLabel = (deal: Deal) => deal.status_display || getDealStatusLabel(deal.status)
+  
+
+const dealStatusLabel = (deal: Deal) =>
+  deal.status_display || getDealStatusLabel(deal.status);
 
 const loadDeals = async () => {
-  const params: Record<string, string> = {}
+  const params: Record<string, string> = {};
   if (searchQuery.value.trim()) {
-    params.search = searchQuery.value.trim()
+    params.search = searchQuery.value.trim();  // Добавляем поиск, если есть
   }
-  deals.value = await dealService.getDeals(params)
-}
+  deals.value = await dealService.getDeals(params); // Запрос к API
+};
 
 const loadAll = async () => {
   try {
-    loading.value = true
-    await loadDeals()
+    loading.value = true;  // Включаем спиннер
+    await loadDeals(); // Загружаем сделки
+
   } catch (error) {
-    console.error("Ошибка загрузки канбана", error)
-    showError("Не удалось загрузить канбан")
+    console.error("Ошибка загрузки канбана", error);
+    showError("Не удалось загрузить канбан");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const onDragStart = (dealId: number) => {
-  draggedDealId.value = dealId
-}
+  draggedDealId.value = dealId;
+};
 
 const onDragEnd = () => {
-  draggedDealId.value = null
-  dropTargetStatus.value = null
-}
+  draggedDealId.value = null;
+  dropTargetStatus.value = null;
+};
 
-const onColumnDragOver = (status: string) => {
-  dropTargetStatus.value = status
-}
+const onColumnDragOver = (status: string) => { // Запоминаем, над какой колонкой курсор
+
+  dropTargetStatus.value = status;
+};
 
 const onColumnDragLeave = (status: string) => {
   if (dropTargetStatus.value === status) {
-    dropTargetStatus.value = null
+    dropTargetStatus.value = null;
   }
-}
+};
 
 const onColumnDrop = async (targetStatus: string) => {
-  const dealId = draggedDealId.value
-  if (!dealId) {
-    dropTargetStatus.value = null
-    return
+  const dealId = draggedDealId.value;
+  if (!dealId) {  
+    dropTargetStatus.value = null;
+    return;
   }
 
-  const currentDeal = deals.value.find((deal) => deal.id === dealId)
+  const currentDeal = deals.value.find((deal) => deal.id === dealId);
   if (!currentDeal || currentDeal.status === targetStatus) {
-    onDragEnd()
-    return
+    onDragEnd(); // Статус не меняется → выходим
+
+    return;
   }
 
   try {
-    await dealService.changeDealStatus(dealId, targetStatus)
-    showSuccess("Сделка перемещена")
-    await loadDeals()
+    await dealService.changeDealStatus(dealId, targetStatus);
+    showSuccess("Сделка перемещена");
+    await loadDeals();
   } catch (error) {
-    console.error("Ошибка перемещения сделки", error)
-    showError("Не удалось переместить сделку")
+    console.error("Ошибка перемещения сделки", error);
+    showError("Не удалось переместить сделку"); // Перезагружаем список
+
   } finally {
-    onDragEnd()
+    onDragEnd(); // Очищаем состояние
   }
-}
+};
 
 const statusClass = (status: string) => {
   const classes: Record<string, string> = {
@@ -202,17 +241,23 @@ const statusClass = (status: string) => {
     won: "bg-green-100 text-green-800",
     lost: "bg-red-100 text-red-800",
     on_hold: "bg-slate-300 text-slate-900",
-  }
-  return classes[status] || "bg-slate-300 text-slate-900"
-}
+  };
+  return classes[status] || "bg-slate-300 text-slate-900";
+};
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(amount)
+  new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(amount);
 
-const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("ru-RU")
+const formatDate = (date: string) => new Date(date).toLocaleDateString("ru-RU");
 
 onMounted(() => {
-  loadAll()
-})
+  loadAll();  // При загрузке страницы загружаем сделки
+  // onMounted Хук Vue, который выполняется один раз, когда компонент отрисовался на экране.
+
+
+});
 </script>

@@ -346,3 +346,4 @@ class AuditTrailSerializer(serializers.ModelSerializer):
             "metadata",
             "created_at",
         ]
+        
